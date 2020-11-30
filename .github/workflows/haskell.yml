@@ -65,7 +65,7 @@ jobs:
       id: setup-haskell
       with:
         ghc-version: ${{ matrix.ghc }}
-        cabal-version: '3.2.0.0'
+        cabal-version: '3.4.0.0-rc3'
 
     - name: Patch GHC 8.10.2 linker
       if: matrix.os == 'windows-latest' && matrix.ghc == '8.10.2'
