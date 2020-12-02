@@ -91,7 +91,7 @@ sed -i ${ROOT}/configuration.yaml \
 # - post another proposal + vote to go to protocol version 2
 
 #uncomment this for an automatic transition after the first epoch
-# echo "TestShelleyHardForkAtEpoch: 1" >> ${ROOT}/configuration.yaml
+#echo "TestShelleyHardForkAtEpoch: 1" >> ${ROOT}/configuration.yaml
 #uncomment this to trigger the hardfork with protocol version 1
 #echo "TestShelleyHardForkAtVersion: 1"  >> ${ROOT}/configuration.yaml
 

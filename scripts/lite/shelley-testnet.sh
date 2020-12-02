@@ -7,7 +7,7 @@ ROOT="$(realpath "$(dirname "$0")/../..")"
 
 configuration="${ROOT}/scripts/lite/configuration"
 
-data_dir="$(mktemp).d"
+data_dir=shelleyscratch
 mkdir -p "${data_dir}"
 
 # Generate shelley genesis spec
@@ -43,6 +43,7 @@ ARGS=(
   --genesis-dir           "${data_dir}/genesis"
   --gen-genesis-keys      3
   --gen-utxo-keys         3
+  --supply 3000
   --testnet-magic 42
 )
 

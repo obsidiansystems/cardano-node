@@ -1,0 +1,13 @@
+{
+    "scripts": [
+        {
+            "keyHash": "966e394a544f242081e41d1965137b1bb412ac230d40ed5407821c37",
+            "type": "sig"
+        },
+        {
+            "slot": 100000,
+            "type": "after"
+        }
+    ],
+    "type": "all"
+}

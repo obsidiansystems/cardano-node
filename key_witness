@@ -1,0 +1,5 @@
+{
+    "type": "TxWitness AllegraEra",
+    "description": "",
+    "cborHex": "820082582005f4625f748e463fe625ee5f999f6a6f2cadaed1b6f3f610afd5bac7c494a2695840518a7583acba6fc1a4ca8a638aa8b1c684831840161c5a83f2dfbaf229e0389c3e0780df610303c35f17806493c5196e8f2bf4933d53bcb1b4c62d67c8caf501"
+}
