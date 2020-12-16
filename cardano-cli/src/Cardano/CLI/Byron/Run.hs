@@ -1,3 +1,5 @@
+{-# LANGUAGE GADTs #-}
+
 module Cardano.CLI.Byron.Run
   ( ByronClientCmdError
   , renderByronClientCmdError
@@ -6,14 +8,16 @@ module Cardano.CLI.Byron.Run
 
 import           Cardano.Prelude
 
-import           Control.Monad.Trans.Except.Extra (firstExceptT, hoistEither)
+import           Control.Monad.Trans.Except.Extra (firstExceptT, hoistEither, left)
 import qualified Data.ByteString.Char8 as BS
+import qualified Data.Text as Text
 import qualified Data.Text.Lazy.Builder as Builder
 import qualified Data.Text.Lazy.IO as TL
 import qualified Formatting as F
 
 import qualified Cardano.Chain.Common as Common
 import qualified Cardano.Chain.Genesis as Genesis
+import           Cardano.Chain.Slotting (EpochSlots (..))
 import           Cardano.Chain.UTxO (TxIn, TxOut)
 
 import qualified Cardano.Crypto.Hashing as Crypto
@@ -21,7 +25,11 @@ import qualified Cardano.Crypto.Signing as Crypto
 
 import           Cardano.Api hiding (TxIn, TxOut, UpdateProposal)
 import           Cardano.Api.Byron hiding (TxIn, TxOut, UpdateProposal)
+import           Cardano.Api.Protocol
+import           Cardano.Api.TxSubmit
 
+import           Ouroboros.Consensus.Byron.Ledger (ByronBlock)
+import           Ouroboros.Consensus.Ledger.SupportsMempool (ApplyTxErr)
 
 import           Cardano.CLI.Byron.Commands
 import           Cardano.CLI.Byron.Delegation
@@ -31,10 +39,11 @@ import           Cardano.CLI.Byron.Query
 import           Cardano.CLI.Byron.Tx
 import           Cardano.CLI.Byron.UpdateProposal
 import           Cardano.CLI.Byron.Vote
-
+import           Cardano.CLI.Environment
 import           Cardano.CLI.Helpers
 import           Cardano.CLI.Shelley.Commands (ByronKeyFormat (..))
 import           Cardano.CLI.Types
+
 -- | Data type that encompasses all the possible errors of the
 -- Byron client.
 data ByronClientCmdError
@@ -44,6 +53,7 @@ data ByronClientCmdError
   | ByronCmdKeyFailure !ByronKeyFailure
   | ByronCmdQueryError !ByronQueryError
   | ByronCmdTxError !ByronTxError
+  | ByronCmdTxSubmitError !(ApplyTxErr ByronBlock)
   | ByronCmdUpdateProposalError !ByronUpdateProposalError
   | ByronCmdVoteError !ByronVoteError
   deriving Show
@@ -57,6 +67,8 @@ renderByronClientCmdError err =
     ByronCmdKeyFailure e -> renderByronKeyFailure e
     ByronCmdQueryError e -> renderByronQueryError e
     ByronCmdTxError e -> renderByronTxError e
+    ByronCmdTxSubmitError e ->
+      "Error while submitting Byron tx: " <> Text.pack (show e)
     ByronCmdUpdateProposalError e -> renderByronUpdateProposalError e
     ByronCmdVoteError e -> renderByronVoteError e
 
@@ -168,8 +180,14 @@ runToVerification bKeyFormat skFp (NewVerificationKeyFile vkFp) = do
 runSubmitTx :: NetworkId -> TxFile -> ExceptT ByronClientCmdError IO ()
 runSubmitTx network fp = do
     tx <- firstExceptT ByronCmdTxError $ readByronTx fp
-    firstExceptT ByronCmdTxError $
-      nodeSubmitTx network (normalByronTxToGenTx tx)
+    SocketPath sockPath <- firstExceptT (ByronCmdTxError . EnvSocketError) readEnvSocketPath
+    withlocalNodeConnectInfo (ByronProtocol $ EpochSlots 21600) network sockPath $ \connectInfo ->
+      case localNodeConsensusMode connectInfo of
+        ByronMode{} -> do
+          result <- liftIO . submitTx connectInfo . TxForByronMode $ ByronTx tx
+          case result of
+            TxSubmitSuccess -> return ()
+            TxSubmitFailureByronMode err -> left $ ByronCmdTxSubmitError err
 
 runGetTxId :: TxFile -> ExceptT ByronClientCmdError IO ()
 runGetTxId fp = firstExceptT ByronCmdTxError $ do
