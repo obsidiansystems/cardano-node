@@ -68,9 +68,12 @@ module Cardano.Api.Byron
     NetworkMagic(..),
 
     -- ** Conversions
+    fromByronTxIn,
     toByronNetworkMagic,
     toByronProtocolMagicId,
     toByronRequiresNetworkMagic,
+
+    makeByronTransaction,
   ) where
 
 import           Cardano.Api

@@ -1,11 +1,11 @@
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE EmptyCase #-}
-{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
@@ -77,49 +77,50 @@ module Cardano.Api.TxBody (
 
     -- * Data family instances
     AsType(AsTxId, AsTxBody, AsByronTxBody, AsShelleyTxBody),
+
+    -- * Conversion functions
+    fromByronTxIn,
   ) where
 
 import           Prelude
 
 import           Data.Bifunctor (first)
-import           Data.Maybe (fromMaybe)
-import           Data.List (intercalate)
-import qualified Data.List.NonEmpty as NonEmpty
-import           Data.String (IsString)
 import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as LBS
+import           Data.List (intercalate)
+import qualified Data.List.NonEmpty as NonEmpty
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import           Data.Maybe (fromMaybe)
 import qualified Data.Sequence.Strict as Seq
 import qualified Data.Set as Set
+import           Data.String (IsString)
 import           Data.Word (Word64)
 
 import           Control.Monad (guard)
 
 import           Cardano.Binary (Annotated (..), reAnnotate, recoverBytes)
 import qualified Cardano.Binary as CBOR
-import qualified Shelley.Spec.Ledger.Serialization as CBOR
-                   (decodeNullMaybe, encodeNullMaybe)
+import qualified Shelley.Spec.Ledger.Serialization as CBOR (decodeNullMaybe, encodeNullMaybe)
 
-import           Cardano.Slotting.Slot (SlotNo (..))
 import qualified Cardano.Crypto.Hash.Class as Crypto
+import           Cardano.Slotting.Slot (SlotNo (..))
 
-import qualified Cardano.Crypto.Hashing as Byron
 import qualified Cardano.Chain.Common as Byron
 import qualified Cardano.Chain.UTxO as Byron
+import qualified Cardano.Crypto.Hashing as Byron
 
-import qualified Cardano.Ledger.Era as Ledger
 import qualified Cardano.Ledger.Core as Ledger
+import qualified Cardano.Ledger.Era as Ledger
 import qualified Cardano.Ledger.Shelley.Constraints as Ledger
-import qualified Cardano.Ledger.ShelleyMA.TxBody as Allegra
 import qualified Cardano.Ledger.ShelleyMA.Metadata as Allegra
-import qualified Shelley.Spec.Ledger.MetaData as Ledger (MetaDataHash, hashMetadata)
-import           Ouroboros.Consensus.Shelley.Eras
-                   (StandardShelley, StandardAllegra, StandardMary)
+import qualified Cardano.Ledger.ShelleyMA.TxBody as Allegra
+import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
+import qualified Shelley.Spec.Ledger.MetaData as Ledger (MetaDataHash, hashMetadata)
 
 import qualified Shelley.Spec.Ledger.Address as Shelley
-import           Shelley.Spec.Ledger.BaseTypes (StrictMaybe(..), maybeToStrictMaybe)
+import           Shelley.Spec.Ledger.BaseTypes (StrictMaybe (..), maybeToStrictMaybe)
 import qualified Shelley.Spec.Ledger.Credential as Shelley
 import qualified Shelley.Spec.Ledger.Genesis as Shelley
 import qualified Shelley.Spec.Ledger.Keys as Shelley
@@ -216,6 +217,13 @@ newtype TxIx = TxIx Word
   deriving stock (Eq, Ord, Show)
   deriving newtype (Enum)
 
+fromByronTxIn :: Byron.TxIn -> TxIn
+fromByronTxIn (Byron.TxInUtxo txId index) =
+  let shortBs = Byron.abstractHashToShort txId
+      mApiHash = Crypto.hashFromBytesShort shortBs
+  in case mApiHash of
+       Just apiHash -> TxIn (TxId apiHash) (TxIx . fromIntegral $ toInteger index)
+       Nothing -> error $ "Error converting Byron era TxId: " <> show txId
 
 toByronTxIn  :: TxIn -> Byron.TxIn
 toByronTxIn (TxIn txid (TxIx txix)) =
