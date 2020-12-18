@@ -24,8 +24,12 @@ module Cardano.CLI.Byron.Parsers
 import           Cardano.Prelude hiding (option)
 import           Prelude (String)
 
+import           Control.Monad (fail)
+import qualified Data.Attoparsec.ByteString.Char8 as Atto
+import           Data.Attoparsec.Combinator ((<?>))
+import qualified Data.ByteString.Char8 as BSC
 import qualified Data.ByteString.Lazy.Char8 as C8
-import qualified Data.List.NonEmpty as NE
+import qualified Data.Char as Char
 import qualified Data.Text as Text
 import           Data.Time (UTCTime)
 import           Data.Time.Clock.POSIX (posixSecondsToUTCTime)
@@ -36,21 +40,22 @@ import qualified Options.Applicative as Opt
 
 import           Cardano.Binary (Annotated (..))
 
-import           Cardano.Crypto (RequiresNetworkMagic (..), decodeHash)
+import           Cardano.Crypto (RequiresNetworkMagic (..))
 import           Cardano.Crypto.Hashing (hashRaw)
 import           Cardano.Crypto.ProtocolMagic (AProtocolMagic (..), ProtocolMagic,
                      ProtocolMagicId (..))
 
-import           Cardano.Chain.Common (Address (..), BlockCount (..), Lovelace, TxFeePolicy (..),
-                     TxSizeLinear (..), decodeAddressBase58, mkLovelace, rationalToLovelacePortion)
+import           Cardano.Chain.Common (BlockCount (..), TxFeePolicy (..), TxSizeLinear (..),
+                     decodeAddressBase58, rationalToLovelacePortion)
+import qualified Cardano.Chain.Common as Byron
 import           Cardano.Chain.Genesis (FakeAvvmOptions (..), TestnetBalanceOptions (..))
 import           Cardano.Chain.Slotting (EpochNumber (..), EpochSlots (..), SlotNumber (..))
 import           Cardano.Chain.Update (ApplicationName (..), InstallerHash (..), NumSoftwareVersion,
                      ProtocolVersion (..), SoftforkRule (..), SoftwareVersion (..), SystemTag (..),
                      checkApplicationName, checkSystemTag)
-import           Cardano.Chain.UTxO (TxId, TxIn (..), TxOut (..))
 
-import           Cardano.Api hiding (Address, Lovelace, TxId, TxIn, TxOut, UpdateProposal)
+import           Cardano.Api hiding (UpdateProposal)
+import           Cardano.Api.Byron (Address (..), Lovelace (..))
 
 import           Cardano.CLI.Byron.Commands
 import           Cardano.CLI.Byron.Genesis
@@ -167,7 +172,6 @@ parseGenesisRelatedValues =
               "genesis-output-dir"
               "Non-existent directory where genesis JSON file and secrets shall be placed."
           <*> parseGenesisParameters
-          <*> parseByronKeyFormat
     , command' "print-genesis-hash" "Compute hash of a genesis file."
         $ PrintGenesisHash
             <$> parseGenesisFile "genesis-json"
@@ -180,8 +184,7 @@ parseKeyRelatedValues =
     mconcat
         [ command' "keygen" "Generate a signing key."
             $ Keygen
-                <$> parseByronKeyFormat
-                <*> parseNewSigningKeyFile "secret"
+                <$> parseNewSigningKeyFile "secret"
                 <*> parsePassword
         , command'
             "to-verification"
@@ -215,7 +218,6 @@ parseKeyRelatedValues =
             $ MigrateDelegateKeyFrom
                 <$> parseByronKeyFormat -- Old Byron key format
                 <*> parseSigningKeyFile "from" "Signing key file to migrate."
-                <*> parseByronKeyFormat -- New Byron key format
                 <*> parseNewSigningKeyFile "to"
         ]
 
@@ -263,25 +265,73 @@ parseTestnetBalanceOptions =
 parseTxIn :: Parser TxIn
 parseTxIn =
   option
-  ( uncurry TxInUtxo
-    . first cliParseTxId
+  ( uncurry TxIn
+    . first parseTxId
+    . second parseTxIx
     <$> auto
   )
   $ long "txin"
     <> metavar "(TXID,INDEX)"
     <> help "Transaction input is a pair of an UTxO TxId and a zero-based output index."
+ where
+  parseTxId :: Text -> TxId
+  parseTxId s =
+      case Atto.parseOnly (parseTxIdAtto <* Atto.endOfInput) $ BSC.pack $ Text.unpack s of
+        Left err -> panic $ "Error parsing tx id: " <> Text.pack (show err)
+        Right v -> v
 
-parseTxOut :: Parser TxOut
+  parseTxIdAtto :: Atto.Parser TxId
+  parseTxIdAtto = (<?> "Transaction ID (hexadecimal)") $ do
+    bstr <- Atto.takeWhile1 Char.isHexDigit
+    case deserialiseFromRawBytesHex AsTxId bstr of
+      Just addr -> return addr
+      Nothing -> fail $ "Incorrect transaction id format:: " ++ show bstr
+
+  parseTxIx :: Text -> TxIx
+  parseTxIx t =
+      case Atto.parseOnly (parseTxIxAtto <* Atto.endOfInput) $ BSC.pack $ Text.unpack t of
+        Left err -> panic $ "Error parsing tx index: " <> Text.pack (show err)
+        Right v -> v
+
+  parseTxIxAtto :: Atto.Parser TxIx
+  parseTxIxAtto = toEnum <$> Atto.decimal
+
+parseTxOut :: Parser (TxOut ByronEra)
 parseTxOut =
   option
     ( uncurry TxOut
-      . first cliParseBase58Address
-      . second cliParseLovelace
+      . first pAddressInEra
+      . second pLovelaceTxOut
       <$> auto
     )
     $ long "txout"
       <> metavar "'(\"ADDR\", LOVELACE)'"
       <> help "Specify a transaction output, as a pair of an address and lovelace."
+ where
+  pAddressInEra :: Text -> AddressInEra ByronEra
+  pAddressInEra t =
+    case decodeAddressBase58 t of
+      Left err -> panic $ "Bad Base58 address: " <> Text.pack (show err)
+      Right byronAddress -> AddressInEra ByronAddressInAnyEra $ ByronAddress byronAddress
+
+  pLovelaceTxOut :: Text -> TxOutValue ByronEra
+  pLovelaceTxOut t =
+    case Atto.parseOnly (pLovelaceTxOutAtto <* Atto.endOfInput) $ BSC.pack $ Text.unpack t of
+      Left err -> panic $ "Error parsing lovelace value: " <> Text.pack err
+      Right v -> v
+
+
+  pLovelaceTxOutAtto :: Atto.Parser (TxOutValue ByronEra)
+  pLovelaceTxOutAtto = do
+    i <- Atto.decimal
+    if i > toInteger (maxBound :: Word64)
+    then fail $ show i <> " lovelace exceeds the Word64 upper bound"
+    else return . TxOutAdaOnly AdaOnlyInByronEra $ Lovelace i
+
+
+readerFromAttoParser :: Atto.Parser a -> Opt.ReadM a
+readerFromAttoParser p =
+    Opt.eitherReader (Atto.parseOnly (p <* Atto.endOfInput) . BSC.pack)
 
 parseTxRelatedValues :: Mod CommandFields ByronCommand
 parseTxRelatedValues =
@@ -306,7 +356,7 @@ parseTxRelatedValues =
             <*> parseAddress
                   "rich-addr-from"
                   "Tx source: genesis UTxO richman address (non-HD)."
-            <*> (NE.fromList <$> some parseTxOut)
+            <*> (some parseTxOut)
 
     , command'
         "issue-utxo-expenditure"
@@ -318,8 +368,8 @@ parseTxRelatedValues =
             <*> parseSigningKeyFile
                   "wallet-key"
                   "Key that has access to all mentioned genesis UTxO inputs."
-            <*> (NE.fromList <$> some parseTxIn)
-            <*> (NE.fromList <$> some parseTxOut)
+            <*> (some parseTxIn)
+            <*> (some parseTxOut)
 
     , command'
         "txid"
@@ -568,7 +618,7 @@ parseWord optname desc metvar = option (fromInteger <$> auto)
 
 
 
-parseAddress :: String -> String -> Parser Address
+parseAddress :: String -> String -> Parser (Address ByronAddr)
 parseAddress opt desc =
   option (cliParseBase58Address <$> str)
     $ long opt <> metavar "ADDR" <> help desc
@@ -671,31 +721,11 @@ parseUTCTime optname desc =
   option (posixSecondsToUTCTime . fromInteger <$> auto)
     $ long optname <> metavar "POSIXSECONDS" <> help desc
 
-
--- | See the rationale for cliParseBase58Address.
-cliParseLovelace :: Word64 -> Lovelace
-cliParseLovelace =
-  either (panic . ("Bad Lovelace value: " <>) . show) identity
-  . mkLovelace
-
--- | Here, we hope to get away with the usage of 'error' in a pure expression,
---   because the CLI-originated values are either used, in which case the error is
---   unavoidable rather early in the CLI tooling scenario (and especially so, if
---   the relevant command ADT constructor is strict, like with ClientCommand), or
---   they are ignored, in which case they are arguably irrelevant.
---   And we're getting a correct-by-construction value that doesn't need to be
---   scrutinised later, so that's an abstraction benefit as well.
-cliParseBase58Address :: Text -> Address
-cliParseBase58Address =
-  either (panic . ("Bad Base58 address: " <>) . show) identity
-  . decodeAddressBase58
-
-
--- | See the rationale for cliParseBase58Address.
-cliParseTxId :: String -> TxId
-cliParseTxId =
-  either (panic . ("Bad Lovelace value: " <>) . show) identity
-  . decodeHash . Text.pack
+cliParseBase58Address :: Text -> Address ByronAddr
+cliParseBase58Address t =
+  case decodeAddressBase58 t of
+    Left err -> panic $ "Bad Base58 address: " <> Text.pack (show err)
+    Right byronAddress -> ByronAddress byronAddress
 
 parseFraction :: String -> String -> Parser Rational
 parseFraction optname desc =
@@ -708,10 +738,22 @@ parseIntegral :: Integral a => String -> String -> Parser a
 parseIntegral optname desc = option (fromInteger <$> auto)
   $ long optname <> metavar "INT" <> help desc
 
-parseLovelace :: String -> String -> Parser Lovelace
+parseLovelace :: String -> String -> Parser Byron.Lovelace
 parseLovelace optname desc =
-  either (panic . show) identity . mkLovelace
-    <$> parseIntegral optname desc
+  Opt.option (readerFromAttoParser parseLovelaceAtto)
+    (  long optname
+    <> metavar "INT"
+    <> help desc
+    )
+ where
+  parseLovelaceAtto :: Atto.Parser Byron.Lovelace
+  parseLovelaceAtto = do
+    i <- Atto.decimal
+    if i > toInteger (maxBound :: Word64)
+    then fail $ show i <> " lovelace exceeds the Word64 upper bound"
+    else case toByronLovelace (Lovelace i) of
+           Just byronLovelace -> return byronLovelace
+           Nothing -> panic $ "Error converting lovelace: " <> Text.pack (show i)
 
 readDouble :: ReadM Double
 readDouble = do

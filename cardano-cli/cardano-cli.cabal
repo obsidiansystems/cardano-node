@@ -36,7 +36,6 @@ library
                        Cardano.CLI.Byron.Delegation
                        Cardano.CLI.Byron.Genesis
                        Cardano.CLI.Byron.Key
-                       Cardano.CLI.Byron.Legacy
                        Cardano.CLI.Byron.Tx
                        Cardano.CLI.Byron.Query
                        Cardano.CLI.Byron.UpdateProposal
