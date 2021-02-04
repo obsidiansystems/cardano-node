@@ -146,6 +146,10 @@ instance FromJSON PartialNodeConfiguration where
             Last . Just  <$> (NodeProtocolConfigurationCardano <$> parseByronProtocol v
                                                                <*> parseShelleyProtocol v
                                                                <*> parseHardForkProtocol v)
+
+          ExampleProtocol ->
+            Last . Just <$> (NodeProtocolConfigurationExample <$> parseShelleyProtocol v
+                                                              <*> parseExampleHardForkProtocol v)
       pure PartialNodeConfiguration {
              pncProtocolConfig = pncProtocolConfig'
            , pncSocketPath = pncSocketPath'
@@ -241,6 +245,15 @@ instance FromJSON PartialNodeConfiguration where
                npcTestMaryHardForkAtVersion
              }
 
+      parseExampleHardForkProtocol v = do
+        npcTestExampleHardForkAtEpoch   <- v .:? "TestExampleHardForkAtEpoch"
+        npcTestExampleHardForkAtVersion <- v .:? "TestExampleHardForkAtVersion"
+
+        pure NodeExampleHardForkProtocolConfiguration {
+               npcTestExampleHardForkAtEpoch,
+               npcTestExampleHardForkAtVersion
+             }
+
 -- | Default configuration is mainnet
 defaultPartialNodeConfiguration :: PartialNodeConfiguration
 defaultPartialNodeConfiguration =
@@ -312,6 +325,7 @@ ncProtocol nc =
     NodeProtocolConfigurationByron{}   -> ByronProtocol
     NodeProtocolConfigurationShelley{} -> ShelleyProtocol
     NodeProtocolConfigurationCardano{} -> CardanoProtocol
+    NodeProtocolConfigurationExample{} -> ExampleProtocol
 
 pncProtocol :: PartialNodeConfiguration -> Either Text Protocol
 pncProtocol pnc =
@@ -320,6 +334,7 @@ pncProtocol pnc =
     Last (Just NodeProtocolConfigurationByron{})   -> Right ByronProtocol
     Last (Just NodeProtocolConfigurationShelley{}) -> Right ShelleyProtocol
     Last (Just NodeProtocolConfigurationCardano{}) -> Right CardanoProtocol
+    Last (Just NodeProtocolConfigurationExample{}) -> Right ExampleProtocol
 
 parseNodeConfigurationFP :: Maybe ConfigYamlFilePath -> IO PartialNodeConfiguration
 parseNodeConfigurationFP Nothing = parseNodeConfigurationFP . getLast $ pncConfigFile defaultPartialNodeConfiguration

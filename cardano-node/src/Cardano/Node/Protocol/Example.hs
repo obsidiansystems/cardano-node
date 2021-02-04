@@ -26,8 +26,6 @@ import           Control.Monad.Trans.Except (ExceptT)
 import           Control.Monad.Trans.Except.Extra (firstExceptT)
 import qualified Data.Text as T
 
-import           Cardano.Slotting.Slot (EpochNo)
-
 import           Ouroboros.Consensus.Cardano hiding (Protocol)
 import qualified Ouroboros.Consensus.Cardano as Consensus
 import qualified Ouroboros.Consensus.Example as Example
@@ -52,32 +50,6 @@ import           Cardano.Node.Protocol.Types
 -- This transitions from the Shelley era, with which it originates,
 -- to the Example era.
 --
-
--- The Example version of NodeHardForkProtocolConfiguration from Cardano.Node.Types
--- There is only one transition, so it's a bit simpler
-data NodeExampleHardForkProtocolConfiguration =
-     NodeExampleHardForkProtocolConfiguration {
-
-       -- | For testing purposes we support specifying that the hard fork
-       -- happens at an exact epoch number (ie the first epoch of the new era).
-       --
-       -- Obviously if this is used, all the nodes in the test cluster must be
-       -- configured the same, or they will disagree.
-       --
-       npcTestExampleHardForkAtEpoch :: Maybe EpochNo
-
-       -- | For testing purposes we support specifying that the hard fork
-       -- happens at a given major protocol version. For example this can be
-       -- used to cause the Shelley hard fork to occur at the transition from
-       -- protocol version 0 to version 1 (rather than the default of from 1 to
-       -- 2) which can make the test setup simpler.
-       --
-       -- Obviously if this is used, all the nodes in the test cluster must be
-       -- configured the same, or they will disagree.
-       --
-     , npcTestExampleHardForkAtVersion :: Maybe Word
-     }
-  deriving (Eq, Show)
 
 -- | Make 'SomeConsensusProtocol' using the Cardano instance.
 --
