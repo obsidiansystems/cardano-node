@@ -295,6 +295,9 @@ nodeBasicInfo nc p nodeStartTime' = do
                ++ getGenesisValues "Shelley" cfgShelley
                ++ getGenesisValues "Allegra" cfgAllegra
                ++ getGenesisValues "Mary"    cfgMary
+          Consensus.ProtocolExample {} ->
+            let foo :: () = Consensus.configLedger cfg
+            in []
       items = nub $
         [ ("protocol",      pack . protocolName $ ncProtocol nc)
         , ("version",       pack . showVersion $ version)
