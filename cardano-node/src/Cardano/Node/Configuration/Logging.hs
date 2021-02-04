@@ -66,6 +66,7 @@ import           Ouroboros.Consensus.Cardano.Block
 import           Ouroboros.Consensus.Cardano.CanHardFork
 import qualified Ouroboros.Consensus.Config as Consensus
 import           Ouroboros.Consensus.Config.SupportsNode (ConfigSupportsNode (..))
+import           Ouroboros.Consensus.Example.Block
 import           Ouroboros.Consensus.HardFork.Combinator.Degenerate
 import           Ouroboros.Consensus.Node.ProtocolInfo
 import           Ouroboros.Consensus.Shelley.Ledger.Ledger
@@ -296,8 +297,9 @@ nodeBasicInfo nc p nodeStartTime' = do
                ++ getGenesisValues "Allegra" cfgAllegra
                ++ getGenesisValues "Mary"    cfgMary
           Consensus.ProtocolExample {} ->
-            let foo :: () = Consensus.configLedger cfg
-            in []
+            let ExampleLedgerConfig cfgShelley cfgExample = Consensus.configLedger cfg
+            in getGenesisValues "Shelley" cfgShelley <>
+               getGenesisValues "Example" cfgExample
       items = nub $
         [ ("protocol",      pack . protocolName $ ncProtocol nc)
         , ("version",       pack . showVersion $ version)

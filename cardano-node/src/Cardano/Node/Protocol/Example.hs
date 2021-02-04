@@ -26,15 +26,12 @@ import           Control.Monad.Trans.Except (ExceptT)
 import           Control.Monad.Trans.Except.Extra (firstExceptT)
 import qualified Data.Text as T
 
-import qualified Cardano.Chain.Update as Byron
 import           Cardano.Slotting.Slot (EpochNo)
 
 import           Ouroboros.Consensus.Cardano hiding (Protocol)
 import qualified Ouroboros.Consensus.Cardano as Consensus
-import qualified Ouroboros.Consensus.Cardano.CanHardFork as Consensus
 import qualified Ouroboros.Consensus.Example as Example
 import qualified Ouroboros.Consensus.Example.Node as Example
-import           Ouroboros.Consensus.Example (ProtocolExample (..))
 import           Ouroboros.Consensus.HardFork.Combinator.Condense ()
 
 import           Ouroboros.Consensus.Cardano.Condense ()
@@ -43,10 +40,8 @@ import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 
 import           Cardano.Node.Types
 
-import           Cardano.Tracing.OrphanInstances.Byron ()
 import           Cardano.Tracing.OrphanInstances.Shelley ()
 
-import qualified Cardano.Node.Protocol.Byron as Byron
 import qualified Cardano.Node.Protocol.Shelley as Shelley
 
 import           Cardano.Node.Protocol.Types
@@ -100,7 +95,7 @@ mkSomeConsensusProtocolExample
   :: NodeShelleyProtocolConfiguration
   -> NodeExampleHardForkProtocolConfiguration
   -> Maybe ProtocolFilepaths
-  -> ExceptT CardanoProtocolInstantiationError IO SomeConsensusProtocol
+  -> ExceptT ExampleProtocolInstantiationError IO SomeConsensusProtocol
 mkSomeConsensusProtocolExample ncs nch files =
 
     -- Applying the SomeConsensusProtocol here is a check that
@@ -118,7 +113,7 @@ mkConsensusProtocolExample
   :: NodeShelleyProtocolConfiguration
   -> NodeExampleHardForkProtocolConfiguration
   -> Maybe ProtocolFilepaths
-  -> ExceptT CardanoProtocolInstantiationError IO
+  -> ExceptT ExampleProtocolInstantiationError IO
              (Consensus.Protocol IO (Example.ExampleBlock StandardCrypto)
                                     Example.ProtocolExample)
 mkConsensusProtocolExample 
@@ -132,12 +127,12 @@ mkConsensusProtocolExample
                            }
                            files = do
     (shelleyGenesis, shelleyGenesisHash) <-
-      firstExceptT CardanoProtocolInstantiationErrorShelley $
+      firstExceptT ExampleProtocolInstantiationErrorShelley $
         Shelley.readGenesis npcShelleyGenesisFile
                             npcShelleyGenesisFileHash
 
     shelleyLeaderCredentials <-
-      firstExceptT CardanoProtocolInstantiationErrorShelley $
+      firstExceptT ExampleProtocolInstantiationErrorShelley $
         Shelley.readLeaderCredentials files
 
     let transitionTrigger =
@@ -194,20 +189,20 @@ mkConsensusProtocolExample
 -- Errors
 --
 
-data CardanoProtocolInstantiationError =
-       CardanoProtocolInstantiationErrorByron
-         Byron.ByronProtocolInstantiationError
+data ExampleProtocolInstantiationError =
+       ExampleProtocolInstantiationErrorShelley
+         Shelley.ShelleyProtocolInstantiationError
 
-     | CardanoProtocolInstantiationErrorShelley
+     | ExampleProtocolInstantiationErrorExample
          Shelley.ShelleyProtocolInstantiationError
   deriving Show
 
-renderCardanoProtocolInstantiationError :: CardanoProtocolInstantiationError
+renderExampleProtocolInstantiationError :: ExampleProtocolInstantiationError
                                         -> T.Text
-renderCardanoProtocolInstantiationError
-  (CardanoProtocolInstantiationErrorByron err) =
-    Byron.renderByronProtocolInstantiationError err
+renderExampleProtocolInstantiationError
+  (ExampleProtocolInstantiationErrorShelley err) =
+    "Shelley: " <> Shelley.renderShelleyProtocolInstantiationError err
 
-renderCardanoProtocolInstantiationError
-  (CardanoProtocolInstantiationErrorShelley err) =
-    Shelley.renderShelleyProtocolInstantiationError err
+renderExampleProtocolInstantiationError
+  (ExampleProtocolInstantiationErrorExample err) =
+    "Example: " <> Shelley.renderShelleyProtocolInstantiationError err
