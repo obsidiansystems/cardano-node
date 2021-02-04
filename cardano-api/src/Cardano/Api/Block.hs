@@ -61,6 +61,9 @@ import qualified Ouroboros.Consensus.Cardano.ShelleyHFC  as Consensus
 import qualified Cardano.Crypto.Hash.Class
 import qualified Cardano.Crypto.Hashing
 
+-- Prototype consensus modes
+import qualified Ouroboros.Consensus.Example.Block       as Example
+
 import qualified Cardano.Chain.Block as Byron
 import qualified Cardano.Chain.UTxO  as Byron
 
@@ -125,6 +128,14 @@ instance Show (Block era) where
         . showsPrec 11 block
         )
 
+    -- Example eras
+    showsPrec p (ShelleyBlock ShelleyBasedEraExample block) =
+      showParen (p >= 11)
+        ( showString "ShelleyBlock ShelleyBasedEraExample "
+        . showsPrec 11 block
+        )
+
+
 getBlockTxs :: forall era . Block era -> [Tx era]
 getBlockTxs (ByronBlock Consensus.ByronBlock { Consensus.byronBlockRaw }) =
     case byronBlockRaw of
@@ -140,6 +151,8 @@ getBlockTxs (ShelleyBlock shelleyEra Consensus.ShelleyBlock{Consensus.shelleyBlo
       ShelleyBasedEraShelley -> go
       ShelleyBasedEraAllegra -> go
       ShelleyBasedEraMary    -> go
+      -- Prototype eras
+      ShelleyBasedEraExample -> go
   where
     go :: Consensus.ShelleyBasedEra (ShelleyLedgerEra era) => [Tx era]
     go = case shelleyBlockRaw of Shelley.Block _header (Shelley.TxSeq txs) -> [ShelleyTx shelleyEra x | x <- toList txs]
@@ -189,6 +202,17 @@ fromConsensusBlock CardanoMode =
         BlockInMode (ShelleyBlock ShelleyBasedEraMary b')
                      MaryEraInCardanoMode
 
+-- Prototype consensus modes
+fromConsensusBlock ExampleMode =
+    \b -> case b of
+      Example.BlockShelley b' ->
+        BlockInMode (ShelleyBlock ShelleyBasedEraShelley b')
+                     ShelleyEraInExampleMode
+      Example.BlockExample b' ->
+        BlockInMode (ShelleyBlock ShelleyBasedEraExample b')
+                     ExampleEraInExampleMode
+
+
 
 -- ----------------------------------------------------------------------------
 -- Block headers
@@ -220,6 +244,8 @@ getBlockHeader (ShelleyBlock shelleyEra block) = case shelleyEra of
   ShelleyBasedEraShelley -> go
   ShelleyBasedEraAllegra -> go
   ShelleyBasedEraMary -> go
+  -- Prototype eras
+  ShelleyBasedEraExample -> go
   where
     go :: Consensus.ShelleyBasedEra (ShelleyLedgerEra era) => BlockHeader
     go = BlockHeader headerFieldSlot (HeaderHash hashSBS) headerFieldBlockNo
@@ -261,6 +287,8 @@ toConsensusPointInMode :: ConsensusMode mode
 toConsensusPointInMode ByronMode   = toConsensusPointHF
 toConsensusPointInMode ShelleyMode = toConsensusPointHF
 toConsensusPointInMode CardanoMode = toConsensusPointHF
+-- Prototype consensus modes
+toConsensusPointInMode ExampleMode = toConsensusPointHF
 
 fromConsensusPointInMode :: ConsensusMode mode
                          -> Consensus.Point (ConsensusBlockForMode mode)
@@ -268,6 +296,8 @@ fromConsensusPointInMode :: ConsensusMode mode
 fromConsensusPointInMode ByronMode   = fromConsensusPointHF
 fromConsensusPointInMode ShelleyMode = fromConsensusPointHF
 fromConsensusPointInMode CardanoMode = fromConsensusPointHF
+-- Prototype consensus modes
+fromConsensusPointInMode ExampleMode = fromConsensusPointHF
 
 
 -- | Convert a 'Consensus.Point' for multi-era block type
@@ -353,6 +383,15 @@ fromConsensusTip ShelleyMode = conv
 fromConsensusTip CardanoMode = conv
   where
     conv :: Consensus.Tip (Consensus.CardanoBlock Consensus.StandardCrypto)
+         -> ChainTip
+    conv Consensus.TipGenesis = ChainTipAtGenesis
+    conv (Consensus.Tip slot (Consensus.OneEraHash h) block) =
+      ChainTip slot (HeaderHash h) block
+
+-- Prototype consensus modes
+fromConsensusTip ExampleMode = conv
+  where
+    conv :: Consensus.Tip (Example.ExampleBlock Consensus.StandardCrypto)
          -> ChainTip
     conv Consensus.TipGenesis = ChainTipAtGenesis
     conv (Consensus.Tip slot (Consensus.OneEraHash h) block) =

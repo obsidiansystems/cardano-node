@@ -1,11 +1,14 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
@@ -38,7 +41,8 @@ import           Cardano.Api
 import           Cardano.Api.Byron
 import qualified Cardano.Api.IPC as NewIPC
 import           Cardano.Api.LocalChainSync (getLocalTip)
-import           Cardano.Api.Modes (AnyConsensusMode (..), AnyConsensusModeParams (..), toEraInMode)
+import           Cardano.Api.Modes (AnyConsensusMode (..), AnyConsensusModeParams (..),
+                     EraInMode (..), toEraInMode)
 import           Cardano.Api.Protocol (Protocol, withlocalNodeConnectInfo)
 import           Cardano.Api.ProtocolParameters
 import           Cardano.Api.Shelley
@@ -58,6 +62,9 @@ import           Ouroboros.Consensus.Cardano.Block as Consensus (Either (..), Er
 import qualified Ouroboros.Consensus.Cardano.Block as Consensus
 import           Ouroboros.Consensus.HardFork.Combinator.Degenerate as Consensus
 import           Ouroboros.Network.Block (Serialised (..), getTipPoint)
+
+-- Prototype consensus modes
+import qualified Ouroboros.Consensus.Example.Block as Example
 
 import qualified Cardano.Ledger.Core as Ledger
 import qualified Cardano.Ledger.Era as Ledger
@@ -171,12 +178,13 @@ runQueryTip protocol network mOutFile = do
     output <-
       firstExceptT ShelleyQueryCmdLocalStateQueryError $
       withlocalNodeConnectInfo protocol network sockPath $ \connectInfo -> do
-        tip <- liftIO $ getLocalTip connectInfo
-        let output = case localNodeConsensusMode connectInfo of
-                       ByronMode{}   -> encodePretty tip
-                       ShelleyMode{} -> encodePretty tip
-                       CardanoMode{} -> encodePretty tip
-        return output
+          tip <- liftIO $ getLocalTip connectInfo
+          let output = case localNodeConsensusMode connectInfo of
+                         ByronMode{}   -> encodePretty tip
+                         ShelleyMode{} -> encodePretty tip
+                         CardanoMode{} -> encodePretty tip
+                         ExampleMode{} -> encodePretty tip
+          return output
     case mOutFile of
       Just (OutputFile fpath) -> liftIO $ LBS.writeFile fpath output
       Nothing                 -> liftIO $ LBS.putStrLn        output
@@ -195,11 +203,11 @@ runQueryUTxO (AnyCardanoEra era) protocol qfilter network mOutFile
     -- Obtain the required type equality constaints and class constaints
     obtainToJSONValue era' $
     obtainLedgerEraClassConstraints era' $ do
-
     SocketPath sockPath <- firstExceptT ShelleyQueryCmdEnvVarSocketErr readEnvSocketPath
-    filteredUtxo <- firstExceptT ShelleyQueryCmdLocalStateQueryError $
-      withlocalNodeConnectInfo protocol network sockPath $
-        queryUTxOFromLocalState era' qfilter
+    filteredUtxo <- withlocalNodeConnectInfo protocol network sockPath $ \connectInfo -> do
+      eraInMode <- checkEraAgainstProtocol era connectInfo
+      firstExceptT ShelleyQueryCmdLocalStateQueryError $
+        queryUTxOFromLocalState eraInMode era' qfilter connectInfo
     writeFilteredUTxOs era' mOutFile filteredUtxo
 
   | otherwise = throwError (ShelleyQueryCmdLocalStateQueryError
@@ -220,9 +228,10 @@ runQueryLedgerState (AnyCardanoEra era) protocol network mOutFile
     obtainToJSONNewEpochState era' $ do
 
     SocketPath sockPath <- firstExceptT ShelleyQueryCmdEnvVarSocketErr readEnvSocketPath
-    els <- firstExceptT ShelleyQueryCmdLocalStateQueryError $
-      withlocalNodeConnectInfo protocol network sockPath $
-        queryLocalLedgerState era'
+    els <- withlocalNodeConnectInfo protocol network sockPath $ \connectInfo -> do
+      eraInMode <- checkEraAgainstProtocol era connectInfo
+      firstExceptT ShelleyQueryCmdLocalStateQueryError $
+        queryLocalLedgerState eraInMode era' connectInfo
     case els of
       Right lstate -> writeLedgerState mOutFile lstate
       Left lbs -> do
@@ -243,9 +252,10 @@ runQueryProtocolState (AnyCardanoEra era) protocol network mOutFile
   | ShelleyBasedEra era' <- cardanoEraStyle era = do
 
     SocketPath sockPath <- firstExceptT ShelleyQueryCmdEnvVarSocketErr readEnvSocketPath
-    els <- firstExceptT ShelleyQueryCmdLocalStateQueryError $
-      withlocalNodeConnectInfo protocol network sockPath $
-        queryLocalProtocolState era'
+    els <- withlocalNodeConnectInfo protocol network sockPath $ \connectInfo -> do
+      eraInMode <- checkEraAgainstProtocol era connectInfo
+      firstExceptT ShelleyQueryCmdLocalStateQueryError $
+        queryLocalProtocolState eraInMode era' connectInfo
     case els of
       Right protocolState -> writeProtocolState mOutFile protocolState
       Left pbs -> do
@@ -367,6 +377,7 @@ writeFilteredUTxOs shelleyBasedEra' mOutFile utxo =
           ShelleyBasedEraShelley -> writeUTxo fpath utxo
           ShelleyBasedEraAllegra -> writeUTxo fpath utxo
           ShelleyBasedEraMary -> writeUTxo fpath utxo
+          ShelleyBasedEraExample -> writeUTxo fpath utxo
  where
    writeUTxo fpath utxo' =
      handleIOExceptT (ShelleyQueryCmdWriteFileError . FileIOError fpath)
@@ -384,6 +395,9 @@ printFilteredUTxOs shelleyBasedEra' utxo = do
       let Shelley.UTxO utxoMap = utxo
       in mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxoMap
     ShelleyBasedEraMary    ->
+      let Shelley.UTxO utxoMap = utxo
+      in mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxoMap
+    ShelleyBasedEraExample ->
       let Shelley.UTxO utxoMap = utxo
       in mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxoMap
  where
@@ -415,6 +429,14 @@ printUtxo shelleyBasedEra' txInOutTuple =
              , "        " <> printableValue (convertToApiValue shelleyBasedEra' value)
              ]
     ShelleyBasedEraMary ->
+      let (Shelley.TxIn (Shelley.TxId txhash) txin, Shelley.TxOut _ value) = txInOutTuple
+      in Text.putStrLn $
+           mconcat
+             [ Text.decodeLatin1 (hashToBytesAsHex txhash)
+             , textShowN 6 txin
+             , "        " <> printableValue (convertToApiValue shelleyBasedEra' value)
+             ]
+    ShelleyBasedEraExample ->
       let (Shelley.TxIn (Shelley.TxId txhash) txin, Shelley.TxOut _ value) = txInOutTuple
       in Text.putStrLn $
            mconcat
@@ -513,11 +535,12 @@ queryUTxOFromLocalState
      ShelleyLedgerEra era ~ ledgerera
   => Ledger.Crypto ledgerera ~ StandardCrypto
   => IsShelleyBasedEra era
-  => ShelleyBasedEra era
+  => EraInMode era (TranslateMode mode)
+  -> ShelleyBasedEra era
   -> QueryFilter
   -> LocalNodeConnectInfo mode block
   -> ExceptT ShelleyQueryCmdLocalStateQueryError IO (Shelley.UTxO ledgerera)
-queryUTxOFromLocalState era qFilter
+queryUTxOFromLocalState eim era qFilter
                         connectInfo@LocalNodeConnectInfo{
                           localNodeConsensusMode
                         } =
@@ -542,10 +565,20 @@ queryUTxOFromLocalState era qFilter
       result <- firstExceptT AcquireFailureError . newExceptT $
         queryNodeLocalState
           connectInfo
-          (getTipPoint tip, queryIfCurrentEra era (applyUTxOFilter qFilter))
+          (getTipPoint tip, queryIfCurrentEra eim era (applyUTxOFilter qFilter))
       case result of
         QueryResultEraMismatch err -> throwError (EraMismatchError err)
         QueryResultSuccess utxo -> return utxo
+    ExampleMode{} -> do
+      tip <- liftIO $ getLocalTip connectInfo
+      result <- firstExceptT AcquireFailureError . newExceptT $
+        queryNodeLocalState
+          connectInfo
+          (getTipPoint tip, exampleQueryIfCurrentEra eim era (applyUTxOFilter qFilter))
+      case result of
+        Example.QueryResultEraMismatch err -> throwError (EraMismatchError err)
+        Example.QueryResultSuccess utxo -> return utxo
+
   where
     applyUTxOFilter :: QueryFilter
                     -> Query (Consensus.ShelleyBlock ledgerera)
@@ -588,11 +621,12 @@ queryLocalLedgerState
   :: forall era ledgerera mode block.
      ShelleyLedgerEra era ~ ledgerera
   => Consensus.ShelleyBasedEra ledgerera
-  => ShelleyBasedEra era
+  => EraInMode era (TranslateMode mode)
+  -> ShelleyBasedEra era
   -> LocalNodeConnectInfo mode block
   -> ExceptT ShelleyQueryCmdLocalStateQueryError IO
              (Either LByteString (NewEpochState ledgerera))
-queryLocalLedgerState era connectInfo@LocalNodeConnectInfo{localNodeConsensusMode} =
+queryLocalLedgerState eim era connectInfo@LocalNodeConnectInfo{localNodeConsensusMode} =
   case localNodeConsensusMode of
     ByronMode{} -> throwError ByronProtocolNotSupportedError
 
@@ -617,11 +651,26 @@ queryLocalLedgerState era connectInfo@LocalNodeConnectInfo{localNodeConsensusMod
         queryNodeLocalState
           connectInfo
           (getTipPoint tip,
-           queryIfCurrentEra era (Consensus.GetCBOR Consensus.DebugNewEpochState))
+           queryIfCurrentEra eim era (Consensus.GetCBOR Consensus.DebugNewEpochState))
            -- Get CBOR-in-CBOR version
       case result of
         QueryResultEraMismatch err -> throwError (EraMismatchError err)
         QueryResultSuccess ls -> return (decodeLedgerState ls)
+
+    -- Prototype consensus modes
+    ExampleMode{} -> do
+      tip <- liftIO $ getLocalTip connectInfo
+      result <- firstExceptT AcquireFailureError . newExceptT $
+        queryNodeLocalState
+          connectInfo
+          (getTipPoint tip,
+           exampleQueryIfCurrentEra eim era (Consensus.GetCBOR Consensus.DebugNewEpochState))
+           -- Get CBOR-in-CBOR version
+      case result of
+        Example.QueryResultEraMismatch err -> throwError (EraMismatchError err)
+        Example.QueryResultSuccess ls -> return (decodeLedgerState ls)
+
+
   where
     -- If decode as a LedgerState fails we return the ByteString so we can do a generic
     -- CBOR decode.
@@ -635,15 +684,16 @@ queryLocalLedgerState era connectInfo@LocalNodeConnectInfo{localNodeConsensusMod
 queryLocalProtocolState
   :: forall era ledgerera mode block.
      ShelleyLedgerEra era ~ ledgerera
-  => ShelleyBasedEra era
+  => EraInMode era (TranslateMode mode)
+  -> ShelleyBasedEra era
   -> LocalNodeConnectInfo mode block
   -> ExceptT ShelleyQueryCmdLocalStateQueryError IO
              (Either LByteString (Ledger.ChainDepState StandardCrypto))
-queryLocalProtocolState era connectInfo@LocalNodeConnectInfo{localNodeConsensusMode} =
+queryLocalProtocolState eim era connectInfo@LocalNodeConnectInfo{localNodeConsensusMode} =
   case localNodeConsensusMode of
     ByronMode{} -> throwError ByronProtocolNotSupportedError
 
-    ShelleyMode{} | ShelleyBasedEraShelley <- era -> do
+    ShelleyMode{} | ShelleyEraInShelleyMode <- eim -> do
       tip <- liftIO $ getLocalTip connectInfo
       Consensus.DegenQueryResult result <-
         firstExceptT AcquireFailureError . newExceptT $
@@ -656,19 +706,28 @@ queryLocalProtocolState era connectInfo@LocalNodeConnectInfo{localNodeConsensusM
             )
       return (decodeProtocolState result)
 
-    ShelleyMode{} | otherwise -> throwError ShelleyProtocolEraMismatch
-
     CardanoMode{} -> do
       tip <- liftIO $ getLocalTip connectInfo
       result <- firstExceptT AcquireFailureError . newExceptT $
         queryNodeLocalState
           connectInfo
           (getTipPoint tip,
-           queryIfCurrentEra era (Consensus.GetCBOR Consensus.DebugChainDepState))
+           queryIfCurrentEra eim era (Consensus.GetCBOR Consensus.DebugChainDepState))
                                   -- Get CBOR-in-CBOR version
       case result of
         QueryResultEraMismatch err -> throwError (EraMismatchError err)
         QueryResultSuccess ls -> return (decodeProtocolState ls)
+    ExampleMode{} -> do
+      tip <- liftIO $ getLocalTip connectInfo
+      result <- firstExceptT AcquireFailureError . newExceptT $
+        queryNodeLocalState
+          connectInfo
+          (getTipPoint tip,
+           exampleQueryIfCurrentEra eim era (Consensus.GetCBOR Consensus.DebugChainDepState))
+                                        -- Get CBOR-in-CBOR version
+      case result of
+        Example.QueryResultEraMismatch err -> throwError (EraMismatchError err)
+        Example.QueryResultSuccess ls -> return (decodeProtocolState ls)
   where
     -- If decode as a ChainDepState fails we return the ByteString so we can do a generic
     -- CBOR decode.
@@ -683,13 +742,49 @@ queryLocalProtocolState era connectInfo@LocalNodeConnectInfo{localNodeConsensusM
 -- 'QueryIfCurrentShelley', 'QueryIfCurrentAllegra' or 'QueryIfCurrentMary'.
 --
 --
-queryIfCurrentEra :: ShelleyBasedEra era
+queryIfCurrentEra :: EraInMode era NewIPC.CardanoMode
+                  -> ShelleyBasedEra era
                   -> Query (Consensus.ShelleyBlock (ShelleyLedgerEra era)) result
                   -> Consensus.CardanoQuery StandardCrypto
                        (Consensus.CardanoQueryResult StandardCrypto result)
-queryIfCurrentEra ShelleyBasedEraShelley = Consensus.QueryIfCurrentShelley
-queryIfCurrentEra ShelleyBasedEraAllegra = Consensus.QueryIfCurrentAllegra
-queryIfCurrentEra ShelleyBasedEraMary    = Consensus.QueryIfCurrentMary
+queryIfCurrentEra ShelleyEraInCardanoMode ShelleyBasedEraShelley = Consensus.QueryIfCurrentShelley
+queryIfCurrentEra AllegraEraInCardanoMode ShelleyBasedEraAllegra = Consensus.QueryIfCurrentAllegra
+queryIfCurrentEra MaryEraInCardanoMode    ShelleyBasedEraMary    = Consensus.QueryIfCurrentMary
+
+-- Prototype consensus modes
+exampleQueryIfCurrentEra :: EraInMode era NewIPC.ExampleMode
+                         -> ShelleyBasedEra era
+                         -> Example.Query (Consensus.ShelleyBlock (ShelleyLedgerEra era)) result
+                         -> Example.ExampleQuery StandardCrypto
+                              (Example.ExampleQueryResult StandardCrypto result)
+exampleQueryIfCurrentEra ShelleyEraInExampleMode ShelleyBasedEraShelley = Example.QueryIfCurrentShelley
+exampleQueryIfCurrentEra ExampleEraInExampleMode ShelleyBasedEraExample = Example.QueryIfCurrentExample
+
+-- | Translate from the Cardano.Api protocol type to the NewIPC protocol type
+-- because the latter understands the relationship between eras and modes
+-- we use to ensure that we do not try to make queries for eras that do not
+-- exist in the given mode.
+type family TranslateMode k :: Type
+type instance TranslateMode ByronMode = NewIPC.ByronMode
+type instance TranslateMode ShelleyMode = NewIPC.ShelleyMode
+type instance TranslateMode CardanoMode = NewIPC.CardanoMode
+-- Prototype consensus modes
+type instance TranslateMode ExampleMode = NewIPC.ExampleMode
+
+checkEraAgainstProtocol
+  :: IsCardanoEra era
+  => CardanoEra era
+  -> LocalNodeConnectInfo mode block
+  -> ExceptT ShelleyQueryCmdError IO (EraInMode era (TranslateMode mode))
+checkEraAgainstProtocol era connectInfo = do
+  let consensusMode = case localNodeConsensusMode connectInfo of
+        ByronMode _ -> NewIPC.ByronMode
+        ShelleyMode -> NewIPC.ShelleyMode
+        CardanoMode _ -> NewIPC.CardanoMode
+        -- Prototype consensus modes
+        ExampleMode -> NewIPC.ExampleMode
+  hoistMaybe (ShelleyQueryCmdEraConsensusModeMismatch (AnyCardanoEra era) (AnyConsensusMode consensusMode)) $
+    toEraInMode era consensusMode
 
 obtainLedgerEraClassConstraints
   :: ShelleyLedgerEra era ~ ledgerera
@@ -698,6 +793,8 @@ obtainLedgerEraClassConstraints
 obtainLedgerEraClassConstraints ShelleyBasedEraShelley f = f
 obtainLedgerEraClassConstraints ShelleyBasedEraAllegra f = f
 obtainLedgerEraClassConstraints ShelleyBasedEraMary    f = f
+-- Prototype consensus modes
+obtainLedgerEraClassConstraints ShelleyBasedEraExample f = f
 
 obtainToJSONNewEpochState
   :: ShelleyLedgerEra era ~ ledgerera
@@ -706,6 +803,8 @@ obtainToJSONNewEpochState
 obtainToJSONNewEpochState ShelleyBasedEraShelley f = f
 obtainToJSONNewEpochState ShelleyBasedEraAllegra f = f
 obtainToJSONNewEpochState ShelleyBasedEraMary    f = f
+-- Prototype consensus modes
+obtainToJSONNewEpochState ShelleyBasedEraExample f = f
 
 obtainToJSONValue
   :: ShelleyLedgerEra era ~ ledgerera
@@ -714,6 +813,8 @@ obtainToJSONValue
 obtainToJSONValue ShelleyBasedEraShelley f = f
 obtainToJSONValue ShelleyBasedEraAllegra f = f
 obtainToJSONValue ShelleyBasedEraMary    f = f
+-- Prototype consensus modes
+obtainToJSONValue ShelleyBasedEraExample f = f
 
 -- | Convert a ledger 'Ledger.Value' to a @cardano-api@ 'Value'.
 convertToApiValue
@@ -724,3 +825,5 @@ convertToApiValue
 convertToApiValue ShelleyBasedEraShelley = lovelaceToValue . fromShelleyLovelace
 convertToApiValue ShelleyBasedEraAllegra = lovelaceToValue . fromShelleyLovelace
 convertToApiValue ShelleyBasedEraMary = fromMaryValue
+-- Prototype consensus modes
+convertToApiValue ShelleyBasedEraExample = lovelaceToValue . fromShelleyLovelace

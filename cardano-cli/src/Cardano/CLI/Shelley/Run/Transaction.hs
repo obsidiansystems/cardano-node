@@ -172,11 +172,15 @@ renderEra (AnyCardanoEra ByronEra)   = "Byron"
 renderEra (AnyCardanoEra ShelleyEra) = "Shelley"
 renderEra (AnyCardanoEra AllegraEra) = "Allegra"
 renderEra (AnyCardanoEra MaryEra)    = "Mary"
+-- Prototype consensus modes
+renderEra (AnyCardanoEra ExampleEra) = "Example"
 
 renderMode :: AnyConsensusMode -> Text
 renderMode (AnyConsensusMode NewIPC.ByronMode) = "ByronMode"
 renderMode (AnyConsensusMode NewIPC.ShelleyMode) = "ShelleyMode"
 renderMode (AnyConsensusMode NewIPC.CardanoMode) = "CardanoMode"
+-- Prototype consensus modes
+renderMode (AnyConsensusMode NewIPC.ExampleMode) = "ExampleMode"
 
 renderFeature :: TxFeature -> Text
 renderFeature TxFeatureShelleyAddresses     = "Shelley addresses"

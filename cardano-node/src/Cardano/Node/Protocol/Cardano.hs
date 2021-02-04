@@ -30,7 +30,6 @@ import qualified Cardano.Chain.Update as Byron
 
 import           Ouroboros.Consensus.Cardano hiding (Protocol)
 import qualified Ouroboros.Consensus.Cardano as Consensus
-import qualified Ouroboros.Consensus.Cardano.CanHardFork as Consensus
 import           Ouroboros.Consensus.HardFork.Combinator.Condense ()
 
 import           Ouroboros.Consensus.Cardano.Condense ()
