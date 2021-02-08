@@ -32,6 +32,8 @@ import           Ouroboros.Consensus.Node.Run (RunNode)
 data Protocol = ByronProtocol !EpochSlots
               | ShelleyProtocol
               | CardanoProtocol !EpochSlots
+              -- Prototype protocols
+              | ExampleProtocol
   deriving (Eq, Show)
 
 data LocalNodeConnectInfoForSomeMode where
@@ -77,3 +79,9 @@ localNodeConnectInfo protocol network socketPath =
           LocalNodeConnectInfo
             socketPath network
             (CardanoMode epSlots)
+
+      ExampleProtocol ->
+        LocalNodeConnectInfoForSomeMode $
+          LocalNodeConnectInfo
+            socketPath network
+            ExampleMode

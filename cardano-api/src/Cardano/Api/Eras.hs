@@ -18,6 +18,10 @@ module Cardano.Api.Eras
   , anyCardanoEra
   , InAnyCardanoEra(..)
 
+  -- prototype consensus mode eras
+  , ExampleEra
+  , IsExampleEra(..)
+  , InAnyExampleEra(..)
     -- * Deprecated aliases
   , Byron
   , Shelley
@@ -38,7 +42,9 @@ module Cardano.Api.Eras
 
     -- * Data family instances
   , AsType(AsByronEra, AsShelleyEra, AsAllegraEra, AsMaryEra,
-           AsByron,    AsShelley,    AsAllegra,    AsMary)
+           AsByron,    AsShelley,    AsAllegra,    AsMary,
+           -- Prototype eras
+           AsExampleEra)
   ) where
 
 import           Prelude
@@ -49,6 +55,7 @@ import           Cardano.Ledger.Era as Ledger (Crypto)
 
 import           Ouroboros.Consensus.Shelley.Eras as Ledger (StandardAllegra, StandardCrypto,
                      StandardMary, StandardShelley)
+import           Ouroboros.Consensus.Example.Eras as Ledger (StandardExample)
 
 import           Cardano.Api.HasTypeProxy
 
@@ -64,6 +71,11 @@ data AllegraEra
 
 -- | A type used as a tag to distinguish the Mary era.
 data MaryEra
+
+-- Prototype eras
+
+-- | A type used as a tag to distinguish the Example era.
+data ExampleEra
 
 
 instance HasTypeProxy ByronEra where
@@ -81,6 +93,12 @@ instance HasTypeProxy AllegraEra where
 instance HasTypeProxy MaryEra where
     data AsType MaryEra = AsMaryEra
     proxyToAsType _ = AsMaryEra
+
+-- Prototype eras
+
+instance HasTypeProxy ExampleEra where
+    data AsType ExampleEra = AsExampleEra
+    proxyToAsType _ = AsExampleEra
 
 
 -- ----------------------------------------------------------------------------
@@ -133,6 +151,8 @@ data CardanoEra era where
      ShelleyEra :: CardanoEra ShelleyEra
      AllegraEra :: CardanoEra AllegraEra
      MaryEra    :: CardanoEra MaryEra
+     -- Prototype consensus mode eras
+     ExampleEra :: CardanoEra ExampleEra
 
 deriving instance Eq   (CardanoEra era)
 deriving instance Ord  (CardanoEra era)
@@ -143,6 +163,8 @@ instance TestEquality CardanoEra where
     testEquality ShelleyEra ShelleyEra = Just Refl
     testEquality AllegraEra AllegraEra = Just Refl
     testEquality MaryEra    MaryEra    = Just Refl
+    -- Prototype consensus mode eras
+    testEquality ExampleEra ExampleEra = Just Refl
     testEquality _          _          = Nothing
 
 
@@ -165,6 +187,9 @@ instance IsCardanoEra AllegraEra where
 instance IsCardanoEra MaryEra where
    cardanoEra      = MaryEra
 
+-- Prototype consensus mode eras
+instance IsCardanoEra ExampleEra where
+   cardanoEra      = ExampleEra
 
 data AnyCardanoEra where
      AnyCardanoEra :: IsCardanoEra era  -- Provide class constraint
@@ -184,12 +209,16 @@ instance Enum AnyCardanoEra where
     toEnum 1 = AnyCardanoEra ShelleyEra
     toEnum 2 = AnyCardanoEra AllegraEra
     toEnum 3 = AnyCardanoEra MaryEra
+    -- Prototype consensus mode eras
+    toEnum 99 = AnyCardanoEra ExampleEra
     toEnum _ = error "AnyCardanoEra.toEnum: bad argument"
 
     fromEnum (AnyCardanoEra ByronEra)   = 0
     fromEnum (AnyCardanoEra ShelleyEra) = 1
     fromEnum (AnyCardanoEra AllegraEra) = 2
     fromEnum (AnyCardanoEra MaryEra)    = 3
+    -- Prototype consensus mode eras
+    fromEnum (AnyCardanoEra ExampleEra) = 99
 
 instance Bounded AnyCardanoEra where
     minBound = AnyCardanoEra ByronEra
@@ -203,6 +232,8 @@ anyCardanoEra ByronEra   = AnyCardanoEra ByronEra
 anyCardanoEra ShelleyEra = AnyCardanoEra ShelleyEra
 anyCardanoEra AllegraEra = AnyCardanoEra AllegraEra
 anyCardanoEra MaryEra    = AnyCardanoEra MaryEra
+-- Prototype consensus mode eras
+anyCardanoEra ExampleEra = AnyCardanoEra ExampleEra
 
 
 -- | This pairs up some era-dependent type with a 'CardanoEra' value that tells
@@ -214,6 +245,23 @@ data InAnyCardanoEra thing where
                      => CardanoEra era    -- and explicit value.
                      -> thing era
                      -> InAnyCardanoEra thing
+
+-- Prototype consensus mode support
+
+class HasTypeProxy era => IsExampleEra era where
+   exampleEra :: CardanoEra era
+
+instance IsExampleEra ShelleyEra where
+   exampleEra = ShelleyEra
+
+instance IsExampleEra ExampleEra where
+   exampleEra = ExampleEra
+
+data InAnyExampleEra thing where
+     InAnyExampleEra :: IsExampleEra era
+                     => CardanoEra era
+                     -> thing era
+                     -> InAnyExampleEra thing
 
 
 -- ----------------------------------------------------------------------------
@@ -232,6 +280,8 @@ data ShelleyBasedEra era where
      ShelleyBasedEraShelley :: ShelleyBasedEra ShelleyEra
      ShelleyBasedEraAllegra :: ShelleyBasedEra AllegraEra
      ShelleyBasedEraMary    :: ShelleyBasedEra MaryEra
+     -- Prototype consensus mode eras
+     ShelleyBasedEraExample :: ShelleyBasedEra ExampleEra
 
 deriving instance Eq   (ShelleyBasedEra era)
 deriving instance Ord  (ShelleyBasedEra era)
@@ -254,6 +304,9 @@ instance IsShelleyBasedEra AllegraEra where
 instance IsShelleyBasedEra MaryEra where
    shelleyBasedEra = ShelleyBasedEraMary
 
+-- Prototype consensus mode eras
+instance IsShelleyBasedEra ExampleEra where
+   shelleyBasedEra = ShelleyBasedEraExample
 
 -- | This pairs up some era-dependent type with a 'ShelleyBasedEra' value that
 -- tells us what era it is, but hides the era type. This is useful when the era
@@ -295,7 +348,8 @@ cardanoEraStyle ByronEra   = LegacyByronEra
 cardanoEraStyle ShelleyEra = ShelleyBasedEra ShelleyBasedEraShelley
 cardanoEraStyle AllegraEra = ShelleyBasedEra ShelleyBasedEraAllegra
 cardanoEraStyle MaryEra    = ShelleyBasedEra ShelleyBasedEraMary
-
+-- Prototype consensus mode eras
+cardanoEraStyle ExampleEra = ShelleyBasedEra ShelleyBasedEraExample
 
 -- ----------------------------------------------------------------------------
 -- Conversion to Shelley ledger library types
@@ -313,4 +367,5 @@ type family ShelleyLedgerEra era where
   ShelleyLedgerEra ShelleyEra = Ledger.StandardShelley
   ShelleyLedgerEra AllegraEra = Ledger.StandardAllegra
   ShelleyLedgerEra MaryEra    = Ledger.StandardMary
-
+  -- Prototype consensus mode eras
+  ShelleyLedgerEra ExampleEra = Ledger.StandardExample

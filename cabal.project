@@ -110,9 +110,9 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/cardano-ledger-specs
-  tag: 0d0f001ec627a963fbc2cbe65273468fdb0f6b75
-  --sha256: 0aww7ls090gvsss0lq3dg95hzffblzmkhdv0x0nnz9d70srn3052
+  location: https://github.com/obsidiansystems/cardano-ledger-specs
+  tag: 0b3eebf2239e1b17a70edd537de194d2ccc8083c
+  sha256: 0pzis56j18a47dsvpk5zkv77xpaglwf1bqmhs2bgmhx754977m05
   subdir:
     byron/chain/executable-spec
     byron/crypto
@@ -126,6 +126,7 @@ source-repository-package
     shelley/chain-and-ledger/executable-spec
     shelley/chain-and-ledger/shelley-spec-ledger-test
     shelley-ma/impl
+    example-shelley/impl
 
 source-repository-package
   type: git
@@ -159,9 +160,9 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: 612270da8152972d1f7891e7f2c8ec60d30449f8
-  --sha256: 10ggxwvv4hnnb4gry0r0c3im7jcv6bxa4pgsfp5qvl1qqq99dlah
+  location: https://github.com/obsidiansystems/ouroboros-network
+  tag: 2ebe71d93b94456ada85d33d0e54bc6ac37ea5f4
+  --sha256: 0h4jzv63r0d7jf7w65q42dbl3p0gm135fr3wmz8f4khcb2901628
   subdir:
     io-sim
     io-sim-classes

@@ -25,6 +25,8 @@ import qualified Ouroboros.Consensus.Byron.Ledger as Byron
 import           Ouroboros.Consensus.Cardano.Block (CardanoApplyTxErr,
                      GenTx (GenTxAllegra, GenTxByron, GenTxMary, GenTxShelley),
                      HardForkApplyTxErr (ApplyTxErrAllegra, ApplyTxErrByron, ApplyTxErrMary, ApplyTxErrShelley, ApplyTxErrWrongEra))
+import           Ouroboros.Consensus.Example.Block (ExampleApplyTxErr)
+import qualified Ouroboros.Consensus.Example.Block as Example
 import           Ouroboros.Consensus.HardFork.Combinator.Degenerate
 import           Ouroboros.Consensus.Shelley.Eras (StandardShelley)
 import           Ouroboros.Consensus.Shelley.Ledger (ShelleyBlock, mkShelleyTx)
@@ -50,6 +52,11 @@ data TxForMode mode where
        :: InAnyCardanoEra Tx
        -> TxForMode CardanoMode
 
+     -- Prototype consensus modes
+     TxForExampleMode
+       :: InAnyExampleEra Tx
+       -> TxForMode ExampleMode
+
 
 data TxSubmitResultForMode mode where
 
@@ -67,6 +74,11 @@ data TxSubmitResultForMode mode where
      TxSubmitFailureCardanoMode
        :: CardanoApplyTxErr StandardCrypto
        -> TxSubmitResultForMode CardanoMode
+
+     -- Prototype consensus modes
+     TxSubmitFailureExampleMode
+       :: ExampleApplyTxErr StandardCrypto
+       -> TxSubmitResultForMode ExampleMode
 
 deriving instance Show (TxSubmitResultForMode ByronMode)
 deriving instance Show (TxSubmitResultForMode ShelleyMode)
@@ -114,10 +126,29 @@ submitTx connctInfo txformode =
               (MaryEra, ShelleyTx _ tx') ->
                 GenTxMary (mkShelleyTx tx')
 
+              _ -> let x = x in x
+
+
         result <- submitTxToNodeLocal connctInfo genTx
         case result of
           SubmitSuccess      -> return TxSubmitSuccess
           SubmitFail failure -> return (TxSubmitFailureCardanoMode failure)
+
+      -- Prototype consensus modes
+      (ExampleMode{}, TxForExampleMode (InAnyExampleEra era tx)) -> do
+        let genTx = case (era, tx) of
+              (ShelleyEra, ShelleyTx _ tx') ->
+                Example.GenTxShelley (mkShelleyTx tx')
+              (ExampleEra, ShelleyTx _ tx') ->
+                Example.GenTxExample (mkShelleyTx tx')
+              _ -> let x = x in x
+        result <- submitTxToNodeLocal connctInfo genTx
+        case result of
+          SubmitSuccess ->
+            return TxSubmitSuccess
+          SubmitFail failure ->
+            return (TxSubmitFailureExampleMode failure)
+
 
 
 renderTxSubmitResult :: TxSubmitResultForMode mode -> Text
@@ -147,3 +178,14 @@ renderTxSubmitResult res =
 
     TxSubmitFailureCardanoMode (ApplyTxErrWrongEra mismatch) ->
       "Failed to submit transaction due to era mismatch: " <> show mismatch
+
+    --Prototype consensus mdoes
+    TxSubmitFailureExampleMode (Example.ApplyTxErrShelley err) ->
+      "Failed to submit Shelley transaction: " <> show err
+
+    TxSubmitFailureExampleMode (Example.ApplyTxErrExample err) ->
+      "Failed to submit Example transaction: " <> show err
+
+    TxSubmitFailureExampleMode (Example.ApplyTxErrWrongEra mismatch) ->
+      "Failed to submit transaction due to era mismatch: " <> show mismatch
+

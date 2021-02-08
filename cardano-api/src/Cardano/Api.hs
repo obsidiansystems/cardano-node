@@ -22,6 +22,10 @@ module Cardano.Api (
     anyCardanoEra,
     InAnyCardanoEra(..),
 
+    -- Prototype consensus modes
+    IsExampleEra(..),
+    InAnyExampleEra(..),
+
     -- ** Shelley-based eras
     ShelleyBasedEra(..),
     IsShelleyBasedEra(..),

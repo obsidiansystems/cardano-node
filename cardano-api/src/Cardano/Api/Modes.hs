@@ -13,6 +13,8 @@ module Cardano.Api.Modes (
     ByronMode,
     ShelleyMode,
     CardanoMode,
+    -- Prototype consensus modes
+    ExampleMode,
     ConsensusMode(..),
     AnyConsensusMode(..),
     ConsensusModeIsMultiEra(..),
@@ -49,6 +51,8 @@ import           Ouroboros.Consensus.HardFork.Combinator as Consensus (EraIndex 
 import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary, StandardShelley)
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
+-- Prototype consensus modes
+import qualified Ouroboros.Consensus.Example.Block as Consensus
 
 import qualified Cardano.Chain.Slotting as Byron (EpochSlots (..))
 
@@ -86,6 +90,12 @@ data ShelleyMode
 --
 data CardanoMode
 
+-- Prototype consensus modes
+-- | The example consensus mode serves as a model for creating new consensus modes
+-- with the purpose of prototyping new eras of Cardano without impacting the mainnet
+-- consensus mode.
+data ExampleMode
+
 data AnyConsensusModeParams where
   AnyConsensusModeParams :: ConsensusModeParams mode -> AnyConsensusModeParams
 
@@ -99,6 +109,8 @@ data ConsensusMode mode where
      ByronMode   :: ConsensusMode ByronMode
      ShelleyMode :: ConsensusMode ShelleyMode
      CardanoMode :: ConsensusMode CardanoMode
+     -- Prototype consensus modes
+     ExampleMode :: ConsensusMode ExampleMode
 
 
 deriving instance Show (ConsensusMode mode)
@@ -125,6 +137,9 @@ toEraInMode ByronEra   CardanoMode = Just ByronEraInCardanoMode
 toEraInMode ShelleyEra CardanoMode = Just ShelleyEraInCardanoMode
 toEraInMode AllegraEra CardanoMode = Just AllegraEraInCardanoMode
 toEraInMode MaryEra    CardanoMode = Just MaryEraInCardanoMode
+-- Prototype eras in prototype consensus modes
+toEraInMode ShelleyEra ExampleMode = Just ShelleyEraInExampleMode
+toEraInMode ExampleEra ExampleMode = Just ExampleEraInExampleMode
 toEraInMode _ _                    = Nothing
 
 
@@ -140,6 +155,9 @@ data EraInMode era mode where
      ShelleyEraInCardanoMode :: EraInMode ShelleyEra CardanoMode
      AllegraEraInCardanoMode :: EraInMode AllegraEra CardanoMode
      MaryEraInCardanoMode    :: EraInMode MaryEra    CardanoMode
+     -- Prototype eras in prototype consensus modes
+     ShelleyEraInExampleMode :: EraInMode ShelleyEra ExampleMode
+     ExampleEraInExampleMode :: EraInMode ExampleEra ExampleMode
 
 deriving instance Show (EraInMode era mode)
 
@@ -151,6 +169,9 @@ eraInModeToEra ByronEraInCardanoMode   = ByronEra
 eraInModeToEra ShelleyEraInCardanoMode = ShelleyEra
 eraInModeToEra AllegraEraInCardanoMode = AllegraEra
 eraInModeToEra MaryEraInCardanoMode    = MaryEra
+-- Prototype eras
+eraInModeToEra ShelleyEraInExampleMode = ShelleyEra
+eraInModeToEra ExampleEraInExampleMode = ExampleEra
 
 
 data AnyEraInMode mode where
@@ -168,6 +189,9 @@ anyEraInModeToAnyEra (AnyEraInMode erainmode) =
     ShelleyEraInCardanoMode -> AnyCardanoEra ShelleyEra
     AllegraEraInCardanoMode -> AnyCardanoEra AllegraEra
     MaryEraInCardanoMode    -> AnyCardanoEra MaryEra
+    -- Prototype eras
+    ShelleyEraInExampleMode -> AnyCardanoEra ShelleyEra
+    ExampleEraInExampleMode -> AnyCardanoEra ShelleyEra
 
 
 -- | The consensus-mode-specific parameters needed to connect to a local node
@@ -195,6 +219,10 @@ data ConsensusModeParams mode where
        :: Byron.EpochSlots
        -> ConsensusModeParams CardanoMode
 
+     -- Prototype consensus modes
+     ExampleModeParams
+       :: ConsensusModeParams ExampleMode
+
 deriving instance Show (ConsensusModeParams mode)
 
 -- ----------------------------------------------------------------------------
@@ -208,12 +236,16 @@ type family ConsensusBlockForMode mode where
   ConsensusBlockForMode ByronMode   = Consensus.ByronBlockHFC
   ConsensusBlockForMode ShelleyMode = Consensus.ShelleyBlockHFC StandardShelley
   ConsensusBlockForMode CardanoMode = Consensus.CardanoBlock StandardCrypto
+  -- Prototype consensus modes
+  ConsensusBlockForMode ExampleMode = Consensus.ExampleBlock StandardCrypto
 
 type family ConsensusBlockForEra era where
   ConsensusBlockForEra ByronEra   = Consensus.ByronBlock
   ConsensusBlockForEra ShelleyEra = Consensus.ShelleyBlock StandardShelley
   ConsensusBlockForEra AllegraEra = Consensus.ShelleyBlock StandardAllegra
   ConsensusBlockForEra MaryEra    = Consensus.ShelleyBlock StandardMary
+  -- Prototype consensus modes
+  ConsensusBlockForEra ExampleEra = Consensus.ShelleyBlock Consensus.StandardExample
 
 
 
@@ -240,6 +272,10 @@ toConsensusEraIndex ByronEraInCardanoMode   = eraIndex0
 toConsensusEraIndex ShelleyEraInCardanoMode = eraIndex1
 toConsensusEraIndex AllegraEraInCardanoMode = eraIndex2
 toConsensusEraIndex MaryEraInCardanoMode    = eraIndex3
+
+-- Prototype consensus modes
+toConsensusEraIndex ShelleyEraInExampleMode = eraIndex0
+toConsensusEraIndex ExampleEraInExampleMode = eraIndex1
 
 
 fromConsensusEraIndex :: ConsensusBlockForMode mode ~ Consensus.HardForkBlock xs
@@ -279,4 +315,15 @@ fromConsensusEraIndex CardanoMode = fromShelleyEraIndex
 
     fromShelleyEraIndex (Consensus.EraIndex (S (S (S (Z (K ())))))) =
       AnyEraInMode MaryEraInCardanoMode
+
+-- Prototype consensus modes
+fromConsensusEraIndex ExampleMode = fromShelleyEraIndex
+  where
+    fromShelleyEraIndex :: Consensus.EraIndex
+                             (Consensus.ExampleEras StandardCrypto)
+                        -> AnyEraInMode ExampleMode
+    fromShelleyEraIndex (Consensus.EraIndex (Z (K ()))) =
+      AnyEraInMode ShelleyEraInExampleMode
+    fromShelleyEraIndex (Consensus.EraIndex (S (Z (K ())))) =
+      AnyEraInMode ExampleEraInExampleMode
 
