@@ -34,6 +34,8 @@ import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
 
 import           Cardano.Api
 import           Cardano.Api.Byron
+import           Cardano.Api.Modes (EraInMode(..), InAnyEraOf(..))
+import qualified Cardano.Api.Modes as Mode
 import           Cardano.Api.Shelley
 import           Cardano.Api.TxSubmit.ErrorRender
 
@@ -49,12 +51,12 @@ data TxForMode mode where
        -> TxForMode ShelleyMode
 
      TxForCardanoMode
-       :: InAnyCardanoEra Tx
+       :: InAnyEraOf Mode.CardanoMode Tx
        -> TxForMode CardanoMode
 
      -- Prototype consensus modes
      TxForExampleMode
-       :: InAnyExampleEra Tx
+       :: InAnyEraOf Mode.ExampleMode Tx
        -> TxForMode ExampleMode
 
 
@@ -110,23 +112,21 @@ submitTx connctInfo txformode =
           SubmitFail (DegenApplyTxErr failure) ->
             return (TxSubmitFailureShelleyMode failure)
 
-      (CardanoMode{}, TxForCardanoMode (InAnyCardanoEra era tx)) -> do
+      (CardanoMode{}, TxForCardanoMode (InAnyEraOf era tx)) -> do
         let genTx = case (era, tx) of
-              (ByronEra, ByronTx tx') ->
+              (ByronEraInCardanoMode, ByronTx tx') ->
                 GenTxByron (Byron.ByronTx (Byron.byronIdTx tx') tx')
 
-              (ByronEra, ShelleyTx era' _) -> case era' of {}
+              (ByronEraInCardanoMode, ShelleyTx era' _) -> case era' of {}
 
-              (ShelleyEra, ShelleyTx _ tx') ->
+              (ShelleyEraInCardanoMode, ShelleyTx _ tx') ->
                 GenTxShelley (mkShelleyTx tx')
 
-              (AllegraEra, ShelleyTx _ tx') ->
+              (AllegraEraInCardanoMode, ShelleyTx _ tx') ->
                 GenTxAllegra (mkShelleyTx tx')
 
-              (MaryEra, ShelleyTx _ tx') ->
+              (MaryEraInCardanoMode, ShelleyTx _ tx') ->
                 GenTxMary (mkShelleyTx tx')
-
-              _ -> let x = x in x
 
 
         result <- submitTxToNodeLocal connctInfo genTx
@@ -135,13 +135,12 @@ submitTx connctInfo txformode =
           SubmitFail failure -> return (TxSubmitFailureCardanoMode failure)
 
       -- Prototype consensus modes
-      (ExampleMode{}, TxForExampleMode (InAnyExampleEra era tx)) -> do
+      (ExampleMode{}, TxForExampleMode (InAnyEraOf era tx)) -> do
         let genTx = case (era, tx) of
-              (ShelleyEra, ShelleyTx _ tx') ->
+              (ShelleyEraInExampleMode, ShelleyTx _ tx') ->
                 Example.GenTxShelley (mkShelleyTx tx')
-              (ExampleEra, ShelleyTx _ tx') ->
+              (ExampleEraInExampleMode, ShelleyTx _ tx') ->
                 Example.GenTxExample (mkShelleyTx tx')
-              _ -> let x = x in x
         result <- submitTxToNodeLocal connctInfo genTx
         case result of
           SubmitSuccess ->

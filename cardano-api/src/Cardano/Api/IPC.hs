@@ -28,6 +28,9 @@ module Cardano.Api.IPC (
     ByronMode,
     ShelleyMode,
     CardanoMode,
+    -- Prototype consensus modes
+    ExampleMode,
+    --
     ConsensusModeParams(..),
     EpochSlots(..),
 

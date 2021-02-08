@@ -18,10 +18,8 @@ module Cardano.Api.Eras
   , anyCardanoEra
   , InAnyCardanoEra(..)
 
-  -- prototype consensus mode eras
+    -- prototype consensus mode eras
   , ExampleEra
-  , IsExampleEra(..)
-  , InAnyExampleEra(..)
     -- * Deprecated aliases
   , Byron
   , Shelley
@@ -245,24 +243,6 @@ data InAnyCardanoEra thing where
                      => CardanoEra era    -- and explicit value.
                      -> thing era
                      -> InAnyCardanoEra thing
-
--- Prototype consensus mode support
-
-class HasTypeProxy era => IsExampleEra era where
-   exampleEra :: CardanoEra era
-
-instance IsExampleEra ShelleyEra where
-   exampleEra = ShelleyEra
-
-instance IsExampleEra ExampleEra where
-   exampleEra = ExampleEra
-
-data InAnyExampleEra thing where
-     InAnyExampleEra :: IsExampleEra era
-                     => CardanoEra era
-                     -> thing era
-                     -> InAnyExampleEra thing
-
 
 -- ----------------------------------------------------------------------------
 -- Shelley-based eras

@@ -36,10 +36,6 @@ module Cardano.Api.Typed (
     anyCardanoEra,
     InAnyCardanoEra(..),
 
-    -- Prototype consensus modes
-    IsExampleEra(..),
-    InAnyExampleEra(..),
-
     -- ** Shelley-based eras
     ShelleyBasedEra(..),
     IsShelleyBasedEra(..),
@@ -418,6 +414,7 @@ module Cardano.Api.Typed (
     CardanoMode,
     -- Prototype consensus modes
     ExampleMode,
+    --
     NodeConsensusMode(..),
     LocalNodeClientProtocols(..),
     nullLocalNodeClientProtocols,
