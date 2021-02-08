@@ -28,6 +28,7 @@ import           Cardano.Tracing.Metrics (HasKESMetricsData)
 data Protocol = ByronProtocol
               | ShelleyProtocol
               | CardanoProtocol
+              | ExampleProtocol
   deriving (Eq, Show, Generic)
 
 deriving instance NFData Protocol
@@ -41,6 +42,7 @@ instance FromJSON Protocol where
       "Byron" -> pure ByronProtocol
       "Shelley" -> pure ShelleyProtocol
       "Cardano" -> pure CardanoProtocol
+      "Example" -> pure ExampleProtocol
 
       -- The old names
       "RealPBFT" -> pure ByronProtocol

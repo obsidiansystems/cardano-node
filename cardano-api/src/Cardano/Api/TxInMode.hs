@@ -24,11 +24,13 @@ import           Data.SOP.Strict (NS(Z, S))
 
 import qualified Ouroboros.Consensus.HardFork.Combinator    as Consensus
 import qualified Ouroboros.Consensus.HardFork.Combinator.Degenerate as Consensus
-import           Ouroboros.Consensus.HardFork.Combinator.AcrossEras (EraMismatch) 
+import           Ouroboros.Consensus.HardFork.Combinator.AcrossEras (EraMismatch)
 import qualified Ouroboros.Consensus.Ledger.SupportsMempool as Consensus
 import qualified Ouroboros.Consensus.Byron.Ledger           as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger         as Consensus
 import qualified Ouroboros.Consensus.Cardano.Block          as Consensus
+-- Prototype consensus modes
+import qualified Ouroboros.Consensus.Example.Block          as Example
 
 import           Cardano.Api.Eras
 import           Cardano.Api.Modes
@@ -102,6 +104,18 @@ toConsensusGenTx (TxInMode (ShelleyTx _ tx) MaryEraInCardanoMode) =
   where
     tx' = Consensus.mkShelleyTx tx
 
+-- Prototype consensus modes
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) ShelleyEraInExampleMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (Z tx'))
+  where
+    tx' = Consensus.mkShelleyTx tx
+
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) ExampleEraInExampleMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (S (Z tx')))
+  where
+    tx' = Consensus.mkShelleyTx tx
+
+
 
 -- ----------------------------------------------------------------------------
 -- Transaction validation errors in the context of eras and consensus modes
@@ -146,6 +160,14 @@ instance Show (TxValidationError era) where
         ( showString "ShelleyTxValidationError ShelleyBasedEraMary "
         . showsPrec 11 err
         )
+
+    -- Prototype eras
+    showsPrec p (ShelleyTxValidationError ShelleyBasedEraExample err) =
+      showParen (p >= 11)
+        ( showString "ShelleyTxValidationError ShelleyBasedEraExample "
+        . showsPrec 11 err
+        )
+
 
 
 -- | A 'TxValidationError' in one of the eras supported by a given protocol
@@ -200,4 +222,19 @@ fromConsensusApplyTxErr CardanoMode (Consensus.ApplyTxErrMary err) =
 
 fromConsensusApplyTxErr CardanoMode (Consensus.ApplyTxErrWrongEra err) =
     TxValidationEraMismatch err
+
+-- Prototype consensus modes
+fromConsensusApplyTxErr ExampleMode (Example.ApplyTxErrShelley err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraShelley err)
+      ShelleyEraInExampleMode
+
+fromConsensusApplyTxErr ExampleMode (Example.ApplyTxErrExample err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraExample err)
+      ExampleEraInExampleMode
+
+fromConsensusApplyTxErr ExampleMode (Example.ApplyTxErrWrongEra err) =
+    TxValidationEraMismatch err
+
 

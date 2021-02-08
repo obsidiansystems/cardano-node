@@ -30,6 +30,7 @@ module Cardano.Api.Typed (
     ShelleyEra,
     AllegraEra,
     MaryEra,
+    ExampleEra,
     CardanoEra(..),
     IsCardanoEra(..),
     AnyCardanoEra(..),
@@ -412,6 +413,9 @@ module Cardano.Api.Typed (
     ByronMode,
     ShelleyMode,
     CardanoMode,
+    -- Prototype consensus modes
+    ExampleMode,
+    --
     NodeConsensusMode(..),
     LocalNodeClientProtocols(..),
     nullLocalNodeClientProtocols,
@@ -546,6 +550,7 @@ import           Ouroboros.Consensus.Util.Time (secondsToNominalDiffTime)
 import           Ouroboros.Consensus.Cardano.Block (CardanoBlock)
 import           Ouroboros.Consensus.Cardano.ByronHFC (ByronBlockHFC)
 import           Ouroboros.Consensus.Cardano.ShelleyHFC (ShelleyBlockHFC)
+import           Ouroboros.Consensus.Example.Block (ExampleBlock)
 
 --
 -- Crypto API used by consensus and Shelley (and should be used by Byron)
@@ -576,6 +581,7 @@ import qualified Shelley.Spec.Ledger.PParams as Shelley
 import           Cardano.Api.Block
 import           Cardano.Api.Protocol.Byron (mkNodeClientProtocolByron)
 import           Cardano.Api.Protocol.Cardano (mkNodeClientProtocolCardano)
+import           Cardano.Api.Protocol.Example (mkNodeClientProtocolExample)
 import           Cardano.Api.Protocol.Shelley (mkNodeClientProtocolShelley)
 
 import           Ouroboros.Network.Protocol.ChainSync.Client as ChainSync
@@ -636,6 +642,7 @@ import           Cardano.Api.Value
 data ByronMode
 data ShelleyMode
 data CardanoMode
+data ExampleMode
 
 data LocalNodeConnectInfo mode block =
      LocalNodeConnectInfo {
@@ -657,6 +664,9 @@ data NodeConsensusMode mode block where
        :: Byron.EpochSlots
        -> NodeConsensusMode CardanoMode (CardanoBlock StandardCrypto)
 
+     ExampleMode
+       :: NodeConsensusMode ExampleMode (ExampleBlock StandardCrypto)
+
 
 withNodeProtocolClient
   :: NodeConsensusMode mode block
@@ -671,6 +681,8 @@ withNodeProtocolClient ShelleyMode f = f mkNodeClientProtocolShelley
 
 withNodeProtocolClient (CardanoMode epochSlots) f =
     f (mkNodeClientProtocolCardano epochSlots)
+
+withNodeProtocolClient ExampleMode f = f mkNodeClientProtocolExample
 
 data LocalNodeClientProtocols block =
      LocalNodeClientProtocols {
