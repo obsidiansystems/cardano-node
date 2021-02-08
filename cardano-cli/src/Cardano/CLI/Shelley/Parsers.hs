@@ -1527,7 +1527,10 @@ pCardanoEra = asum
       (  Opt.long "mary-era"
       <> Opt.help "Specify the Mary era"
       )
-
+  , Opt.flag' (AnyCardanoEra ShelleyEra)
+      (  Opt.long "example-era"
+      <> Opt.help "Specify the Example prototype era"
+      )
     -- Default for now:
   , pure (AnyCardanoEra ShelleyEra)
   ]
@@ -2336,8 +2339,8 @@ pProtocol =
   <|>
   -- Prototype consensus modes
     (  Opt.flag' ()
-        (  Opt.long "shelley-mode"
-        <> Opt.help "For talking to a node running in Shelley-only mode."
+        (  Opt.long "example-mode"
+        <> Opt.help "For talking to a node running the example prototype mode."
         )
     *> pExampleMode
     )
