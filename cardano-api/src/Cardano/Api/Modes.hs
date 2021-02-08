@@ -26,7 +26,6 @@ module Cardano.Api.Modes (
     AnyEraInMode(..),
     toEraInMode,
     InAnyEraOf(..),
-    toInAnyCardanoEra,
 
     -- * Connection paramaters for each mode
     ConsensusModeParams(..),
@@ -203,13 +202,6 @@ data InAnyEraOf mode thing where
                 => EraInMode era mode
                 -> thing era
                 -> InAnyEraOf mode thing
-
--- | Forget the mode and carry just the era witness, as that is what
--- most of the API is concerned with.
-toInAnyCardanoEra :: InAnyEraOf mode thing -> InAnyCardanoEra thing
-toInAnyCardanoEra (InAnyEraOf eraInMode thing) = InAnyCardanoEra
-  (eraInModeToEra eraInMode)
-  thing
 
 -- | The consensus-mode-specific parameters needed to connect to a local node
 -- that is using each consensus mode.

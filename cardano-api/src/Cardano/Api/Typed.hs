@@ -30,6 +30,7 @@ module Cardano.Api.Typed (
     ShelleyEra,
     AllegraEra,
     MaryEra,
+    ExampleEra,
     CardanoEra(..),
     IsCardanoEra(..),
     AnyCardanoEra(..),
