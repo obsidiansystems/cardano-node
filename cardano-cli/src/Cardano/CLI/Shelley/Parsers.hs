@@ -1527,7 +1527,7 @@ pCardanoEra = asum
       (  Opt.long "mary-era"
       <> Opt.help "Specify the Mary era"
       )
-  , Opt.flag' (AnyCardanoEra ShelleyEra)
+  , Opt.flag' (AnyCardanoEra ExampleEra)
       (  Opt.long "example-era"
       <> Opt.help "Specify the Example prototype era"
       )
