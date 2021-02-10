@@ -41,6 +41,7 @@ library
                        Cardano.Node.Protocol
                        Cardano.Node.Protocol.Byron
                        Cardano.Node.Protocol.Cardano
+                       Cardano.Node.Protocol.Example
                        Cardano.Node.Protocol.Shelley
                        Cardano.Node.Protocol.Types
                        Cardano.Node.Query

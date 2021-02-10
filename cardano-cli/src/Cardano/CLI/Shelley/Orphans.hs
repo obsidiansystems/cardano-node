@@ -33,6 +33,8 @@ import           Ouroboros.Consensus.Shelley.Eras
                    (ShelleyBasedEra, StandardCrypto,
                     StandardShelley, StandardAllegra, StandardMary)
 import           Ouroboros.Network.Block (BlockNo (..), HeaderHash, Tip (..))
+-- Prototype consensus modes
+import           Ouroboros.Consensus.Example.Block (StandardExample)
 
 import           Cardano.Ledger.AuxiliaryData (AuxiliaryDataHash (..))
 import qualified Cardano.Ledger.Era as Ledger
@@ -183,3 +185,13 @@ instance ToJSON Ledger.Mary.AssetName where
 
 instance (ToJSONKey k, ToJSON v) => ToJSON (SetAlgebra.BiMap v k v) where
   toJSON = toJSON . SetAlgebra.forwards -- to normal Map
+
+-- Prototype consensus modes
+deriving anyclass instance ToJSON (Ledger.ProposedPPUpdates StandardExample)
+deriving anyclass instance ToJSON (Ledger.PPUPState StandardExample)
+
+deriving instance ToJSON (Ledger.LedgerState StandardExample)
+deriving instance ToJSON (Ledger.EpochState StandardExample)
+deriving instance ToJSON (Ledger.NewEpochState StandardExample)
+deriving instance ToJSON (Ledger.PParams' StrictMaybe StandardExample)
+deriving instance ToJSON (Ledger.UTxOState StandardExample)

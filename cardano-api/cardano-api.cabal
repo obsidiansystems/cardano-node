@@ -30,6 +30,7 @@ library
                         Cardano.Api.ProtocolParameters
                         Cardano.Api.Protocol.Byron
                         Cardano.Api.Protocol.Cardano
+                        Cardano.Api.Protocol.Example
                         Cardano.Api.Protocol.Shelley
                         Cardano.Api.Protocol.Types
                         Cardano.Api.Shelley.Genesis

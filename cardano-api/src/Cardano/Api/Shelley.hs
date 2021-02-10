@@ -146,9 +146,12 @@ module Cardano.Api.Shelley
     LocalNodeConnectInfo(LocalNodeConnectInfo),
     ShelleyMode,
     CardanoMode,
+    -- Prototype consensus modes
+    ExampleMode,
     NodeConsensusMode
       ( ShelleyMode
       , CardanoMode
+      , ExampleMode
       ),
     LocalNodeClientProtocols(LocalNodeClientProtocols),
     withNodeProtocolClient,
