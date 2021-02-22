@@ -77,6 +77,12 @@ answerQueryWithLedgerState protocol extLedgerState query = runIdentity $
         HF.forwardCompatQuery
           answerQueryHelper
           query
+      {-
+      Consensus.ProtocolExample {} ->
+        HF.forwardCompatQuery
+          answerQueryHelper
+          query
+      -}
   where
     cfg :: TopLevelConfig blk
     cfg = pInfoConfig $ Consensus.protocolInfo protocol

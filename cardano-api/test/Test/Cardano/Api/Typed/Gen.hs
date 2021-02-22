@@ -312,6 +312,13 @@ genTxBodyShelley = do
     Left err -> fail (show err) -- TODO: Render function for TxBodyError
     Right txBody -> pure txBody
 
+genTxBodyExample :: Gen (TxBody ExampleEra)
+genTxBodyExample = do
+  res <- makeTransactionBody <$> genTxBodyContent ExampleEra
+  case res of
+    Left err -> fail (show err) -- TODO: Render function for TxBodyError
+    Right txBody -> pure txBody
+
 genByronTxOut :: Gen (TxOut ByronEra)
 genByronTxOut =
   TxOut <$> (byronAddressInEra <$> genAddressByron)
@@ -321,6 +328,11 @@ genShelleyTxOut :: Gen (TxOut ShelleyEra)
 genShelleyTxOut =
   TxOut <$> (shelleyAddressInEra <$> genAddressShelley)
         <*> (TxOutAdaOnly AdaOnlyInShelleyEra <$> genLovelace)
+
+genExampleTxOut :: Gen (TxOut ExampleEra)
+genExampleTxOut =
+  TxOut <$> (shelleyAddressInEra <$> genAddressShelley)
+        <*> (TxOutAdaOnly AdaOnlyInExampleEra <$> genLovelace)
 
 genShelleyHash :: Gen (Crypto.Hash Crypto.Blake2b_256 Shelley.EraIndependentTxBody)
 genShelleyHash = return . Crypto.castHash $ Crypto.hashWith CBOR.serialize' ()
@@ -350,6 +362,7 @@ genTxOutValue era =
   case era of
     ByronEra -> TxOutAdaOnly AdaOnlyInByronEra <$> genLovelace
     ShelleyEra -> TxOutAdaOnly AdaOnlyInShelleyEra <$> genLovelace
+    ExampleEra -> TxOutAdaOnly AdaOnlyInExampleEra <$> genLovelace
     AllegraEra -> TxOutAdaOnly AdaOnlyInAllegraEra <$> genLovelace
     MaryEra -> TxOutValue MultiAssetInMaryEra <$> genValueForTxOut
 
@@ -358,6 +371,7 @@ genTxOut era =
   case era of
     ByronEra -> genByronTxOut
     ShelleyEra -> genShelleyTxOut
+    ExampleEra -> genExampleTxOut
     AllegraEra ->
       TxOut
         <$> (shelleyAddressInEra <$> genAddressShelley)
@@ -376,6 +390,7 @@ genTxValidityLowerBound era =
   case era of
     ByronEra -> pure TxValidityNoLowerBound
     ShelleyEra -> pure TxValidityNoLowerBound
+    ExampleEra -> pure TxValidityNoLowerBound
     AllegraEra -> TxValidityLowerBound ValidityLowerBoundInAllegraEra <$> genTtl
     MaryEra -> TxValidityLowerBound ValidityLowerBoundInMaryEra <$> genTtl
 
@@ -385,6 +400,7 @@ genTxValidityUpperBound era =
   case era of
     ByronEra -> pure (TxValidityNoUpperBound ValidityNoUpperBoundInByronEra)
     ShelleyEra -> TxValidityUpperBound ValidityUpperBoundInShelleyEra <$> genTtl
+    ExampleEra -> TxValidityUpperBound ValidityUpperBoundInExampleEra <$> genTtl
     AllegraEra -> TxValidityUpperBound ValidityUpperBoundInAllegraEra <$> genTtl
     MaryEra -> TxValidityUpperBound ValidityUpperBoundInMaryEra <$> genTtl
 
@@ -405,6 +421,11 @@ genTxMetadataInEra era =
         [ pure TxMetadataNone
         , TxMetadataInEra TxMetadataInShelleyEra <$> genTxMetadata
         ]
+    ExampleEra ->
+      Gen.choice
+        [ pure TxMetadataNone
+        , TxMetadataInEra TxMetadataInExampleEra <$> genTxMetadata
+        ]
     AllegraEra ->
       Gen.choice
         [ pure TxMetadataNone
@@ -421,6 +442,7 @@ genTxAuxScripts era =
   case era of
     ByronEra   -> pure TxAuxScriptsNone
     ShelleyEra -> pure TxAuxScriptsNone
+    ExampleEra -> pure TxAuxScriptsNone
     AllegraEra -> TxAuxScripts AuxScriptsInAllegraEra
                            <$> Gen.list (Range.linear 0 3)
                                         (genScriptInEra AllegraEra)
@@ -436,6 +458,11 @@ genTxWithdrawals era =
       Gen.choice
         [ pure TxWithdrawalsNone
         , pure (TxWithdrawals WithdrawalsInShelleyEra mempty) -- TODO: Generate withdrawals
+        ]
+    ExampleEra ->
+      Gen.choice
+        [ pure TxWithdrawalsNone
+        , pure (TxWithdrawals WithdrawalsInExampleEra mempty) -- TODO: Generate withdrawals
         ]
     AllegraEra ->
       Gen.choice
@@ -457,6 +484,11 @@ genTxCertificates era =
         [ pure TxCertificatesNone
         , pure (TxCertificates CertificatesInShelleyEra mempty) -- TODO: Generate certificates
         ]
+    ExampleEra ->
+      Gen.choice
+        [ pure TxCertificatesNone
+        , pure (TxCertificates CertificatesInExampleEra mempty) -- TODO: Generate certificates
+        ]
     AllegraEra ->
       Gen.choice
         [ pure TxCertificatesNone
@@ -477,6 +509,11 @@ genTxUpdateProposal era =
         [ pure TxUpdateProposalNone
         , pure (TxUpdateProposal UpdateProposalInShelleyEra emptyUpdateProposal) -- TODO: Generate proposals
         ]
+    ExampleEra ->
+      Gen.choice
+        [ pure TxUpdateProposalNone
+        , pure (TxUpdateProposal UpdateProposalInExampleEra emptyUpdateProposal) -- TODO: Generate proposals
+        ]
     AllegraEra ->
       Gen.choice
         [ pure TxUpdateProposalNone
@@ -496,6 +533,7 @@ genTxMintValue era =
   case era of
     ByronEra -> pure TxMintNone
     ShelleyEra -> pure TxMintNone
+    ExampleEra -> pure TxMintNone
     AllegraEra -> pure TxMintNone
     MaryEra ->
       Gen.choice
@@ -533,6 +571,7 @@ genTxFee :: CardanoEra era -> Gen (TxFee era)
 genTxFee era =
   case era of
     ByronEra -> pure (TxFeeImplicit TxFeesImplicitInByronEra)
+    ExampleEra -> TxFeeExplicit TxFeesExplicitInExampleEra <$> genLovelace
     ShelleyEra -> TxFeeExplicit TxFeesExplicitInShelleyEra <$> genLovelace
     AllegraEra -> TxFeeExplicit TxFeesExplicitInAllegraEra <$> genLovelace
     MaryEra -> TxFeeExplicit TxFeesExplicitInMaryEra <$> genLovelace
@@ -541,6 +580,7 @@ genTxBody :: CardanoEra era -> Gen (TxBody era)
 genTxBody era =
   case era of
     ByronEra -> genTxBodyByron
+    ExampleEra -> genTxBodyExample
     ShelleyEra -> genTxBodyShelley
     AllegraEra -> do
       res <- makeTransactionBody <$> genTxBodyContent AllegraEra
@@ -564,6 +604,7 @@ genTx era =
       case era of
         ByronEra -> Gen.list (Range.constant 1 10) genByronKeyWitness
         ShelleyEra -> genShelleyBasedWitnessList
+        ExampleEra -> genShelleyBasedWitnessList
         AllegraEra -> genShelleyBasedWitnessList
         MaryEra -> genShelleyBasedWitnessList
 

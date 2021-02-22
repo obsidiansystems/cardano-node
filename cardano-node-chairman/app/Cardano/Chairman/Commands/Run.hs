@@ -40,6 +40,8 @@ mkNodeClientProtocol protocol =
       mkSomeNodeClientProtocolCardano
         (EpochSlots 21600)
 
+    _ -> let x = x in x
+
 data RunOpts = RunOpts
   { -- | Stop the test after given number of seconds. The chairman will
     -- observe only for the given period of time, and check the consensus

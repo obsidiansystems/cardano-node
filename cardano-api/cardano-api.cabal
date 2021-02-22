@@ -28,6 +28,7 @@ library
                         -- when new IPC is integrated with cardano-node-chairman
                         Cardano.Api.Protocol.Byron
                         Cardano.Api.Protocol.Cardano
+                        Cardano.Api.Protocol.Example
                         Cardano.Api.Protocol.Shelley
                         Cardano.Api.Protocol.Types
 
@@ -110,6 +111,8 @@ library
                       , ouroboros-consensus-byron
                       , ouroboros-consensus-cardano
                       , ouroboros-consensus-shelley
+                      -- Prototype consensus modes
+                      , ouroboros-consensus-example
                       , ouroboros-network
                       , ouroboros-network-framework
                       , scientific

@@ -57,6 +57,10 @@ import qualified Ouroboros.Consensus.Byron.Ledger as Consensus
 import           Ouroboros.Consensus.Cardano.Block (StandardCrypto)
 import qualified Ouroboros.Consensus.Cardano.Block as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
+
+-- Prototype consensus modes
+import qualified Ouroboros.Consensus.Example.Block as Example
+
 import           Ouroboros.Network.Block (Serialised)
 
 import           Cardano.Binary
@@ -222,6 +226,10 @@ fromUTxO eraConversion utxo =
     ShelleyBasedEraMary ->
       let Shelley.UTxO sUtxo = utxo
       in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraMary)) $ Map.toList sUtxo
+    -- Prototype eras
+    ShelleyBasedEraExample ->
+      let Shelley.UTxO sUtxo = utxo
+      in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraExample)) $ Map.toList sUtxo
 
 fromShelleyPoolDistr :: Shelley.PoolDistr StandardCrypto
                      -> Map (Hash StakePoolKey) Rational
@@ -280,6 +288,9 @@ toConsensusQuery (QueryInEra erainmode (QueryInShelleyBasedEra era q)) =
       ShelleyEraInCardanoMode -> toConsensusQueryShelleyBased erainmode q
       AllegraEraInCardanoMode -> toConsensusQueryShelleyBased erainmode q
       MaryEraInCardanoMode    -> toConsensusQueryShelleyBased erainmode q
+      -- Prototype consensus modes
+      ShelleyEraInExampleMode -> toConsensusQueryShelleyBased erainmode q
+      ExampleEraInExampleMode -> toConsensusQueryShelleyBased erainmode q
 
 
 toConsensusQueryShelleyBased
@@ -346,6 +357,10 @@ consensusQueryInEraInMode ByronEraInCardanoMode   = Consensus.QueryIfCurrentByro
 consensusQueryInEraInMode ShelleyEraInCardanoMode = Consensus.QueryIfCurrentShelley
 consensusQueryInEraInMode AllegraEraInCardanoMode = Consensus.QueryIfCurrentAllegra
 consensusQueryInEraInMode MaryEraInCardanoMode    = Consensus.QueryIfCurrentMary
+-- Prototype consensus
+consensusQueryInEraInMode ShelleyEraInExampleMode = Example.QueryIfCurrentShelley
+consensusQueryInEraInMode ExampleEraInExampleMode = Example.QueryIfCurrentExample
+
 
 
 -- ----------------------------------------------------------------------------
@@ -419,6 +434,24 @@ fromConsensusQueryResult (QueryInEra MaryEraInCardanoMode
               r'
       _ -> fromConsensusQueryResultMismatch
 
+-- Prototype consensus modes
+fromConsensusQueryResult (QueryInEra ShelleyEraInExampleMode
+                                     (QueryInShelleyBasedEra _era q)) q' r' =
+    case q' of
+      Example.QueryIfCurrentShelley q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultShelleyBased ShelleyBasedEraShelley q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra ExampleEraInExampleMode
+                                     (QueryInShelleyBasedEra _era q)) q' r' =
+    case q' of
+      Example.QueryIfCurrentExample q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultShelleyBased ShelleyBasedEraExample q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
 
 fromConsensusQueryResultShelleyBased
   :: forall era ledgerera result result'.
