@@ -6,14 +6,7 @@
 {-# OPTIONS_GHC -Wno-orphans  #-}
 
 module Cardano.Node.Protocol.Example
-  (
-    -- * Protocol exposing the specific type
-    -- | Use this when you need the specific instance
-    mkConsensusProtocolExample
-
-    -- * Protocols hiding the specific type
-    -- | Use this when you want to handle protocols generically
-  , mkSomeConsensusProtocolExample
+  ( mkSomeConsensusProtocolExample
 
     -- * Errors
   , ExampleProtocolInstantiationError(..)
@@ -33,8 +26,6 @@ import qualified Ouroboros.Consensus.Example.Node as Example
 import           Ouroboros.Consensus.HardFork.Combinator.Condense ()
 
 import           Ouroboros.Consensus.Cardano.Condense ()
-
-import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 
 import           Cardano.Node.Types
 
@@ -68,27 +59,7 @@ mkSomeConsensusProtocolExample
   -> NodeExampleHardForkProtocolConfiguration
   -> Maybe ProtocolFilepaths
   -> ExceptT ExampleProtocolInstantiationError IO SomeConsensusProtocol
-mkSomeConsensusProtocolExample ncs nch files =
-
-    -- Applying the SomeConsensusProtocol here is a check that
-    -- the type of mkConsensusProtocolExample fits all the class
-    -- constraints we need to run the protocol.
-    SomeConsensusProtocol
-      <$> mkConsensusProtocolExample ncs nch files
-
-
--- | Instantiate 'Consensus.Protocol' for Byron specifically.
---
--- Use this when you need to run the consensus with this specific protocol.
---
-mkConsensusProtocolExample
-  :: NodeShelleyProtocolConfiguration
-  -> NodeExampleHardForkProtocolConfiguration
-  -> Maybe ProtocolFilepaths
-  -> ExceptT ExampleProtocolInstantiationError IO
-             (Consensus.Protocol IO (Example.ExampleBlock StandardCrypto)
-                                    Example.ProtocolExample)
-mkConsensusProtocolExample
+mkSomeConsensusProtocolExample
                            NodeShelleyProtocolConfiguration {
                              npcShelleyGenesisFile,
                              npcShelleyGenesisFileHash
@@ -128,7 +99,7 @@ mkConsensusProtocolExample
 
     --TODO: all these protocol versions below are confusing and unnecessary.
     -- It could and should all be automated and these config entries eliminated.
-    let protocolExample = (let x = x in x) {- Consensus.ProtocolExample -}
+    let protocolExample = SomeConsensusProtocol ExampleBlockType $ Example.RunProtocolExample
           Consensus.ProtocolParamsShelleyBased {
             shelleyBasedGenesis = shelleyGenesis,
             shelleyBasedInitialNonce =

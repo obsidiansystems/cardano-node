@@ -58,7 +58,6 @@ import           Cardano.BM.Tracing
 
 import qualified Cardano.Chain.Genesis as Gen
 import           Cardano.Slotting.Slot (EpochSize (..))
-import           Ouroboros.Consensus.Block (BlockProtocol)
 import qualified Ouroboros.Consensus.BlockchainTime.WallClock.Types as WCT
 import           Ouroboros.Consensus.Byron.Ledger.Conversions
 import qualified Ouroboros.Consensus.Cardano as Consensus
@@ -66,7 +65,7 @@ import           Ouroboros.Consensus.Cardano.Block
 import           Ouroboros.Consensus.Cardano.CanHardFork
 import qualified Ouroboros.Consensus.Config as Consensus
 import           Ouroboros.Consensus.Config.SupportsNode (ConfigSupportsNode (..))
--- import           Ouroboros.Consensus.Example.Block
+import           Ouroboros.Consensus.Example.Block
 import           Ouroboros.Consensus.HardFork.Combinator.Degenerate
 import           Ouroboros.Consensus.Node.ProtocolInfo
 import           Ouroboros.Consensus.Shelley.Ledger.Ledger
@@ -75,6 +74,7 @@ import qualified Shelley.Spec.Ledger.API as SL
 import           Cardano.Config.Git.Rev (gitRev)
 import           Cardano.Node.Configuration.POM (NodeConfiguration (..), ncProtocol)
 import           Cardano.Node.Types
+import           Cardano.Node.Protocol.Types (BlockType (..), SomeConsensusProtocol (..))
 import           Cardano.Tracing.OrphanInstances.Common ()
 import           Paths_cardano_node (version)
 
@@ -137,7 +137,7 @@ loggingCLIConfiguration = maybe emptyConfig readConfig
 createLoggingLayer
   :: Text
   -> NodeConfiguration
-  -> Consensus.Protocol IO blk (BlockProtocol blk)
+  -> SomeConsensusProtocol
   -> ExceptT ConfigError IO LoggingLayer
 createLoggingLayer ver nodeConfig' p = do
 
@@ -276,32 +276,30 @@ shutdownLoggingLayer = shutdown . llSwitchboard
 -- It will be sent once TraceForwarderBK is connected to an external process
 -- (for example, RTView).
 nodeBasicInfo :: NodeConfiguration
-              -> Consensus.Protocol IO blk (BlockProtocol blk)
+              -> SomeConsensusProtocol
               -> UTCTime
               -> IO [LogObject Text]
-nodeBasicInfo nc p nodeStartTime' = do
+nodeBasicInfo nc (SomeConsensusProtocol whichP pForInfo) nodeStartTime' = do
   meta <- mkLOMeta Notice Public
-  let cfg = pInfoConfig $ Consensus.protocolInfo p
+  let cfg = pInfoConfig $ Consensus.protocolInfo pForInfo
       protocolDependentItems =
-        case p of
-          Consensus.ProtocolByron {} ->
+        case whichP of
+          ByronBlockType ->
             let DegenLedgerConfig cfgByron = Consensus.configLedger cfg
             in getGenesisValuesByron cfg cfgByron
-          Consensus.ProtocolShelley {} ->
+          ShelleyBlockType ->
             let DegenLedgerConfig cfgShelley = Consensus.configLedger cfg
             in getGenesisValues "Shelley" cfgShelley
-          Consensus.ProtocolCardano {} ->
+          CardanoBlockType ->
             let CardanoLedgerConfig cfgByron cfgShelley cfgAllegra cfgMary = Consensus.configLedger cfg
             in getGenesisValuesByron cfg cfgByron
                ++ getGenesisValues "Shelley" cfgShelley
                ++ getGenesisValues "Allegra" cfgAllegra
                ++ getGenesisValues "Mary"    cfgMary
-          {-
-          Consensus.ProtocolExample {} ->
+          ExampleBlockType ->
             let ExampleLedgerConfig cfgShelley cfgExample = Consensus.configLedger cfg
             in getGenesisValues "Shelley" cfgShelley <>
                getGenesisValues "Example" cfgExample
-          -}
       items = nub $
         [ ("protocol",      pack . protocolName $ ncProtocol nc)
         , ("version",       pack . showVersion $ version)

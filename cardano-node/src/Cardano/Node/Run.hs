@@ -75,6 +75,7 @@ import           Cardano.Node.Protocol.Types
 import           Cardano.Tracing.Kernel
 import           Cardano.Tracing.Peer
 import           Cardano.Tracing.Tracers
+import           Cardano.Tracing.Metrics (HasKESMetricsData)
 
 {- HLINT ignore "Use fewer imports" -}
 
@@ -102,10 +103,10 @@ runNode cmdPc = do
 
     eitherSomeProtocol <- runExceptT $ mkConsensusProtocol nc
 
-    SomeConsensusProtocol (p :: Consensus.Protocol IO blk (BlockProtocol blk)) <-
+    p :: SomeConsensusProtocol <-
       case eitherSomeProtocol of
         Left err -> putTextLn (renderProtocolInstantiationError err) >> exitFailure
-        Right (SomeConsensusProtocol p) -> pure $ SomeConsensusProtocol p
+        Right p -> pure p
 
     eLoggingLayer <- runExceptT $ createLoggingLayer
                      (Text.pack (showVersion version))
@@ -131,7 +132,12 @@ runNode cmdPc = do
         $ \_peerLogingThread ->
           -- We ignore peer loging thread if it dies, but it will be killed
           -- when 'handleSimpleNode' terminates.
-          handleSimpleNode p trace tracers nc (setNodeKernel nodeKernelData)
+          (case p of
+            SomeConsensusProtocol ByronBlockType runP -> handleSimpleNode ByronBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
+            SomeConsensusProtocol ShelleyBlockType runP -> handleSimpleNode ShelleyBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
+            SomeConsensusProtocol CardanoBlockType runP -> handleSimpleNode CardanoBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
+            SomeConsensusProtocol ExampleBlockType runP -> handleSimpleNode ExampleBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
+          )
           `finally`
           shutdownLoggingLayer loggingLayer
 
@@ -178,8 +184,13 @@ handlePeersListSimple tr nodeKern = forever $ do
 -- create a new block.
 
 handleSimpleNode
-  :: forall blk. RunNode blk
-  => Consensus.Protocol IO blk (BlockProtocol blk)
+  :: forall blk p
+  . ( RunNode blk
+    , HasKESMetricsData blk
+    , Consensus.Protocol IO blk p
+    )
+  => BlockType blk
+  -> Consensus.RunProtocol IO blk p
   -> Trace IO Text
   -> Tracers RemoteConnectionId LocalConnectionId blk
   -> NodeConfiguration
@@ -188,10 +199,10 @@ handleSimpleNode
   -- layer is initialised.  This implies this function must not block,
   -- otherwise the node won't actually start.
   -> IO ()
-handleSimpleNode p trace nodeTracers nc onKernel = do
+handleSimpleNode bType runP trace nodeTracers nc onKernel = do
   meta <- mkLOMeta Notice Public
 
-  let pInfo = Consensus.protocolInfo p
+  let pInfo = Consensus.protocolInfo runP
       tracer = toLogObject trace
 
   createTracers nc trace tracer
@@ -294,14 +305,14 @@ handleSimpleNode p trace nodeTracers nc onKernel = do
     -> IO ()
   createTracers NodeConfiguration { ncValidateDB }
                 tr tracer = do
-    let ProtocolInfo{ pInfoConfig = cfg } = Consensus.protocolInfo p
+    let ProtocolInfo{ pInfoConfig = cfg } = Consensus.protocolInfo runP
 
     meta <- mkLOMeta Notice Public
     traceNamedObject (appendName "networkMagic" tr)
                      (meta, LogMessage ("NetworkMagic " <> show (unNetworkMagic . getNetworkMagic $ Consensus.configBlock cfg)))
 
     startTime <- getCurrentTime
-    traceNodeBasicInfo tr =<< nodeBasicInfo nc p startTime
+    traceNodeBasicInfo tr =<< nodeBasicInfo nc (SomeConsensusProtocol bType runP) startTime
     traceCounter "nodeStartTime" tr (ceiling $ utcTimeToPOSIXSeconds startTime)
 
     when ncValidateDB $ traceWith tracer "Performing DB validation"
