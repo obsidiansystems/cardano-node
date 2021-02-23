@@ -2,22 +2,20 @@
 --
 module Cardano.Api.Protocol.Example
   ( -- * Client support
-  --   mkNodeClientProtocolExample
-  -- , mkSomeNodeClientProtocolExample
+    mkNodeClientProtocolExample
+  , mkSomeNodeClientProtocolExample
   ) where
 
-{-
 import           Cardano.Api.Protocol.Types (SomeNodeClientProtocol (..))
-import           Ouroboros.Consensus.Cardano (ProtocolExample,
-                     ProtocolClient (ProtocolClientExample))
+import           Ouroboros.Consensus.Example (ProtocolClient(..), ProtocolExample,
+                     RunProtocolClient (RunProtocolClientExample))
 import           Ouroboros.Consensus.Example.Block (ExampleBlock)
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 
-mkNodeClientProtocolExample :: ProtocolClient (ExampleBlock StandardCrypto)
+mkNodeClientProtocolExample :: RunProtocolClient (ExampleBlock StandardCrypto)
                                               ProtocolExample
-mkNodeClientProtocolExample = ProtocolClientExample
+mkNodeClientProtocolExample = RunProtocolClientExample
 
 mkSomeNodeClientProtocolExample :: SomeNodeClientProtocol
 mkSomeNodeClientProtocolExample =
     SomeNodeClientProtocol mkNodeClientProtocolExample
--}

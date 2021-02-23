@@ -99,6 +99,8 @@ import qualified Ouroboros.Consensus.Node.NetworkProtocolVersion as Consensus
 import qualified Ouroboros.Consensus.Node.ProtocolInfo as Consensus
 import qualified Ouroboros.Consensus.Node.Run as Consensus
 
+import qualified Ouroboros.Consensus.Example as Prototype
+
 import           Cardano.Api.Block
 import           Cardano.Api.HasTypeProxy
 import           Cardano.Api.Modes
@@ -200,15 +202,10 @@ connectToLocalNode LocalNodeConnectInfo {
 
 
 mkVersionedProtocols :: forall block.
-                        (Consensus.SerialiseNodeToClientConstraints block,
-                         Consensus.SupportedNetworkProtocolVersion block,
-                         ShowProxy block,
-                         ShowProxy (Consensus.ApplyTxErr block),
-                         ShowProxy (Consensus.GenTx block),
-                         ShowProxy (Consensus.Query block),
-                         Consensus.ShowQuery (Consensus.Query block))
+                        ( Consensus.ShowQuery (Consensus.Query block),
+                          Consensus.ProtocolClient block (Consensus.BlockProtocol block))
                      => NetworkId
-                     -> Consensus.ProtocolClient block
+                     -> Consensus.RunProtocolClient block
                           (Consensus.BlockProtocol block)
                      -> LocalNodeClientProtocolsForBlock block
                      -> Net.Versions
@@ -300,8 +297,10 @@ data LocalNodeClientParams where
            Consensus.SupportedNetworkProtocolVersion block,
            ShowProxy block, ShowProxy (Consensus.ApplyTxErr block),
            ShowProxy (Consensus.GenTx block), ShowProxy (Consensus.Query block),
-           Consensus.ShowQuery (Consensus.Query block))
-       => Consensus.ProtocolClient block (Consensus.BlockProtocol block)
+           Consensus.ShowQuery (Consensus.Query block),
+           Consensus.ProtocolClient block (Consensus.BlockProtocol block)
+           )
+       => Consensus.RunProtocolClient block (Consensus.BlockProtocol block)
        -> LocalNodeClientProtocolsForBlock block
        -> LocalNodeClientParams
 
@@ -328,26 +327,24 @@ mkLocalNodeClientParams modeparams clients =
     case modeparams of
       ByronModeParams epochSlots ->
         LocalNodeClientParams
-          (Consensus.ProtocolClientByron epochSlots)
+          (Consensus.RunProtocolClientByron epochSlots)
           (convLocalNodeClientProtocols ByronMode clients)
 
       ShelleyModeParams ->
         LocalNodeClientParams
-          Consensus.ProtocolClientShelley
+          Consensus.RunProtocolClientShelley
           (convLocalNodeClientProtocols ShelleyMode clients)
 
       CardanoModeParams epochSlots ->
         LocalNodeClientParams
-          (Consensus.ProtocolClientCardano epochSlots)
+          (Consensus.RunProtocolClientCardano epochSlots)
           (convLocalNodeClientProtocols CardanoMode clients)
 
       -- Prototype consensus modes
-      ExampleModeParams -> let x = x in x
-      {-
+      ExampleModeParams ->
         LocalNodeClientParams
-          Consensus.ProtocolClientExample
+          Prototype.RunProtocolClientExample
           (convLocalNodeClientProtocols ExampleMode clients)
-      -}
 
 convLocalNodeClientProtocols :: forall mode block.
                                 ConsensusBlockForMode mode ~ block
