@@ -7,8 +7,9 @@ module Cardano.Api.Protocol.Example
   ) where
 
 import           Cardano.Api.Protocol.Types (SomeNodeClientProtocol (..))
-import           Ouroboros.Consensus.Example (ProtocolClient(..), ProtocolExample,
-                     RunProtocolClient (RunProtocolClientExample))
+import           Ouroboros.Consensus.Cardano (ProtocolClient(..),
+                     RunProtocolClient (..))
+import           Ouroboros.Consensus.Example (ProtocolExample, RunProtocolClient(..))
 import           Ouroboros.Consensus.Example.Block (ExampleBlock)
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 
