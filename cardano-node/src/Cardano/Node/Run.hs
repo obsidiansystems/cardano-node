@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE NamedFieldPuns #-}
@@ -53,7 +54,6 @@ import           Cardano.Node.Configuration.POM (NodeConfiguration (..),
 import           Cardano.Node.Types
 import           Cardano.Tracing.Config (TraceOptions (..), TraceSelection (..))
 
-import           Ouroboros.Consensus.Block (BlockProtocol)
 import qualified Ouroboros.Consensus.Cardano as Consensus
 import qualified Ouroboros.Consensus.Config as Consensus
 import           Ouroboros.Consensus.Config.SupportsNode (getNetworkMagic)
@@ -75,7 +75,6 @@ import           Cardano.Node.Protocol.Types
 import           Cardano.Tracing.Kernel
 import           Cardano.Tracing.Peer
 import           Cardano.Tracing.Tracers
-import           Cardano.Tracing.Metrics (HasKESMetricsData)
 
 {- HLINT ignore "Use fewer imports" -}
 
@@ -122,25 +121,55 @@ runNode cmdPc = do
 
     logTracingVerbosity nc tracer
 
-    -- This IORef contains node kernel structure which holds node kernel.
-    -- Used for ledger queries and peer connection status.
-    nodeKernelData :: NodeKernelData blk <- mkNodeKernelData
-
-    tracers <- mkTracers (ncTraceConfig nc) trace nodeKernelData
-
-    Async.withAsync (handlePeersListSimple trace nodeKernelData)
-        $ \_peerLogingThread ->
-          -- We ignore peer loging thread if it dies, but it will be killed
-          -- when 'handleSimpleNode' terminates.
-          (case p of
-            SomeConsensusProtocol ByronBlockType runP -> handleSimpleNode ByronBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
-            SomeConsensusProtocol ShelleyBlockType runP -> handleSimpleNode ShelleyBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
-            SomeConsensusProtocol CardanoBlockType runP -> handleSimpleNode CardanoBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
-            SomeConsensusProtocol ExampleBlockType runP -> handleSimpleNode ExampleBlockType runP trace tracers nc (setNodeKernel nodeKernelData)
-          )
-          `finally`
-          shutdownLoggingLayer loggingLayer
-
+    case p of
+      SomeConsensusProtocol ByronBlockType runP -> do
+        -- This IORef contains node kernel structure which holds node kernel.
+        -- Used for ledger queries and peer connection status.
+        nodeKernelData <- mkNodeKernelData
+        tracers <- mkTracers (ncTraceConfig nc) trace nodeKernelData
+        Async.withAsync (handlePeersListSimple trace nodeKernelData)
+            $ \_peerLogingThread ->
+              -- We ignore peer loging thread if it dies, but it will be killed
+              -- when 'handleSimpleNode' terminates.
+              handleSimpleNode p runP trace tracers nc (setNodeKernel nodeKernelData)
+              `finally`
+              shutdownLoggingLayer loggingLayer
+      SomeConsensusProtocol ShelleyBlockType runP -> do
+        -- This IORef contains node kernel structure which holds node kernel.
+        -- Used for ledger queries and peer connection status.
+        nodeKernelData <- mkNodeKernelData
+        tracers <- mkTracers (ncTraceConfig nc) trace nodeKernelData
+        Async.withAsync (handlePeersListSimple trace nodeKernelData)
+            $ \_peerLogingThread ->
+              -- We ignore peer loging thread if it dies, but it will be killed
+              -- when 'handleSimpleNode' terminates.
+              handleSimpleNode p runP trace tracers nc (setNodeKernel nodeKernelData)
+              `finally`
+              shutdownLoggingLayer loggingLayer
+      SomeConsensusProtocol CardanoBlockType runP -> do
+        -- This IORef contains node kernel structure which holds node kernel.
+        -- Used for ledger queries and peer connection status.
+        nodeKernelData <- mkNodeKernelData
+        tracers <- mkTracers (ncTraceConfig nc) trace nodeKernelData
+        Async.withAsync (handlePeersListSimple trace nodeKernelData)
+            $ \_peerLogingThread ->
+              -- We ignore peer loging thread if it dies, but it will be killed
+              -- when 'handleSimpleNode' terminates.
+              handleSimpleNode p runP trace tracers nc (setNodeKernel nodeKernelData)
+              `finally`
+              shutdownLoggingLayer loggingLayer
+      SomeConsensusProtocol ExampleBlockType runP -> do
+        -- This IORef contains node kernel structure which holds node kernel.
+        -- Used for ledger queries and peer connection status.
+        nodeKernelData <- mkNodeKernelData
+        tracers <- mkTracers (ncTraceConfig nc) trace nodeKernelData
+        Async.withAsync (handlePeersListSimple trace nodeKernelData)
+            $ \_peerLogingThread ->
+              -- We ignore peer loging thread if it dies, but it will be killed
+              -- when 'handleSimpleNode' terminates.
+              handleSimpleNode p runP trace tracers nc (setNodeKernel nodeKernelData)
+              `finally`
+              shutdownLoggingLayer loggingLayer
 
 logTracingVerbosity :: NodeConfiguration -> Tracer IO String -> IO ()
 logTracingVerbosity nc tracer =
@@ -186,10 +215,9 @@ handlePeersListSimple tr nodeKern = forever $ do
 handleSimpleNode
   :: forall blk p
   . ( RunNode blk
-    , HasKESMetricsData blk
     , Consensus.Protocol IO blk p
     )
-  => BlockType blk
+  => SomeConsensusProtocol
   -> Consensus.RunProtocol IO blk p
   -> Trace IO Text
   -> Tracers RemoteConnectionId LocalConnectionId blk
@@ -199,7 +227,7 @@ handleSimpleNode
   -- layer is initialised.  This implies this function must not block,
   -- otherwise the node won't actually start.
   -> IO ()
-handleSimpleNode bType runP trace nodeTracers nc onKernel = do
+handleSimpleNode scp runP trace nodeTracers nc onKernel = do
   meta <- mkLOMeta Notice Public
 
   let pInfo = Consensus.protocolInfo runP
@@ -312,7 +340,7 @@ handleSimpleNode bType runP trace nodeTracers nc onKernel = do
                      (meta, LogMessage ("NetworkMagic " <> show (unNetworkMagic . getNetworkMagic $ Consensus.configBlock cfg)))
 
     startTime <- getCurrentTime
-    traceNodeBasicInfo tr =<< nodeBasicInfo nc (SomeConsensusProtocol bType runP) startTime
+    traceNodeBasicInfo tr =<< nodeBasicInfo nc scp startTime
     traceCounter "nodeStartTime" tr (ceiling $ utcTimeToPOSIXSeconds startTime)
 
     when ncValidateDB $ traceWith tracer "Performing DB validation"
