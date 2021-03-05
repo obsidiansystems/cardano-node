@@ -110,9 +110,9 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/cardano-ledger-specs
-  tag: a4eaf8819515003e287c8960817d2599cfdda1c6
-  --sha256: 0ayq5xaxdf6c5y524c3gz3052dcclqf93kiwf1zhpmq6q960l45y
+  location: https://github.com/obsidiansystems/cardano-ledger-specs
+  tag: 16317619ef4300975f1dadbd93ef8bef1180c6c1
+  --sha256: 0zqi5zb3z04cnlg7r3i5niiczz81vmmcnfcxw074h7d1abi9b6z4
   subdir:
     byron/chain/executable-spec
     byron/crypto
@@ -159,9 +159,9 @@ source-repository-package
 
 source-repository-package
   type: git
-  location: https://github.com/input-output-hk/ouroboros-network
-  tag: a8e3ad077e7a84727381a0a4d930450116209f95
-  --sha256: 04dp49hnk473fz1pa0n6chs1x69x01l7fjsxhrajqcijmksdi9f9
+  location: https://github.com/obsidiansystems/ouroboros-network
+  tag: 7ead52c7266bbe9f348273389f7585b0cc7ae4cc
+  --sha256: 0bfnggfj2pgr6c7gcd9szwlvavrlqhjlq28p5lf3pgychmd6agqn
   subdir:
     io-sim
     io-sim-classes

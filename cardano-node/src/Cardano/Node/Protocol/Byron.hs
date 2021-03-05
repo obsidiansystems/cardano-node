@@ -1,14 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 
 module Cardano.Node.Protocol.Byron
-  (
-    -- * Protocol exposing the specific type
-    -- | Use this when you need the specific instance
-    mkConsensusProtocolByron
-
-    -- * Protocols hiding the specific type
-    -- | Use this when you want to handle protocols generically
-  , mkSomeConsensusProtocolByron
+  ( mkSomeConsensusProtocolByron
     -- * Errors
   , ByronProtocolInstantiationError(..)
   , renderByronProtocolInstantiationError
@@ -38,7 +31,6 @@ import           Cardano.Crypto.ProtocolMagic (RequiresNetworkMagic)
 
 import           Ouroboros.Consensus.Cardano hiding (Protocol)
 import qualified Ouroboros.Consensus.Cardano as Consensus
-import           Ouroboros.Consensus.Cardano.ByronHFC
 
 import           Cardano.Node.Types
 
@@ -63,24 +55,7 @@ mkSomeConsensusProtocolByron
   :: NodeByronProtocolConfiguration
   -> Maybe ProtocolFilepaths
   -> ExceptT ByronProtocolInstantiationError IO SomeConsensusProtocol
-mkSomeConsensusProtocolByron nc files =
-
-    -- Applying the SomeConsensusProtocol here is a check that
-    -- the type of mkConsensusProtocolByron fits all the class
-    -- constraints we need to run the protocol.
-    SomeConsensusProtocol <$> mkConsensusProtocolByron nc files
-
-
--- | Instantiate 'Consensus.Protocol' for Byron specifically.
---
--- Use this when you need to run the consensus with this specific protocol.
---
-mkConsensusProtocolByron
-  :: NodeByronProtocolConfiguration
-  -> Maybe ProtocolFilepaths
-  -> ExceptT ByronProtocolInstantiationError IO
-             (Consensus.Protocol IO ByronBlockHFC ProtocolByron)
-mkConsensusProtocolByron NodeByronProtocolConfiguration {
+mkSomeConsensusProtocolByron NodeByronProtocolConfiguration {
                            npcByronGenesisFile,
                            npcByronGenesisFileHash,
                            npcByronReqNetworkMagic,
@@ -98,8 +73,7 @@ mkConsensusProtocolByron NodeByronProtocolConfiguration {
 
     optionalLeaderCredentials <- readLeaderCredentials genesisConfig files
 
-    return $
-      Consensus.ProtocolByron $ Consensus.ProtocolParamsByron {
+    return $ SomeConsensusProtocol ByronBlockType $ Consensus.RunProtocolByron $ Consensus.ProtocolParamsByron {
         byronGenesis = genesisConfig,
         byronPbftSignatureThreshold =
           PBftSignatureThreshold <$> npcByronPbftSignatureThresh,
