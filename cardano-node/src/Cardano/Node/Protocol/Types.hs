@@ -22,6 +22,9 @@ import qualified Ouroboros.Consensus.Cardano as Cardano
 import           Ouroboros.Consensus.Cardano.Block (StandardCrypto, StandardShelley)
 import           Ouroboros.Consensus.Cardano.ByronHFC (ByronBlockHFC)
 import           Ouroboros.Consensus.Cardano.ShelleyHFC (ShelleyBlockHFC)
+-- prototypes
+import           Ouroboros.Consensus.Example.Block (ExampleBlock)
+--
 
 import           Cardano.Tracing.Constraints (TraceConstraints)
 import           Cardano.Tracing.Metrics (HasKESMetricsData, HasKESInfo)
@@ -30,6 +33,8 @@ data BlockType blk where
   ByronBlockType :: BlockType ByronBlockHFC
   ShelleyBlockType :: BlockType (ShelleyBlockHFC StandardShelley)
   CardanoBlockType :: BlockType (Cardano.CardanoBlock StandardCrypto)
+  -- prototypes
+  ExampleBlockType :: BlockType (ExampleBlock StandardCrypto)
 
 deriving instance Eq (BlockType blk)
 deriving instance Show (BlockType blk)
@@ -37,6 +42,8 @@ deriving instance Show (BlockType blk)
 data Protocol = ByronProtocol
               | ShelleyProtocol
               | CardanoProtocol
+              -- prototypes
+              | ExampleProtocol
   deriving (Eq, Show, Generic)
 
 deriving instance NFData Protocol
@@ -50,6 +57,8 @@ instance FromJSON Protocol where
       "Byron" -> pure ByronProtocol
       "Shelley" -> pure ShelleyProtocol
       "Cardano" -> pure CardanoProtocol
+      -- prototypes
+      "Example" -> pure ExampleProtocol
 
       -- The old names
       "RealPBFT" -> pure ByronProtocol

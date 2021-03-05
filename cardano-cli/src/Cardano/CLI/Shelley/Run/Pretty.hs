@@ -6,7 +6,10 @@
 module Cardano.CLI.Shelley.Run.Pretty (prettyTx) where
 
 import           Cardano.Api
-                   (ShelleyBasedEra (ShelleyBasedEraAllegra, ShelleyBasedEraMary, ShelleyBasedEraShelley))
+                   (ShelleyBasedEra (ShelleyBasedEraAllegra, ShelleyBasedEraMary,
+                                     ShelleyBasedEraShelley,
+                                     -- prototypes
+                                     ShelleyBasedEraExample))
 import           Cardano.Api.Byron (TxBody (ByronTxBody))
 import           Cardano.Api.Shelley (TxBody (ShelleyTxBody))
 import           Cardano.CLI.Helpers (textShow)
@@ -97,6 +100,32 @@ prettyTx body0 =
           adHash
           mint =
             body
+    -- prototypes
+    ShelleyTxBody ShelleyBasedEraExample body aux ->
+      [ "era" .= ("Example" :: Text)
+      , "inputs" .= _inputs
+      , "outputs" .= _outputs
+      , "certificates" .= fmap textShow _certs
+      , "withdrawals" .= withdrawals
+      , "fee" .= _txfee
+      , "timetolive" .= _ttl
+      , "update" .= fmap textShow _txUpdate
+      , "metadata_hash" .= fmap textShow _mdHash
+      , "auxiliary_data" .= fmap textShow aux
+      ]
+      where
+        Shelley.TxBody
+          { _inputs
+          , _outputs
+          , _certs
+          , _wdrls
+          , _txfee
+          , _ttl
+          , _txUpdate
+          , _mdHash
+          } =
+            body
+        Shelley.Wdrl withdrawals = _wdrls
 
 prettyValidityInterval :: ShelleyMA.ValidityInterval -> JSON.Value
 prettyValidityInterval

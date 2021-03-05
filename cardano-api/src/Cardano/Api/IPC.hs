@@ -28,6 +28,9 @@ module Cardano.Api.IPC (
     ByronMode,
     ShelleyMode,
     CardanoMode,
+    -- prototypes
+    ExampleMode,
+    --
     ConsensusModeParams(..),
     EpochSlots(..),
 
@@ -96,6 +99,9 @@ import qualified Ouroboros.Consensus.Node.NetworkProtocolVersion as Consensus
 import qualified Ouroboros.Consensus.Node.ProtocolInfo as Consensus
 import qualified Ouroboros.Consensus.Node.Run as Consensus
 
+-- prototypes
+import qualified Ouroboros.Consensus.Example as Prototype
+
 import           Cardano.Api.Block
 import           Cardano.Api.HasTypeProxy
 import           Cardano.Api.Modes
@@ -158,6 +164,8 @@ consensusModeOnly :: ConsensusModeParams mode
 consensusModeOnly ByronModeParams{}   = ByronMode
 consensusModeOnly ShelleyModeParams{} = ShelleyMode
 consensusModeOnly CardanoModeParams{} = CardanoMode
+-- prototypes
+consensusModeOnly ExampleModeParams{} = ExampleMode
 
 
 -- ----------------------------------------------------------------------------
@@ -332,6 +340,12 @@ mkLocalNodeClientParams modeparams clients =
         LocalNodeClientParams
           (Consensus.RunProtocolClientCardano epochSlots)
           (convLocalNodeClientProtocols CardanoMode clients)
+
+      -- prototypes
+      ExampleModeParams ->
+        LocalNodeClientParams
+          Prototype.RunProtocolClientExample
+          (convLocalNodeClientProtocols ExampleMode clients)
 
 convLocalNodeClientProtocols :: forall mode block.
                                 ConsensusBlockForMode mode ~ block

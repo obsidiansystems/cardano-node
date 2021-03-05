@@ -18,6 +18,9 @@ import           Cardano.Node.Protocol.Byron
 import           Cardano.Node.Protocol.Cardano
 import           Cardano.Node.Protocol.Shelley
 import           Cardano.Node.Protocol.Types (SomeConsensusProtocol (..))
+-- prototypes
+import           Cardano.Node.Protocol.Example
+--
 
 ------------------------------------------------------------------------------
 -- Conversions from configuration into specific protocols and their params
@@ -47,6 +50,15 @@ mkConsensusProtocol NodeConfiguration{ncProtocolConfig, ncProtocolFiles} =
             hardForkConfig
             (Just ncProtocolFiles)
 
+      -- prototypes
+      NodeProtocolConfigurationExample shelleyConfig
+                                       hardForkConfig ->
+        firstExceptT ExampleProtocolInstantiationError $
+          mkSomeConsensusProtocolExample
+            shelleyConfig
+            hardForkConfig
+            (Just ncProtocolFiles)
+
 ------------------------------------------------------------------------------
 -- Errors
 --
@@ -55,6 +67,8 @@ data ProtocolInstantiationError =
     ByronProtocolInstantiationError   ByronProtocolInstantiationError
   | ShelleyProtocolInstantiationError ShelleyProtocolInstantiationError
   | CardanoProtocolInstantiationError CardanoProtocolInstantiationError
+  -- prototypes
+  | ExampleProtocolInstantiationError ExampleProtocolInstantiationError
   deriving Show
 
 
@@ -69,3 +83,7 @@ renderProtocolInstantiationError pie =
 
     CardanoProtocolInstantiationError cpie ->
       renderCardanoProtocolInstantiationError cpie
+
+    -- prototypes
+    ExampleProtocolInstantiationError epie ->
+      renderExampleProtocolInstantiationError epie

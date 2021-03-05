@@ -218,6 +218,8 @@ getTxId (ShelleyTxBody era tx _) =
       ShelleyBasedEraShelley -> getTxIdShelley tx
       ShelleyBasedEraAllegra -> getTxIdShelley tx
       ShelleyBasedEraMary    -> getTxIdShelley tx
+      -- prototypes
+      ShelleyBasedEraExample -> getTxIdShelley tx
   where
     getTxIdShelley :: Ledger.Crypto (ShelleyLedgerEra era) ~ StandardCrypto
                    => Ledger.UsesTxBody (ShelleyLedgerEra era)
@@ -304,6 +306,12 @@ instance IsCardanoEra era => ToJSON (TxOut era) where
             in object [ "address" .= hexAddr
                       , "value" .= toJSON val
                       ]
+          -- prototypes
+          ShelleyBasedEraExample ->
+            let hexAddr = serialiseToRawBytesHexText addr
+            in object [ "address" .= hexAddr
+                      , "value" .= toJSON val
+                      ]
 
 
 
@@ -339,6 +347,10 @@ toShelleyTxOut (TxOut addr (TxOutAdaOnly AdaOnlyInAllegraEra value)) =
 toShelleyTxOut (TxOut addr (TxOutValue MultiAssetInMaryEra value)) =
     Shelley.TxOut (toShelleyAddr addr) (toMaryValue value)
 
+-- prototypes
+toShelleyTxOut (TxOut addr (TxOutAdaOnly AdaOnlyInExampleEra value)) =
+    Shelley.TxOut (toShelleyAddr addr) (toShelleyLovelace value)
+
 fromShelleyTxOut :: Shelley.TxOut StandardShelley -> TxOut ShelleyEra
 fromShelleyTxOut = fromTxOut ShelleyBasedEraShelley
 
@@ -361,6 +373,11 @@ fromTxOut shelleyBasedEra' ledgerTxOut =
                               in TxOut (fromShelleyAddr addr)
                                         (TxOutValue MultiAssetInMaryEra
                                                       (fromMaryValue value))
+    -- prototypes
+    ShelleyBasedEraExample -> let (Shelley.TxOut addr value) = ledgerTxOut
+                              in TxOut (fromShelleyAddr addr)
+                                       (TxOutAdaOnly AdaOnlyInExampleEra
+                                                      (fromShelleyLovelace value))
 
 -- ----------------------------------------------------------------------------
 -- Era-dependent transaction body features
@@ -396,6 +413,8 @@ data OnlyAdaSupportedInEra era where
      AdaOnlyInByronEra   :: OnlyAdaSupportedInEra ByronEra
      AdaOnlyInShelleyEra :: OnlyAdaSupportedInEra ShelleyEra
      AdaOnlyInAllegraEra :: OnlyAdaSupportedInEra AllegraEra
+     -- prototypes
+     AdaOnlyInExampleEra :: OnlyAdaSupportedInEra ExampleEra
 
 deriving instance Eq   (OnlyAdaSupportedInEra era)
 deriving instance Show (OnlyAdaSupportedInEra era)
@@ -407,7 +426,8 @@ multiAssetSupportedInEra ByronEra   = Left AdaOnlyInByronEra
 multiAssetSupportedInEra ShelleyEra = Left AdaOnlyInShelleyEra
 multiAssetSupportedInEra AllegraEra = Left AdaOnlyInAllegraEra
 multiAssetSupportedInEra MaryEra    = Right MultiAssetInMaryEra
-
+-- prototypes
+multiAssetSupportedInEra ExampleEra = Left AdaOnlyInExampleEra
 
 -- | A representation of whether the era requires explicitly specified fees in
 -- transactions.
@@ -421,6 +441,8 @@ data TxFeesExplicitInEra era where
      TxFeesExplicitInShelleyEra :: TxFeesExplicitInEra ShelleyEra
      TxFeesExplicitInAllegraEra :: TxFeesExplicitInEra AllegraEra
      TxFeesExplicitInMaryEra    :: TxFeesExplicitInEra MaryEra
+     -- prototypes
+     TxFeesExplicitInExampleEra :: TxFeesExplicitInEra ExampleEra
 
 deriving instance Eq   (TxFeesExplicitInEra era)
 deriving instance Show (TxFeesExplicitInEra era)
@@ -443,6 +465,8 @@ txFeesExplicitInEra ByronEra   = Left  TxFeesImplicitInByronEra
 txFeesExplicitInEra ShelleyEra = Right TxFeesExplicitInShelleyEra
 txFeesExplicitInEra AllegraEra = Right TxFeesExplicitInAllegraEra
 txFeesExplicitInEra MaryEra    = Right TxFeesExplicitInMaryEra
+-- prototypes
+txFeesExplicitInEra ExampleEra = Right TxFeesExplicitInExampleEra
 
 
 -- | A representation of whether the era supports transactions with an upper
@@ -457,6 +481,8 @@ data ValidityUpperBoundSupportedInEra era where
      ValidityUpperBoundInShelleyEra :: ValidityUpperBoundSupportedInEra ShelleyEra
      ValidityUpperBoundInAllegraEra :: ValidityUpperBoundSupportedInEra AllegraEra
      ValidityUpperBoundInMaryEra    :: ValidityUpperBoundSupportedInEra MaryEra
+     -- prototypes
+     ValidityUpperBoundInExampleEra :: ValidityUpperBoundSupportedInEra ExampleEra
 
 deriving instance Eq   (ValidityUpperBoundSupportedInEra era)
 deriving instance Show (ValidityUpperBoundSupportedInEra era)
@@ -467,6 +493,8 @@ validityUpperBoundSupportedInEra ByronEra   = Nothing
 validityUpperBoundSupportedInEra ShelleyEra = Just ValidityUpperBoundInShelleyEra
 validityUpperBoundSupportedInEra AllegraEra = Just ValidityUpperBoundInAllegraEra
 validityUpperBoundSupportedInEra MaryEra    = Just ValidityUpperBoundInMaryEra
+-- prototypes
+validityUpperBoundSupportedInEra ExampleEra = Just ValidityUpperBoundInExampleEra
 
 
 -- | A representation of whether the era supports transactions having /no/
@@ -494,6 +522,8 @@ validityNoUpperBoundSupportedInEra ByronEra   = Just ValidityNoUpperBoundInByron
 validityNoUpperBoundSupportedInEra ShelleyEra = Nothing
 validityNoUpperBoundSupportedInEra AllegraEra = Just ValidityNoUpperBoundInAllegraEra
 validityNoUpperBoundSupportedInEra MaryEra    = Just ValidityNoUpperBoundInMaryEra
+-- prototypes
+validityNoUpperBoundSupportedInEra ExampleEra = Nothing
 
 
 -- | A representation of whether the era supports transactions with a lower
@@ -517,6 +547,8 @@ validityLowerBoundSupportedInEra ByronEra   = Nothing
 validityLowerBoundSupportedInEra ShelleyEra = Nothing
 validityLowerBoundSupportedInEra AllegraEra = Just ValidityLowerBoundInAllegraEra
 validityLowerBoundSupportedInEra MaryEra    = Just ValidityLowerBoundInMaryEra
+-- prototypes
+validityLowerBoundSupportedInEra ExampleEra = Nothing
 
 
 -- | A representation of whether the era supports transaction metadata.
@@ -528,6 +560,8 @@ data TxMetadataSupportedInEra era where
      TxMetadataInShelleyEra :: TxMetadataSupportedInEra ShelleyEra
      TxMetadataInAllegraEra :: TxMetadataSupportedInEra AllegraEra
      TxMetadataInMaryEra    :: TxMetadataSupportedInEra MaryEra
+     -- prototypes
+     TxMetadataInExampleEra :: TxMetadataSupportedInEra ExampleEra
 
 deriving instance Eq   (TxMetadataSupportedInEra era)
 deriving instance Show (TxMetadataSupportedInEra era)
@@ -538,6 +572,8 @@ txMetadataSupportedInEra ByronEra   = Nothing
 txMetadataSupportedInEra ShelleyEra = Just TxMetadataInShelleyEra
 txMetadataSupportedInEra AllegraEra = Just TxMetadataInAllegraEra
 txMetadataSupportedInEra MaryEra    = Just TxMetadataInMaryEra
+-- prototypes
+txMetadataSupportedInEra ExampleEra = Just TxMetadataInExampleEra
 
 
 -- | A representation of whether the era supports auxiliary scripts in
@@ -559,6 +595,8 @@ auxScriptsSupportedInEra ByronEra   = Nothing
 auxScriptsSupportedInEra ShelleyEra = Nothing
 auxScriptsSupportedInEra AllegraEra = Just AuxScriptsInAllegraEra
 auxScriptsSupportedInEra MaryEra    = Just AuxScriptsInMaryEra
+-- prototypes
+auxScriptsSupportedInEra ExampleEra = Nothing
 
 
 -- | A representation of whether the era supports withdrawals from reward
@@ -573,6 +611,9 @@ data WithdrawalsSupportedInEra era where
      WithdrawalsInAllegraEra :: WithdrawalsSupportedInEra AllegraEra
      WithdrawalsInMaryEra    :: WithdrawalsSupportedInEra MaryEra
 
+     -- prototypes
+     WithdrawalsInExampleEra :: WithdrawalsSupportedInEra ExampleEra
+
 deriving instance Eq   (WithdrawalsSupportedInEra era)
 deriving instance Show (WithdrawalsSupportedInEra era)
 
@@ -582,6 +623,8 @@ withdrawalsSupportedInEra ByronEra   = Nothing
 withdrawalsSupportedInEra ShelleyEra = Just WithdrawalsInShelleyEra
 withdrawalsSupportedInEra AllegraEra = Just WithdrawalsInAllegraEra
 withdrawalsSupportedInEra MaryEra    = Just WithdrawalsInMaryEra
+-- prototypes
+withdrawalsSupportedInEra ExampleEra = Just WithdrawalsInExampleEra
 
 
 -- | A representation of whether the era supports 'Certificate's embedded in
@@ -595,6 +638,9 @@ data CertificatesSupportedInEra era where
      CertificatesInAllegraEra :: CertificatesSupportedInEra AllegraEra
      CertificatesInMaryEra    :: CertificatesSupportedInEra MaryEra
 
+     -- prototypes
+     CertificatesInExampleEra :: CertificatesSupportedInEra ExampleEra
+
 deriving instance Eq   (CertificatesSupportedInEra era)
 deriving instance Show (CertificatesSupportedInEra era)
 
@@ -604,6 +650,8 @@ certificatesSupportedInEra ByronEra   = Nothing
 certificatesSupportedInEra ShelleyEra = Just CertificatesInShelleyEra
 certificatesSupportedInEra AllegraEra = Just CertificatesInAllegraEra
 certificatesSupportedInEra MaryEra    = Just CertificatesInMaryEra
+-- prototypes
+certificatesSupportedInEra ExampleEra = Just CertificatesInExampleEra
 
 
 -- | A representation of whether the era supports 'UpdateProposal's embedded in
@@ -618,6 +666,8 @@ data UpdateProposalSupportedInEra era where
      UpdateProposalInShelleyEra :: UpdateProposalSupportedInEra ShelleyEra
      UpdateProposalInAllegraEra :: UpdateProposalSupportedInEra AllegraEra
      UpdateProposalInMaryEra    :: UpdateProposalSupportedInEra MaryEra
+     -- prototypes
+     UpdateProposalInExampleEra :: UpdateProposalSupportedInEra ExampleEra
 
 deriving instance Eq   (UpdateProposalSupportedInEra era)
 deriving instance Show (UpdateProposalSupportedInEra era)
@@ -628,6 +678,8 @@ updateProposalSupportedInEra ByronEra   = Nothing
 updateProposalSupportedInEra ShelleyEra = Just UpdateProposalInShelleyEra
 updateProposalSupportedInEra AllegraEra = Just UpdateProposalInAllegraEra
 updateProposalSupportedInEra MaryEra    = Just UpdateProposalInMaryEra
+-- prototypes
+updateProposalSupportedInEra ExampleEra = Just UpdateProposalInExampleEra
 
 
 -- ----------------------------------------------------------------------------
@@ -846,10 +898,14 @@ instance Eq (TxBody era) where
            ShelleyBasedEraShelley -> txmetadataA == txmetadataB
            ShelleyBasedEraAllegra -> txmetadataA == txmetadataB
            ShelleyBasedEraMary    -> txmetadataA == txmetadataB
+           -- prototypes
+           ShelleyBasedEraExample -> txmetadataA == txmetadataB
       && case era of
            ShelleyBasedEraShelley -> txbodyA == txbodyB
            ShelleyBasedEraAllegra -> txbodyA == txbodyB
            ShelleyBasedEraMary    -> txbodyA == txbodyB
+           -- prototypes
+           ShelleyBasedEraExample -> txbodyA == txbodyB
 
     (==) ByronTxBody{} (ShelleyTxBody era _ _) = case era of {}
 
@@ -885,6 +941,14 @@ instance Show (TxBody era) where
         . showChar ' '
         . showsPrec 11 txmetadata
         )
+    -- prototypes
+    showsPrec p (ShelleyTxBody ShelleyBasedEraExample txbody txmetadata) =
+      showParen (p >= 11)
+        ( showString "ShelleyTxBody ShelleyBasedEraExample "
+        . showsPrec 11 txbody
+        . showChar ' '
+        . showsPrec 11 txmetadata
+        )
 
 instance HasTypeProxy era => HasTypeProxy (TxBody era) where
     data AsType (TxBody era) = AsTxBody (AsType era)
@@ -910,6 +974,8 @@ instance IsCardanoEra era => SerialiseAsCBOR (TxBody era) where
         ShelleyBasedEraShelley -> serialiseShelleyBasedTxBody txbody txmetadata
         ShelleyBasedEraAllegra -> serialiseShelleyBasedTxBody txbody txmetadata
         ShelleyBasedEraMary    -> serialiseShelleyBasedTxBody txbody txmetadata
+        -- prototypes
+        ShelleyBasedEraExample -> serialiseShelleyBasedTxBody txbody txmetadata
 
     deserialiseFromCBOR _ bs =
       case cardanoEra :: CardanoEra era of
@@ -927,6 +993,9 @@ instance IsCardanoEra era => SerialiseAsCBOR (TxBody era) where
                         (ShelleyTxBody ShelleyBasedEraAllegra) bs
         MaryEra    -> deserialiseShelleyBasedTxBody
                         (ShelleyTxBody ShelleyBasedEraMary) bs
+        -- prototypes
+        ExampleEra -> deserialiseShelleyBasedTxBody
+                        (ShelleyTxBody ShelleyBasedEraExample) bs
 
 -- | The serialisation format for the different Shelley-based eras are not the
 -- same, but they can be handled generally with one overloaded implementation.
@@ -969,6 +1038,8 @@ instance IsCardanoEra era => HasTextEnvelope (TxBody era) where
         ShelleyEra -> "TxUnsignedShelley"
         AllegraEra -> "TxBodyAllegra"
         MaryEra    -> "TxBodyMary"
+        -- prototypes
+        ExampleEra -> "TxBodyExample"
 
 
 -- ----------------------------------------------------------------------------
@@ -1249,6 +1320,61 @@ makeShelleyTransactionBody era@ShelleyBasedEraMary
         ss = case txAuxScripts of
                TxAuxScriptsNone   -> []
                TxAuxScripts _ ss' -> ss'
+
+-- prototypes
+makeShelleyTransactionBody era@ShelleyBasedEraExample
+                           TxBodyContent {
+                             txIns,
+                             txOuts,
+                             txFee,
+                             txValidityRange = (_, upperBound),
+                             txMetadata,
+                             txWithdrawals,
+                             txCertificates,
+                             txUpdateProposal
+                           } = do
+    guard (not (null txIns)) ?! TxBodyEmptyTxIns
+    sequence_
+      [ do guard (v >= 0) ?! TxBodyOutputNegative (lovelaceToQuantity v) txout
+           guard (v <= maxTxOut) ?! TxBodyOutputOverflow (lovelaceToQuantity v) txout
+      | let maxTxOut = fromIntegral (maxBound :: Word64) :: Lovelace
+      , txout@(TxOut _ (TxOutAdaOnly AdaOnlyInExampleEra v)) <- txOuts ]
+    case txMetadata of
+      TxMetadataNone      -> return ()
+      TxMetadataInEra _ m -> first TxBodyMetadataError (validateTxMetadata m)
+
+    return $
+      ShelleyTxBody era
+        (Shelley.TxBody
+          (Set.fromList (map toShelleyTxIn  txIns))
+          (Seq.fromList (map toShelleyTxOut txOuts))
+          (case txCertificates of
+             TxCertificatesNone  -> Seq.empty
+             TxCertificates _ cs -> Seq.fromList (map toShelleyCertificate cs))
+          (case txWithdrawals of
+             TxWithdrawalsNone  -> Shelley.Wdrl Map.empty
+             TxWithdrawals _ ws -> toShelleyWithdrawal ws)
+          (case txFee of
+             TxFeeImplicit era'  -> case era' of {}
+             TxFeeExplicit _ fee -> toShelleyLovelace fee)
+          (case upperBound of
+             TxValidityNoUpperBound era' -> case era' of {}
+             TxValidityUpperBound _ ttl  -> ttl)
+          (case txUpdateProposal of
+             TxUpdateProposalNone -> SNothing
+             TxUpdateProposal _ p -> SJust (toShelleyUpdate p))
+          (maybeToStrictMaybe
+            (Ledger.hashAuxiliaryData @StandardShelley <$> txAuxData)))
+        txAuxData
+  where
+    txAuxData :: Maybe (Ledger.AuxiliaryData StandardShelley)
+    txAuxData
+      | Map.null ms = Nothing
+      | otherwise   = Just (toShelleyAuxiliaryData ms)
+      where
+        ms = case txMetadata of
+               TxMetadataNone                     -> Map.empty
+               TxMetadataInEra _ (TxMetadata ms') -> ms'
 
 
 toShelleyWithdrawal :: [(StakeAddress, Lovelace)] -> Shelley.Wdrl StandardCrypto

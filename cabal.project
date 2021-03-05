@@ -126,6 +126,8 @@ source-repository-package
     shelley/chain-and-ledger/executable-spec
     shelley/chain-and-ledger/shelley-spec-ledger-test
     shelley-ma/impl
+    -- prototypes
+    example-shelley/impl
 
 source-repository-package
   type: git
@@ -175,6 +177,12 @@ source-repository-package
     typed-protocols
     typed-protocols-examples
     Win32-network
+    -- prototypes
+    ouroboros-consensus-example
+
+-- Needed for the Windows cabal constraint solver.
+max-backjumps: 10000
+reorder-goals: True
 
 -- Needed for the Windows cabal constraint solver.
 max-backjumps: 10000

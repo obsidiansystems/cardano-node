@@ -18,6 +18,8 @@ module Cardano.Api.Eras
   , anyCardanoEra
   , InAnyCardanoEra(..)
 
+    -- prototypes
+  , ExampleEra
     -- * Deprecated aliases
   , Byron
   , Shelley
@@ -38,7 +40,9 @@ module Cardano.Api.Eras
 
     -- * Data family instances
   , AsType(AsByronEra, AsShelleyEra, AsAllegraEra, AsMaryEra,
-           AsByron,    AsShelley,    AsAllegra,    AsMary)
+           AsByron,    AsShelley,    AsAllegra,    AsMary,
+           -- prototypes
+           AsExampleEra)
   ) where
 
 import           Prelude
@@ -49,6 +53,8 @@ import           Cardano.Ledger.Era as Ledger (Crypto)
 
 import           Ouroboros.Consensus.Shelley.Eras as Ledger (StandardAllegra, StandardCrypto,
                      StandardMary, StandardShelley)
+-- prototypes
+import           Ouroboros.Consensus.Example.Eras as Ledger (StandardExample)
 
 import           Cardano.Api.HasTypeProxy
 
@@ -64,6 +70,11 @@ data AllegraEra
 
 -- | A type used as a tag to distinguish the Mary era.
 data MaryEra
+
+-- prototypes
+
+-- | A type used as a tag to distinguish the Example era.
+data ExampleEra
 
 
 instance HasTypeProxy ByronEra where
@@ -81,6 +92,12 @@ instance HasTypeProxy AllegraEra where
 instance HasTypeProxy MaryEra where
     data AsType MaryEra = AsMaryEra
     proxyToAsType _ = AsMaryEra
+
+-- prototypes
+
+instance HasTypeProxy ExampleEra where
+    data AsType ExampleEra = AsExampleEra
+    proxyToAsType _ = AsExampleEra
 
 
 -- ----------------------------------------------------------------------------
@@ -133,6 +150,8 @@ data CardanoEra era where
      ShelleyEra :: CardanoEra ShelleyEra
      AllegraEra :: CardanoEra AllegraEra
      MaryEra    :: CardanoEra MaryEra
+     -- prototypes
+     ExampleEra :: CardanoEra ExampleEra
 
 deriving instance Eq   (CardanoEra era)
 deriving instance Ord  (CardanoEra era)
@@ -143,6 +162,8 @@ instance TestEquality CardanoEra where
     testEquality ShelleyEra ShelleyEra = Just Refl
     testEquality AllegraEra AllegraEra = Just Refl
     testEquality MaryEra    MaryEra    = Just Refl
+    -- prototypes
+    testEquality ExampleEra ExampleEra = Just Refl
     testEquality _          _          = Nothing
 
 
@@ -165,6 +186,9 @@ instance IsCardanoEra AllegraEra where
 instance IsCardanoEra MaryEra where
    cardanoEra      = MaryEra
 
+-- prototypes
+instance IsCardanoEra ExampleEra where
+   cardanoEra      = ExampleEra
 
 data AnyCardanoEra where
      AnyCardanoEra :: IsCardanoEra era  -- Provide class constraint
@@ -187,6 +211,8 @@ anyCardanoEra ByronEra   = AnyCardanoEra ByronEra
 anyCardanoEra ShelleyEra = AnyCardanoEra ShelleyEra
 anyCardanoEra AllegraEra = AnyCardanoEra AllegraEra
 anyCardanoEra MaryEra    = AnyCardanoEra MaryEra
+-- prototypes
+anyCardanoEra ExampleEra = AnyCardanoEra ExampleEra
 
 
 -- | This pairs up some era-dependent type with a 'CardanoEra' value that tells
@@ -216,6 +242,8 @@ data ShelleyBasedEra era where
      ShelleyBasedEraShelley :: ShelleyBasedEra ShelleyEra
      ShelleyBasedEraAllegra :: ShelleyBasedEra AllegraEra
      ShelleyBasedEraMary    :: ShelleyBasedEra MaryEra
+     -- prototypes
+     ShelleyBasedEraExample :: ShelleyBasedEra ExampleEra
 
 deriving instance Eq   (ShelleyBasedEra era)
 deriving instance Ord  (ShelleyBasedEra era)
@@ -238,6 +266,9 @@ instance IsShelleyBasedEra AllegraEra where
 instance IsShelleyBasedEra MaryEra where
    shelleyBasedEra = ShelleyBasedEraMary
 
+-- prototypes
+instance IsShelleyBasedEra ExampleEra where
+   shelleyBasedEra = ShelleyBasedEraExample
 
 -- | This pairs up some era-dependent type with a 'ShelleyBasedEra' value that
 -- tells us what era it is, but hides the era type. This is useful when the era
@@ -279,7 +310,8 @@ cardanoEraStyle ByronEra   = LegacyByronEra
 cardanoEraStyle ShelleyEra = ShelleyBasedEra ShelleyBasedEraShelley
 cardanoEraStyle AllegraEra = ShelleyBasedEra ShelleyBasedEraAllegra
 cardanoEraStyle MaryEra    = ShelleyBasedEra ShelleyBasedEraMary
-
+-- prototypes
+cardanoEraStyle ExampleEra = ShelleyBasedEra ShelleyBasedEraExample
 
 -- ----------------------------------------------------------------------------
 -- Conversion to Shelley ledger library types
@@ -297,4 +329,5 @@ type family ShelleyLedgerEra era where
   ShelleyLedgerEra ShelleyEra = Ledger.StandardShelley
   ShelleyLedgerEra AllegraEra = Ledger.StandardAllegra
   ShelleyLedgerEra MaryEra    = Ledger.StandardMary
-
+  -- prototypes
+  ShelleyLedgerEra ExampleEra = Ledger.StandardExample

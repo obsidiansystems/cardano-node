@@ -30,6 +30,8 @@ library
                         Cardano.Api.Protocol.Cardano
                         Cardano.Api.Protocol.Shelley
                         Cardano.Api.Protocol.Types
+                        -- prototypes
+                        Cardano.Api.Protocol.Example
 
 
   other-modules:        Cardano.Api.TxSubmit.ErrorRender
@@ -125,6 +127,8 @@ library
                       , typed-protocols-examples
                       , unordered-containers >= 0.2.11
                       , vector
+                      -- prototypes
+                      , ouroboros-consensus-example
 
   default-language:     Haskell2010
   default-extensions:   NoImplicitPrelude
