@@ -72,7 +72,7 @@ chairmanTest tracer protocol nw securityParam runningTime progressThreshold sock
   traceWith tracer ("Will observe nodes for " ++ show runningTime)
   traceWith tracer ("Will require chain growth of " ++ show progressThreshold)
 
-  SomeNodeClientProtocol (ptcl :: ProtocolClient blk (BlockProtocol blk)) <- return protocol
+  SomeNodeClientProtocol (ptcl :: RunProtocolClient blk (BlockProtocol blk)) <- return protocol
 
   -- Run the chairman and get the final snapshot of the chain from each node.
   chainsSnapshot <- runChairman
