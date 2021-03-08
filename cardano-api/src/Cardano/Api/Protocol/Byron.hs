@@ -8,12 +8,13 @@ module Cardano.Api.Protocol.Byron
 
 import           Cardano.Api.Protocol.Types (SomeNodeClientProtocol (..))
 import           Cardano.Chain.Slotting (EpochSlots)
-import           Ouroboros.Consensus.Cardano (ProtocolByron, ProtocolClient (ProtocolClientByron))
+import           Ouroboros.Consensus.Cardano (ProtocolClient(..), ProtocolByron,
+                     RunProtocolClient(RunProtocolClientByron))
 import           Ouroboros.Consensus.Cardano.ByronHFC
 
 mkNodeClientProtocolByron :: EpochSlots
-                          -> ProtocolClient ByronBlockHFC ProtocolByron
-mkNodeClientProtocolByron = ProtocolClientByron
+                          -> RunProtocolClient ByronBlockHFC ProtocolByron
+mkNodeClientProtocolByron = RunProtocolClientByron
 
 mkSomeNodeClientProtocolByron :: EpochSlots
                               -> SomeNodeClientProtocol
