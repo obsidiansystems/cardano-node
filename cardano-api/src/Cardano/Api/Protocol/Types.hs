@@ -1,4 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE GADTSyntax #-}
 
 module Cardano.Api.Protocol.Types
@@ -12,6 +13,6 @@ import           Ouroboros.Consensus.Node.Run (RunNode)
 data SomeNodeClientProtocol where
 
      SomeNodeClientProtocol
-       :: RunNode blk
-       => ProtocolClient blk (BlockProtocol blk)
+       :: (RunNode blk, ProtocolClient blk (BlockProtocol blk))
+       => RunProtocolClient blk (BlockProtocol blk)
        -> SomeNodeClientProtocol
