@@ -8,15 +8,15 @@ module Cardano.Api.Protocol.Cardano
 
 import           Cardano.Api.Protocol.Types (SomeNodeClientProtocol (..))
 import           Cardano.Chain.Slotting (EpochSlots)
-import           Ouroboros.Consensus.Cardano (ProtocolCardano,
-                     ProtocolClient (ProtocolClientCardano))
+import           Ouroboros.Consensus.Cardano (ProtocolClient(..), ProtocolCardano,
+                     RunProtocolClient(RunProtocolClientCardano))
 import           Ouroboros.Consensus.Cardano.Block (CardanoBlock)
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 
 mkNodeClientProtocolCardano :: EpochSlots
-                            -> ProtocolClient (CardanoBlock StandardCrypto)
+                            -> RunProtocolClient (CardanoBlock StandardCrypto)
                                               ProtocolCardano
-mkNodeClientProtocolCardano = ProtocolClientCardano
+mkNodeClientProtocolCardano = RunProtocolClientCardano
 
 mkSomeNodeClientProtocolCardano :: EpochSlots
                                 -> SomeNodeClientProtocol
