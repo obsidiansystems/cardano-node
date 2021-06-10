@@ -137,6 +137,7 @@ source-repository-package
     shelley/chain-and-ledger/shelley-spec-ledger-test
     shelley-ma/impl
     shelley-ma/shelley-ma-test
+    -- prototypes
     example-shelley
     voltaire-prototype/impl
 
@@ -196,6 +197,10 @@ source-repository-package
     typed-protocols-examples
     ouroboros-consensus-example
     ouroboros-consensus-voltaireprototype
+
+-- Needed for the Windows cabal constraint solver.
+max-backjumps: 10000
+reorder-goals: True
 
 constraints:
     hedgehog >= 1.0

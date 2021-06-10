@@ -7,7 +7,8 @@
 {-# LANGUAGE StandaloneDeriving #-}
 
 module Cardano.Node.Protocol.Types
-  ( Protocol(..)
+  ( BlockType(..)
+  , Protocol(..)
   , SomeConsensusProtocol(..)
   ) where
 
@@ -18,13 +19,28 @@ import           Data.Aeson
 import           NoThunks.Class (NoThunks)
 
 import qualified Cardano.Api.Protocol.Types as Cardano
+-- prototypes
+import           Ouroboros.Consensus.Example.Block (ExampleBlock)
+--
 
 import           Cardano.Tracing.Constraints (TraceConstraints)
 import           Cardano.Tracing.Metrics (HasKESMetricsData, HasKESInfo)
 
+data BlockType blk where
+  ByronBlockType :: BlockType ByronBlockHFC
+  ShelleyBlockType :: BlockType (ShelleyBlockHFC StandardShelley)
+  CardanoBlockType :: BlockType (Cardano.CardanoBlock StandardCrypto)
+  -- prototypes
+  ExampleBlockType :: BlockType (ExampleBlock StandardCrypto)
+
+deriving instance Eq (BlockType blk)
+deriving instance Show (BlockType blk)
+
 data Protocol = ByronProtocol
               | ShelleyProtocol
               | CardanoProtocol
+              -- prototypes
+              | ExampleProtocol
   deriving (Eq, Show, Generic)
 
 deriving instance NFData Protocol
@@ -38,6 +54,8 @@ instance FromJSON Protocol where
       "Byron" -> pure ByronProtocol
       "Shelley" -> pure ShelleyProtocol
       "Cardano" -> pure CardanoProtocol
+      -- prototypes
+      "Example" -> pure ExampleProtocol
 
       -- The old names
       "RealPBFT" -> pure ByronProtocol

@@ -127,6 +127,9 @@ library
                       , ouroboros-consensus-byron
                       , ouroboros-consensus-cardano
                       , ouroboros-consensus-shelley
+                      -- prototype consensus modes
+                      , ouroboros-consensus-example
+                      --
                       , ouroboros-network
                       , parsec
                       , shelley-spec-ledger

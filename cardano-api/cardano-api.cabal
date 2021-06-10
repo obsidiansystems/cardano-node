@@ -48,6 +48,8 @@ library
                         Cardano.Api.Protocol.Cardano
                         Cardano.Api.Protocol.Shelley
                         Cardano.Api.Protocol.Types
+                        -- prototypes
+                        Cardano.Api.Protocol.Example
 
   other-modules:
                         -- Splitting up the big Typed module:
@@ -135,6 +137,8 @@ library
                       , unordered-containers >= 0.2.11
                       , vector
                       , yaml
+                      -- prototypes
+                      , ouroboros-consensus-example
 
 test-suite cardano-api-test
   import:               base, project-config

@@ -31,6 +31,9 @@ import           Ouroboros.Consensus.Node.Run (RunNode)
 import           Ouroboros.Consensus.Shelley.Ledger (ShelleyBlock)
 import           Ouroboros.Consensus.Shelley.ShelleyHFC (ShelleyBlockHFC)
 import           Ouroboros.Consensus.Util.IOLike (IOLike)
+-- Prototypes
+import qualified Ouroboros.Consensus.Example.Node as Example
+import qualified Ouroboros.Consensus.Example.Block as Example
 
 class (RunNode blk, IOLike m) => Protocol m blk where
   data ProtocolInfoArgs m blk
@@ -105,10 +108,35 @@ instance ProtocolClient (ShelleyBlockHFC StandardShelley) where
   protocolClientInfo ProtocolClientInfoArgsShelley =
     inject protocolClientInfoShelley
 
+-- Prototypes
+instance IOLike m => Protocol m (Example.ExampleBlock StandardCrypto) where
+  data ProtocolInfoArgs m (Example.ExampleBlock StandardCrypto) = ProtocolInfoArgsExample
+    (ProtocolParamsShelleyBased StandardShelley)
+    ProtocolParamsShelley
+    Example.ProtocolParamsExample
+    (Example.ProtocolParamsTransition (ShelleyBlock StandardShelley) (ShelleyBlock Example.StandardExample))
+  protocolInfo (ProtocolInfoArgsExample
+               paramsShelleyBased
+               paramsShelley
+               paramsExample
+               paramsShelleyExample) =
+    Example.protocolInfoExample
+      paramsShelleyBased
+      paramsShelley
+      paramsExample
+      paramsShelleyExample
+
+instance ProtocolClient (Example.ExampleBlock StandardCrypto) where
+  data ProtocolClientInfoArgs (Example.ExampleBlock StandardCrypto) =
+    ProtocolClientInfoArgsExample
+  protocolClientInfo ProtocolClientInfoArgsExample =
+    Example.protocolClientInfoExample
+
 data BlockType blk where
   ByronBlockType :: BlockType ByronBlockHFC
   ShelleyBlockType :: BlockType (ShelleyBlockHFC StandardShelley)
   CardanoBlockType :: BlockType (CardanoBlock StandardCrypto)
+  ExampleBlockType :: BlockType (Example.ExampleBlock StandardCrypto)
 
 deriving instance Eq (BlockType blk)
 deriving instance Show (BlockType blk)

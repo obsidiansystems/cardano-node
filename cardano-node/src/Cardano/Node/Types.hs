@@ -41,6 +41,9 @@ module Cardano.Node.Types
     -- * Consensus protocol configuration
   , NodeByronProtocolConfiguration(..)
   , NodeHardForkProtocolConfiguration(..)
+  -- prototypes
+  , NodeExampleHardForkProtocolConfiguration(..)
+  --
   , NodeProtocolConfiguration(..)
   , NodeShelleyProtocolConfiguration(..)
   , VRFPrivateKeyFilePermissionError(..)
@@ -262,6 +265,9 @@ data NodeProtocolConfiguration =
      | NodeProtocolConfigurationCardano NodeByronProtocolConfiguration
                                         NodeShelleyProtocolConfiguration
                                         NodeHardForkProtocolConfiguration
+     -- prototypes
+     | NodeProtocolConfigurationExample NodeShelleyProtocolConfiguration
+                                        NodeExampleHardForkProtocolConfiguration
   deriving (Eq, Show)
 
 data NodeShelleyProtocolConfiguration =
@@ -358,6 +364,33 @@ data NodeHardForkProtocolConfiguration =
      }
   deriving (Eq, Show)
 
+-- prototypes
+
+-- The Example version of NodeHardForkProtocolConfiguration
+-- There is only one transition, so it's a bit simpler
+data NodeExampleHardForkProtocolConfiguration =
+     NodeExampleHardForkProtocolConfiguration {
+       -- | For testing purposes we support specifying that the hard fork
+       -- happens at an exact epoch number (ie the first epoch of the new era).
+       --
+       -- Obviously if this is used, all the nodes in the test cluster must be
+       -- configured the same, or they will disagree.
+       --
+       npcTestExampleHardForkAtEpoch :: Maybe EpochNo
+
+       -- | For testing purposes we support specifying that the hard fork
+       -- happens at a given major protocol version. For example this can be
+       -- used to cause the Shelley hard fork to occur at the transition from
+       -- protocol version 0 to version 1 (rather than the default of from 1 to
+       -- 2) which can make the test setup simpler.
+       --
+       -- Obviously if this is used, all the nodes in the test cluster must be
+       -- configured the same, or they will disagree.
+       --
+     , npcTestExampleHardForkAtVersion :: Maybe Word
+     }
+  deriving (Eq, Show)
+
 newtype SocketPath = SocketPath
   { unSocketPath :: FilePath }
   deriving stock (Eq, Ord)
@@ -379,6 +412,10 @@ instance AdjustFilePaths NodeProtocolConfiguration where
     NodeProtocolConfigurationCardano (adjustFilePaths f pcb)
                                      (adjustFilePaths f pcs)
                                      pch
+
+  -- prototypes
+  adjustFilePaths f (NodeProtocolConfigurationExample pcs pch) =
+    NodeProtocolConfigurationExample (adjustFilePaths f pcs) pch
 
 instance AdjustFilePaths NodeByronProtocolConfiguration where
   adjustFilePaths f x@NodeByronProtocolConfiguration {
@@ -419,7 +456,8 @@ protocolName :: Protocol -> String
 protocolName ByronProtocol   = "Byron"
 protocolName ShelleyProtocol = "Shelley"
 protocolName CardanoProtocol = "Byron; Shelley"
-
+-- prototypes
+protocolName ExampleProtocol = "Shelley; Example"
 
 data VRFPrivateKeyFilePermissionError
   = OtherPermissionsExist FilePath

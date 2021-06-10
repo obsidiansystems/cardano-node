@@ -104,6 +104,9 @@ import qualified Shelley.Spec.Ledger.Genesis as Shelley.Spec
 import qualified Shelley.Spec.Ledger.Keys as Shelley.Spec
 import qualified Shelley.Spec.Ledger.PParams as Shelley.Spec
 
+-- Prototypes
+import qualified Ouroboros.Consensus.Example.Block as Example
+
 data InitialLedgerStateError
   = ILSEConfigFile Text
   -- ^ Failed to read or parse the network config file.
@@ -160,6 +163,7 @@ applyBlock env oldState enableValidation block
         ShelleyBasedEraShelley -> Consensus.BlockShelley shelleyBlock
         ShelleyBasedEraAllegra -> Consensus.BlockAllegra shelleyBlock
         ShelleyBasedEraMary    -> Consensus.BlockMary shelleyBlock
+        ShelleyBasedEraExample -> Consensus.BlockExample shelleyBlock
 
 pattern LedgerStateByron
   :: Ledger.LedgerState Byron.ByronBlock

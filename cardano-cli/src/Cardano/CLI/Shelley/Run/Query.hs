@@ -1,10 +1,13 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DerivingStrategies #-}
+{-# LANGUAGE EmptyCase #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 
 {-# OPTIONS_GHC -Wno-unticked-promoted-constructors #-}
 
@@ -541,6 +544,8 @@ writeFilteredUTxOs shelleyBasedEra' mOutFile utxo =
           ShelleyBasedEraShelley -> writeUTxo fpath utxo
           ShelleyBasedEraAllegra -> writeUTxo fpath utxo
           ShelleyBasedEraMary -> writeUTxo fpath utxo
+          -- prototypes
+          ShelleyBasedEraExample -> writeUTxo fpath utxo
  where
    writeUTxo fpath utxo' =
      handleIOExceptT (ShelleyQueryCmdWriteFileError . FileIOError fpath)
@@ -556,6 +561,9 @@ printFilteredUTxOs shelleyBasedEra' (UTxO utxo) = do
     ShelleyBasedEraAllegra ->
       mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
     ShelleyBasedEraMary    ->
+      mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
+    -- prototypes
+    ShelleyBasedEraExample ->
       mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
  where
    title :: Text
@@ -594,6 +602,15 @@ printUtxo shelleyBasedEra' txInOutTuple =
              , "        " <> printableValue value
              ]
 
+    -- prototypes
+    ShelleyBasedEraExample ->
+      let (TxIn (TxId txhash) (TxIx index), TxOut _ value) = txInOutTuple
+      in Text.putStrLn $
+           mconcat
+             [ Text.decodeLatin1 (hashToBytesAsHex txhash)
+             , textShowN 6 index
+             , "        " <> printableValue value
+             ]
  where
   textShowN :: Show a => Int -> a -> Text
   textShowN len x =
@@ -761,4 +778,5 @@ obtainLedgerEraClassConstraints
 obtainLedgerEraClassConstraints ShelleyBasedEraShelley f = f
 obtainLedgerEraClassConstraints ShelleyBasedEraAllegra f = f
 obtainLedgerEraClassConstraints ShelleyBasedEraMary    f = f
-
+-- prototypes
+obtainLedgerEraClassConstraints ShelleyBasedEraExample f = f
