@@ -510,7 +510,7 @@ genTxCertificates era =
     ExampleEra ->
       Gen.choice
         [ pure TxCertificatesNone
-        , pure (TxCertificates CertificatesInExampleEra mempty) -- TODO: Generate certificates
+        , pure (TxCertificates CertificatesInExampleEra mempty $ BuildTxWith mempty) -- TODO: Generate certificates
         ]
 
 genTxUpdateProposal :: CardanoEra era -> Gen (TxUpdateProposal era)

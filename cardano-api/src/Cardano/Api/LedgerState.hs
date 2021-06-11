@@ -105,7 +105,7 @@ import qualified Shelley.Spec.Ledger.Keys as Shelley.Spec
 import qualified Shelley.Spec.Ledger.PParams as Shelley.Spec
 
 -- Prototypes
-import qualified Ouroboros.Consensus.Example.Block as Example
+-- import qualified Ouroboros.Consensus.Example.Block as Example
 
 data InitialLedgerStateError
   = ILSEConfigFile Text
@@ -163,7 +163,8 @@ applyBlock env oldState enableValidation block
         ShelleyBasedEraShelley -> Consensus.BlockShelley shelleyBlock
         ShelleyBasedEraAllegra -> Consensus.BlockAllegra shelleyBlock
         ShelleyBasedEraMary    -> Consensus.BlockMary shelleyBlock
-        ShelleyBasedEraExample -> Consensus.BlockExample shelleyBlock
+        ShelleyBasedEraExample -> undefined -- FIXME: applyBlock appears not to be used in cardano-node, but we should figure out how to disentangle this anyways.
+          -- This can be verified by commenting out the export of applyBlock from this module and Cardano.Api and compiling cardano-node.
 
 pattern LedgerStateByron
   :: Ledger.LedgerState Byron.ByronBlock

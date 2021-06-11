@@ -19,14 +19,15 @@ import           Control.Monad.Trans.Except (ExceptT)
 import           Control.Monad.Trans.Except.Extra (firstExceptT)
 import qualified Data.Text as T
 
-import           Ouroboros.Consensus.Cardano hiding (Protocol)
+import           Ouroboros.Consensus.Cardano
 import qualified Ouroboros.Consensus.Cardano as Consensus
-import qualified Ouroboros.Consensus.Example as Example
+import qualified Ouroboros.Consensus.Example ()
 import qualified Ouroboros.Consensus.Example.Node as Example
 import           Ouroboros.Consensus.HardFork.Combinator.Condense ()
 
 import           Ouroboros.Consensus.Cardano.Condense ()
 
+import           Cardano.Api.Protocol.Types
 import           Cardano.Node.Types
 
 import           Cardano.Tracing.OrphanInstances.Shelley ()
@@ -99,7 +100,7 @@ mkSomeConsensusProtocolExample
 
     --TODO: all these protocol versions below are confusing and unnecessary.
     -- It could and should all be automated and these config entries eliminated.
-    let protocolExample = SomeConsensusProtocol ExampleBlockType $ Example.RunProtocolExample
+    let protocolExample = SomeConsensusProtocol ExampleBlockType $ ProtocolInfoArgsExample
           Consensus.ProtocolParamsShelleyBased {
             shelleyBasedGenesis = shelleyGenesis,
             shelleyBasedInitialNonce =
