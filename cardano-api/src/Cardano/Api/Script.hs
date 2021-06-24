@@ -440,6 +440,7 @@ data ScriptLanguageInEra lang era where
 
      -- prototypes
      SimpleScriptV1InExample :: ScriptLanguageInEra SimpleScriptV1 ExampleEra
+     SimpleScriptV1InVoltairePrototype :: ScriptLanguageInEra SimpleScriptV1 VoltairePrototypeEra
 
 deriving instance Eq   (ScriptLanguageInEra lang era)
 deriving instance Show (ScriptLanguageInEra lang era)
@@ -470,6 +471,7 @@ instance IsShelleyBasedEra era => HasTextEnvelope (ScriptInEra era) where
         ShelleyBasedEraMary    -> "ScriptInEra MaryEra"
         -- prototypes
         ShelleyBasedEraExample -> "ScriptInEra ExampleEra"
+        ShelleyBasedEraVoltairePrototype -> "ScriptInEra VoltairePrototypeEra"
 
 
 -- | Check if a given script language is supported in a given era, and if so
@@ -785,6 +787,10 @@ fromShelleyBasedScript era script =
       ScriptInEra SimpleScriptV1InExample $
       SimpleScript SimpleScriptV1 $
       fromShelleyMultiSig script
+    ShelleyBasedEraVoltairePrototype -> undefined
+      {-ScriptInEra SimpleScriptV1InVoltairePrototype $
+      SimpleScript SimpleScriptV1 $
+      fRomShelleyMultiSig script-}
 
 -- | Conversion for the 'Shelley.MultiSig' language used by the Shelley era.
 --

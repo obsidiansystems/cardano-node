@@ -19,10 +19,10 @@ module Cardano.Api.LedgerState
       , LedgerStateMary
       )
   , initialLedgerState
-  , applyBlock
+--  , applyBlock
 
     -- * Traversing the block chain
-  , foldBlocks
+  , notfoldBlocks
 
    -- * Errors
   , FoldBlocksError(..)
@@ -202,7 +202,7 @@ renderFoldBlocksError fbe = case fbe of
 
 -- | Monadic fold over all blocks and ledger states. Stopping @k@ blocks before
 -- the node's tip where @k@ is the security parameter.
-foldBlocks
+notfoldBlocks
   :: forall a.
   FilePath
   -- ^ Path to the cardano-node config file (e.g. <path to cardano-node project>/configuration/cardano/mainnet-config.json)
@@ -231,7 +231,7 @@ foldBlocks
   -- truncating the last k blocks before the node's tip.
   -> ExceptT FoldBlocksError IO a
   -- ^ The final state
-foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accumulate = do
+notfoldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accumulate = do
   -- NOTE this was originally implemented with a non-pipelined client then
   -- changed to a pipelined client for a modest speedup:
   --  * Non-pipelined: 1h  0m  19s

@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
@@ -34,6 +35,9 @@ import           Ouroboros.Consensus.Util.IOLike (IOLike)
 -- Prototypes
 import qualified Ouroboros.Consensus.Example.Node as Example
 import qualified Ouroboros.Consensus.Example.Block as Example
+import qualified Ouroboros.Consensus.Voltaire.Prototype as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Node as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 
 class (RunNode blk, IOLike m) => Protocol m blk where
   data ProtocolInfoArgs m blk
@@ -131,6 +135,29 @@ instance ProtocolClient (Example.ExampleBlock StandardCrypto) where
     ProtocolClientInfoArgsExample
   protocolClientInfo ProtocolClientInfoArgsExample =
     Example.protocolClientInfoExample
+
+instance (IOLike m, Voltaire.VoltaireConstraints proto StandardCrypto, WithShelleyUpdates (Voltaire.VoltairePrototypeEra proto StandardCrypto)) => Protocol m (Voltaire.VoltairePrototypeBlock proto StandardCrypto) where
+  data ProtocolInfoArgs m (Voltaire.VoltairePrototypeBlock proto StandardCrypto) = ProtocolInfoArgsVoltairePrototype
+    (ProtocolParamsShelleyBased StandardShelley)
+    ProtocolParamsShelley
+    Voltaire.ProtocolParamsVoltairePrototype
+    (Voltaire.ProtocolParamsTransition (ShelleyBlock StandardShelley) (ShelleyBlock Voltaire.StandardVoltairePrototype))
+  protocolInfo (ProtocolInfoArgsVoltairePrototype
+               paramsShelleyBased
+               paramsShelley
+               paramsVoltairePrototype
+               paramsShelleyVoltairePrototype) =
+    Voltaire.protocolInfoVoltairePrototype
+      paramsShelleyBased
+      paramsShelley
+      paramsVoltairePrototype
+      paramsShelleyVoltairePrototype
+
+instance ProtocolClient (Voltaire.VoltairePrototypeBlock proto StandardCrypto) where
+  data ProtocolClientInfoArgs (Voltaire.VoltairePrototypeBlock proto StandardCrypto) =
+    ProtocolClientInfoArgsVoltairePrototype
+  protocolClientInfo ProtocolClientInfoArgsVoltairePrototype =
+    Voltaire.protocolClientInfoVoltairePrototype
 
 data BlockType blk where
   ByronBlockType :: BlockType ByronBlockHFC

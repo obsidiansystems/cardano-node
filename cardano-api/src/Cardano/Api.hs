@@ -23,6 +23,7 @@ module Cardano.Api (
     InAnyCardanoEra(..),
     -- prototypes
     ExampleEra,
+    VoltairePrototypeEra,
 
     -- ** Shelley-based eras
     ShelleyBasedEra(..),
@@ -406,10 +407,10 @@ module Cardano.Api (
     envSecurityParam,
     LedgerState(..),
     initialLedgerState,
-    applyBlock,
+    -- applyBlock,
 
     -- *** Traversing the block chain
-    foldBlocks,
+    -- foldBlocks,
 
     -- *** Errors
     FoldBlocksError(..),
