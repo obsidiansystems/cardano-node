@@ -29,6 +29,9 @@ module Cardano.Api.IPC (
     ByronMode,
     ShelleyMode,
     CardanoMode,
+    -- prototypes
+    ExampleMode,
+    --
     ConsensusModeParams(..),
     EpochSlots(..),
 
@@ -164,6 +167,8 @@ consensusModeOnly :: ConsensusModeParams mode
 consensusModeOnly ByronModeParams{}   = ByronMode
 consensusModeOnly ShelleyModeParams{} = ShelleyMode
 consensusModeOnly CardanoModeParams{} = CardanoMode
+-- prototypes
+consensusModeOnly ExampleModeParams{} = ExampleMode
 
 
 -- ----------------------------------------------------------------------------
@@ -366,6 +371,11 @@ mkLocalNodeClientParams modeparams clients =
           (ProtocolClientInfoArgsCardano epochSlots)
           (convLocalNodeClientProtocols CardanoMode clients)
 
+      -- prototypes
+      ExampleModeParams ->
+        LocalNodeClientParams
+          ProtocolClientInfoArgsExample
+          (convLocalNodeClientProtocols ExampleMode clients)
 
 convLocalNodeClientProtocols :: forall mode block.
                                 ConsensusBlockForMode mode ~ block

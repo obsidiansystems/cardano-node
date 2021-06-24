@@ -11,6 +11,9 @@ import           Cardano.Api
 import           Cardano.Api.Protocol.Byron
 import           Cardano.Api.Protocol.Cardano
 import           Cardano.Api.Protocol.Shelley
+-- prototypes
+import           Cardano.Api.Protocol.Example
+--
 import           Cardano.Chairman (chairmanTest)
 import           Cardano.Node.Configuration.POM (parseNodeConfigurationFP, pncProtocol)
 import           Cardano.Node.Protocol.Types (Protocol (..))
@@ -39,6 +42,9 @@ mkNodeClientProtocol protocol =
     CardanoProtocol ->
       mkSomeNodeClientProtocolCardano
         (EpochSlots 21600)
+
+    -- prototypes
+    ExampleProtocol -> mkSomeNodeClientProtocolExample
 
 data RunOpts = RunOpts
   { -- | Stop the test after given number of seconds. The chairman will

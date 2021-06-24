@@ -438,6 +438,10 @@ data ScriptLanguageInEra lang era where
      SimpleScriptV2InAllegra :: ScriptLanguageInEra SimpleScriptV2 AllegraEra
      SimpleScriptV2InMary    :: ScriptLanguageInEra SimpleScriptV2 MaryEra
 
+     -- prototypes
+     SimpleScriptV1InExample :: ScriptLanguageInEra SimpleScriptV1 ExampleEra
+     SimpleScriptV1InVoltairePrototype :: ScriptLanguageInEra SimpleScriptV1 VoltairePrototypeEra
+
 deriving instance Eq   (ScriptLanguageInEra lang era)
 deriving instance Show (ScriptLanguageInEra lang era)
 
@@ -465,6 +469,9 @@ instance IsShelleyBasedEra era => HasTextEnvelope (ScriptInEra era) where
         ShelleyBasedEraShelley -> "ScriptInEra ShelleyEra"
         ShelleyBasedEraAllegra -> "ScriptInEra AllegraEra"
         ShelleyBasedEraMary    -> "ScriptInEra MaryEra"
+        -- prototypes
+        ShelleyBasedEraExample -> "ScriptInEra ExampleEra"
+        ShelleyBasedEraVoltairePrototype -> "ScriptInEra VoltairePrototypeEra"
 
 
 -- | Check if a given script language is supported in a given era, and if so
@@ -502,6 +509,8 @@ languageOfScriptLanguageInEra langInEra =
 
       SimpleScriptV2InAllegra -> SimpleScriptLanguage SimpleScriptV2
       SimpleScriptV2InMary    -> SimpleScriptLanguage SimpleScriptV2
+      -- prototypes
+      SimpleScriptV1InExample -> SimpleScriptLanguage SimpleScriptV1
 
 eraOfScriptLanguageInEra :: ScriptLanguageInEra lang era
                          -> ShelleyBasedEra era
@@ -514,6 +523,8 @@ eraOfScriptLanguageInEra langInEra =
 
       SimpleScriptV1InMary    -> ShelleyBasedEraMary
       SimpleScriptV2InMary    -> ShelleyBasedEraMary
+      -- prototypes
+      SimpleScriptV1InExample -> ShelleyBasedEraExample
 
 
 -- | Given a target era and a script in some language, check if the language is
@@ -751,6 +762,8 @@ toShelleyScript (ScriptInEra langInEra (SimpleScript _ script)) =
       SimpleScriptV1InMary    -> toAllegraTimelock script
       SimpleScriptV2InAllegra -> toAllegraTimelock script
       SimpleScriptV2InMary    -> toAllegraTimelock script
+      -- prototypes
+      SimpleScriptV1InExample -> toShelleyMultiSig script
 
 fromShelleyBasedScript  :: ShelleyBasedEra era
                         -> Ledger.Script (ShelleyLedgerEra era)
@@ -769,7 +782,15 @@ fromShelleyBasedScript era script =
       ScriptInEra SimpleScriptV2InMary $
       SimpleScript SimpleScriptV2 $
       fromAllegraTimelock TimeLocksInSimpleScriptV2 script
-
+    -- prototypes
+    ShelleyBasedEraExample ->
+      ScriptInEra SimpleScriptV1InExample $
+      SimpleScript SimpleScriptV1 $
+      fromShelleyMultiSig script
+    ShelleyBasedEraVoltairePrototype -> undefined
+      {-ScriptInEra SimpleScriptV1InVoltairePrototype $
+      SimpleScript SimpleScriptV1 $
+      fRomShelleyMultiSig script-}
 
 -- | Conversion for the 'Shelley.MultiSig' language used by the Shelley era.
 --
@@ -923,6 +944,10 @@ instance IsCardanoEra era => FromJSON (ScriptInEra era) where
                                      (SimpleScript SimpleScriptV2 s)
               Just s' -> ScriptInEra SimpleScriptV1InMary
                                      (SimpleScript SimpleScriptV1 s')
+      -- prototypes
+      ExampleEra -> ScriptInEra SimpleScriptV1InExample
+                  . SimpleScript SimpleScriptV1
+                <$> parseSimpleScript SimpleScriptV1 v
 
 
 instance IsSimpleScriptLanguage lang => FromJSON (SimpleScript lang) where

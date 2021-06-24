@@ -22,9 +22,12 @@ import qualified Cardano.Api.Protocol.Types as Cardano
 import           Cardano.Tracing.Constraints (TraceConstraints)
 import           Cardano.Tracing.Metrics (HasKESMetricsData, HasKESInfo)
 
+
 data Protocol = ByronProtocol
               | ShelleyProtocol
               | CardanoProtocol
+              -- prototypes
+              | ExampleProtocol
   deriving (Eq, Show, Generic)
 
 deriving instance NFData Protocol
@@ -38,6 +41,8 @@ instance FromJSON Protocol where
       "Byron" -> pure ByronProtocol
       "Shelley" -> pure ShelleyProtocol
       "Cardano" -> pure CardanoProtocol
+      -- prototypes
+      "Example" -> pure ExampleProtocol
 
       -- The old names
       "RealPBFT" -> pure ByronProtocol

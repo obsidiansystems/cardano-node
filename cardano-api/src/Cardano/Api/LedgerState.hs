@@ -19,10 +19,10 @@ module Cardano.Api.LedgerState
       , LedgerStateMary
       )
   , initialLedgerState
-  , applyBlock
+--  , applyBlock
 
     -- * Traversing the block chain
-  , foldBlocks
+  , notfoldBlocks
 
    -- * Errors
   , FoldBlocksError(..)
@@ -104,6 +104,9 @@ import qualified Shelley.Spec.Ledger.Genesis as Shelley.Spec
 import qualified Shelley.Spec.Ledger.Keys as Shelley.Spec
 import qualified Shelley.Spec.Ledger.PParams as Shelley.Spec
 
+-- Prototypes
+-- import qualified Ouroboros.Consensus.Example.Block as Example
+
 data InitialLedgerStateError
   = ILSEConfigFile Text
   -- ^ Failed to read or parse the network config file.
@@ -160,6 +163,8 @@ applyBlock env oldState enableValidation block
         ShelleyBasedEraShelley -> Consensus.BlockShelley shelleyBlock
         ShelleyBasedEraAllegra -> Consensus.BlockAllegra shelleyBlock
         ShelleyBasedEraMary    -> Consensus.BlockMary shelleyBlock
+        ShelleyBasedEraExample -> undefined -- FIXME: applyBlock appears not to be used in cardano-node, but we should figure out how to disentangle this anyways.
+          -- This can be verified by commenting out the export of applyBlock from this module and Cardano.Api and compiling cardano-node.
 
 pattern LedgerStateByron
   :: Ledger.LedgerState Byron.ByronBlock
@@ -197,7 +202,7 @@ renderFoldBlocksError fbe = case fbe of
 
 -- | Monadic fold over all blocks and ledger states. Stopping @k@ blocks before
 -- the node's tip where @k@ is the security parameter.
-foldBlocks
+notfoldBlocks
   :: forall a.
   FilePath
   -- ^ Path to the cardano-node config file (e.g. <path to cardano-node project>/configuration/cardano/mainnet-config.json)
@@ -226,7 +231,7 @@ foldBlocks
   -- truncating the last k blocks before the node's tip.
   -> ExceptT FoldBlocksError IO a
   -- ^ The final state
-foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accumulate = do
+notfoldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accumulate = do
   -- NOTE this was originally implemented with a non-pipelined client then
   -- changed to a pipelined client for a modest speedup:
   --  * Non-pipelined: 1h  0m  19s

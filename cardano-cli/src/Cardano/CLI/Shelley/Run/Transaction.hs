@@ -174,11 +174,15 @@ renderEra (AnyCardanoEra ByronEra)   = "Byron"
 renderEra (AnyCardanoEra ShelleyEra) = "Shelley"
 renderEra (AnyCardanoEra AllegraEra) = "Allegra"
 renderEra (AnyCardanoEra MaryEra)    = "Mary"
+-- prototypes
+renderEra (AnyCardanoEra ExampleEra) = "Example"
 
 renderMode :: AnyConsensusMode -> Text
 renderMode (AnyConsensusMode ByronMode) = "ByronMode"
 renderMode (AnyConsensusMode ShelleyMode) = "ShelleyMode"
 renderMode (AnyConsensusMode CardanoMode) = "CardanoMode"
+--prototypes
+renderMode (AnyConsensusMode ExampleMode) = "ExampleMode"
 
 renderFeature :: TxFeature -> Text
 renderFeature TxFeatureShelleyAddresses     = "Shelley addresses"

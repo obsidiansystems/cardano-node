@@ -35,7 +35,7 @@ common project-config
                         -Wno-unticked-promoted-constructors
                         -Wpartial-fields
                         -Wredundant-constraints
-                        -Wunused-packages
+                        -- -Wunused-packages
 
 common maybe-Win32
   if os(windows)
@@ -70,7 +70,6 @@ library
                        Cardano.Node.Protocol.Cardano
                        Cardano.Node.Protocol.Shelley
                        Cardano.Node.Protocol.Types
-                       Cardano.Node.Query
                        Cardano.Node.Parsers
                        Cardano.Node.Run
                        Cardano.Node.STM
@@ -90,6 +89,8 @@ library
                        Cardano.Tracing.OrphanInstances.HardFork
                        Cardano.Tracing.OrphanInstances.Network
                        Cardano.Tracing.OrphanInstances.Shelley
+                       -- prototypes
+                       Cardano.Node.Protocol.Example
 
   other-modules:       Paths_cardano_node
                        Cardano.Node.Configuration.Socket
@@ -147,6 +148,8 @@ library
                       , transformers-except
                       , unordered-containers
                       , yaml
+                      -- prototypes
+                      , ouroboros-consensus-example
 
 executable cardano-node
   import:               base, project-config

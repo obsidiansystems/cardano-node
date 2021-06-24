@@ -30,6 +30,9 @@ import qualified Ouroboros.Consensus.HardFork.Combinator.Degenerate as Consensus
 import qualified Ouroboros.Consensus.Ledger.SupportsMempool as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
 
+-- prototypes
+import qualified Ouroboros.Consensus.Example.Block as Example
+
 import           Cardano.Api.Eras
 import           Cardano.Api.Modes
 import           Cardano.Api.Tx
@@ -102,6 +105,18 @@ toConsensusGenTx (TxInMode (ShelleyTx _ tx) MaryEraInCardanoMode) =
   where
     tx' = Consensus.mkShelleyTx tx
 
+-- prototypes
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) ShelleyEraInExampleMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (Z tx'))
+  where
+    tx' = Consensus.mkShelleyTx tx
+
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) ExampleEraInExampleMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (S (Z tx')))
+  where
+    tx' = Consensus.mkShelleyTx tx
+
+
 
 -- ----------------------------------------------------------------------------
 -- Transaction validation errors in the context of eras and consensus modes
@@ -146,6 +161,14 @@ instance Show (TxValidationError era) where
         ( showString "ShelleyTxValidationError ShelleyBasedEraMary "
         . showsPrec 11 err
         )
+
+    -- prototypes
+    showsPrec p (ShelleyTxValidationError ShelleyBasedEraExample err) =
+      showParen (p >= 11)
+        ( showString "ShelleyTxValidationError ShelleyBasedEraExample "
+        . showsPrec 11 err
+        )
+
 
 
 -- | A 'TxValidationError' in one of the eras supported by a given protocol
@@ -200,4 +223,19 @@ fromConsensusApplyTxErr CardanoMode (Consensus.ApplyTxErrMary err) =
 
 fromConsensusApplyTxErr CardanoMode (Consensus.ApplyTxErrWrongEra err) =
     TxValidationEraMismatch err
+
+-- prototypes
+fromConsensusApplyTxErr ExampleMode (Example.ApplyTxErrShelley err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraShelley err)
+      ShelleyEraInExampleMode
+
+fromConsensusApplyTxErr ExampleMode (Example.ApplyTxErrExample err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraExample err)
+      ExampleEraInExampleMode
+
+fromConsensusApplyTxErr ExampleMode (Example.ApplyTxErrWrongEra err) =
+    TxValidationEraMismatch err
+
 

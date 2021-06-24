@@ -24,7 +24,7 @@ common project-config
                         -Wincomplete-uni-patterns
                         -Wpartial-fields
                         -Wredundant-constraints
-                        -Wunused-packages
+--                        -Wunused-packages
 
 library
   import:               base, project-config
@@ -48,6 +48,9 @@ library
                         Cardano.Api.Protocol.Cardano
                         Cardano.Api.Protocol.Shelley
                         Cardano.Api.Protocol.Types
+                        -- prototypes
+                        Cardano.Api.Protocol.Example
+                        Cardano.Api.Protocol.Voltaire.Prototype
 
   other-modules:
                         -- Splitting up the big Typed module:
@@ -135,6 +138,9 @@ library
                       , unordered-containers >= 0.2.11
                       , vector
                       , yaml
+                      -- prototypes
+                      , ouroboros-consensus-example
+                      , ouroboros-consensus-voltaireprototype
 
 test-suite cardano-api-test
   import:               base, project-config

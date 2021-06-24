@@ -25,6 +25,10 @@ import qualified Shelley.Spec.Ledger.UTxO as Shelley
 import qualified Ouroboros.Consensus.Cardano as Cardano
 import qualified Ouroboros.Consensus.Cardano.Block as Cardano
 
+-- prototypes
+import qualified Ouroboros.Consensus.Example as Example
+import qualified Ouroboros.Consensus.Example.Block as Example
+
 
 class LedgerQueries blk where
   ledgerUtxoSize     :: LedgerState blk -> Int
@@ -67,3 +71,12 @@ instance LedgerQueries (Cardano.CardanoBlock c) where
     Cardano.LedgerStateShelley ledgerShelley -> ledgerDelegMapSize ledgerShelley
     Cardano.LedgerStateAllegra ledgerAllegra -> ledgerDelegMapSize ledgerAllegra
     Cardano.LedgerStateMary    ledgerMary    -> ledgerDelegMapSize ledgerMary
+
+-- prototypes
+instance LedgerQueries (Example.ExampleBlock c) where
+  ledgerUtxoSize = \case
+    Example.LedgerStateShelley ledgerShelley -> ledgerUtxoSize ledgerShelley
+    Example.LedgerStateExample ledgerExample -> ledgerUtxoSize ledgerExample
+  ledgerDelegMapSize = \case
+    Example.LedgerStateShelley ledgerShelley -> ledgerDelegMapSize ledgerShelley
+    Example.LedgerStateExample ledgerExample -> ledgerDelegMapSize ledgerExample

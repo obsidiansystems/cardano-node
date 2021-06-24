@@ -120,7 +120,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/obsidiansystems/cardano-ledger-specs
-  tag: 7a3cb7233c6c030d9e7d0f107e9bd6586b790a99
+  tag: d8847cbbaed569e1adc828f3a7e36ccafe2c0558
   --sha256: 1v36d3lyhmadzj0abdfsppjna7n7llzqzp9ikx5yq28l2kda2f1q
   subdir:
     byron/chain/executable-spec
@@ -137,6 +137,7 @@ source-repository-package
     shelley/chain-and-ledger/shelley-spec-ledger-test
     shelley-ma/impl
     shelley-ma/shelley-ma-test
+    -- prototypes
     example-shelley
     voltaire-prototype/impl
 
@@ -179,7 +180,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/obsidiansystems/ouroboros-network
-  tag: f54e2ce0bbd3acb1cafde5c01d2c166e7d284524
+  tag: f3dba38e734a4766cebd59662ecb0bf3e388ebb7
   --sha256: 0d7bk9vzmhhb2z4ns2qw7f1vz6lr186m98sh8wvrnfpxk3z86dxq
   subdir:
     io-sim
@@ -196,6 +197,10 @@ source-repository-package
     typed-protocols-examples
     ouroboros-consensus-example
     ouroboros-consensus-voltaireprototype
+
+-- Needed for the Windows cabal constraint solver.
+max-backjumps: 10000
+reorder-goals: True
 
 constraints:
     hedgehog >= 1.0
