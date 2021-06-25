@@ -152,6 +152,7 @@ instance ToJSON (CardanoEra era) where
    toJSON ShelleyEra = "Shelley"
    toJSON AllegraEra = "Allegra"
    toJSON MaryEra    = "Mary"
+   toJSON VoltairePrototypeEra = "VoltairePrototype"
 
 instance TestEquality CardanoEra where
     testEquality ByronEra   ByronEra   = Just Refl
