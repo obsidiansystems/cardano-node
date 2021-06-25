@@ -127,8 +127,11 @@ source-repository-package
     shelley/chain-and-ledger/executable-spec
     shelley/chain-and-ledger/shelley-spec-ledger-test
     shelley-ma/impl
+    shelley-ma/shelley-ma-test
     cardano-ledger-test
     cardano-ledger-core
+    example-shelley
+    voltaire-prototype/impl
 
 source-repository-package
   type: git
@@ -183,6 +186,7 @@ source-repository-package
     ouroboros-network-framework
     typed-protocols
     typed-protocols-examples
+    ouroboros-network-testing
     ouroboros-consensus-voltaireprototype
 
 -- Needed for the Windows cabal constraint solver.
