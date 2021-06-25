@@ -52,6 +52,7 @@ import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 -- prototypes
 import qualified Ouroboros.Consensus.Voltaire.Prototype as Consensus
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Consensus
 
 import qualified Cardano.Chain.Slotting as Byron (EpochSlots (..))
 
@@ -302,3 +303,13 @@ fromConsensusEraIndex CardanoMode = fromShelleyEraIndex
     fromShelleyEraIndex (Consensus.EraIndex (S (S (S (Z (K ())))))) =
       AnyEraInMode MaryEraInCardanoMode
 
+fromConsensusEraIndex PrototypeMode = fromPrototypeEraIndex
+  where
+    fromPrototypeEraIndex :: Consensus.EraIndex
+                             (Consensus.VoltairePrototypeEras 'Consensus.VoltairePrototype_One StandardCrypto)
+                        -> AnyEraInMode PrototypeMode
+    fromPrototypeEraIndex (Consensus.EraIndex (Z (K ()))) =
+      AnyEraInMode ShelleyEraInPrototypeMode
+
+    fromPrototypeEraIndex (Consensus.EraIndex (S (Z (K ())))) =
+      AnyEraInMode VoltairePrototypeEraInPrototypeMode
