@@ -98,6 +98,7 @@ library
                       , cardano-crypto
                       , cardano-crypto-class
                       , cardano-crypto-wrapper
+                      , cardano-ledger-core
                       , cardano-ledger-byron
                       , cardano-ledger-shelley-ma
                       , cardano-prelude
@@ -118,6 +119,7 @@ library
                       , ouroboros-consensus-byron
                       , ouroboros-consensus-cardano
                       , ouroboros-consensus-shelley
+                      , ouroboros-consensus-voltaireprototype
                       , ouroboros-network
                       , ouroboros-network-framework
                       , scientific
@@ -130,6 +132,7 @@ library
                       , transformers-except
                       , typed-protocols
                       , unordered-containers >= 0.2.11
+                      , strict-containers
                       , vector
 
 test-suite cardano-api-test
