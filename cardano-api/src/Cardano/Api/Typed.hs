@@ -545,7 +545,7 @@ import           Ouroboros.Consensus.Util.Time (secondsToNominalDiffTime)
 
 import           Ouroboros.Consensus.Cardano.Block (CardanoBlock)
 import           Ouroboros.Consensus.Cardano.ByronHFC (ByronBlockHFC)
-import           Ouroboros.Consensus.Cardano.ShelleyHFC (ShelleyBlockHFC)
+import           Ouroboros.Consensus.Shelley.ShelleyHFC (ShelleyBlockHFC)
 
 --
 -- Crypto API used by consensus and Shelley (and should be used by Byron)

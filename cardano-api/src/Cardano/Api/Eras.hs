@@ -12,6 +12,7 @@ module Cardano.Api.Eras
   , ShelleyEra
   , AllegraEra
   , MaryEra
+  , VoltairePrototypeEra
   , CardanoEra(..)
   , IsCardanoEra(..)
   , AnyCardanoEra(..)

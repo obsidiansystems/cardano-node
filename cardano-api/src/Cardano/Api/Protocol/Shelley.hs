@@ -9,7 +9,7 @@ module Cardano.Api.Protocol.Shelley
 
 import           Ouroboros.Consensus.Cardano (ProtocolClient (ProtocolClientShelley),
                      ProtocolShelley)
-import           Ouroboros.Consensus.Cardano.ShelleyHFC
+import           Ouroboros.Consensus.Shelley.ShelleyHFC
 
 import           Ouroboros.Consensus.Shelley.Eras (StandardShelley)
 

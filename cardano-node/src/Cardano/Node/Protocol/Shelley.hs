@@ -35,7 +35,7 @@ import           Control.Monad.Trans.Except.Extra (firstExceptT, handleIOExceptT
 import qualified Cardano.Crypto.Hash.Class as Crypto
 
 import qualified Ouroboros.Consensus.Cardano as Consensus
-import           Ouroboros.Consensus.Cardano.ShelleyHFC
+import           Ouroboros.Consensus.Shelley.ShelleyHFC
 
 import           Ouroboros.Consensus.Shelley.Eras (StandardShelley)
 import           Ouroboros.Consensus.Shelley.Node (Nonce (..), ProtocolParamsShelley (..),

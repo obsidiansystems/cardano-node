@@ -43,7 +43,7 @@ import qualified Shelley.Spec.Ledger.API as SL
 import qualified Ouroboros.Consensus.Cardano as Consensus
 import           Ouroboros.Consensus.Cardano.ByronHFC (ByronBlockHFC)
 import qualified Ouroboros.Consensus.Cardano.CanHardFork as CanHardFork
-import           Ouroboros.Consensus.Cardano.ShelleyHFC (ShelleyBlockHFC)
+import           Ouroboros.Consensus.Shelley.ShelleyHFC (ShelleyBlockHFC)
 
 import           Cardano.Tracing.Kernel
 
