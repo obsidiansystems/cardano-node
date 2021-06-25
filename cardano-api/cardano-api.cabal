@@ -93,7 +93,7 @@ library
                       , cardano-crypto
                       , cardano-crypto-class
                       , cardano-crypto-wrapper
-                      , cardano-ledger
+                      , cardano-ledger-byron
                       , cardano-ledger-shelley-ma
                       , cardano-prelude
                       , cardano-slotting
@@ -116,6 +116,7 @@ library
                       , ouroboros-consensus-byron
                       , ouroboros-consensus-cardano
                       , ouroboros-consensus-shelley
+                      , ouroboros-consensus-voltaireprototype
                       , ouroboros-network
                       , ouroboros-network-framework
                       , scientific
