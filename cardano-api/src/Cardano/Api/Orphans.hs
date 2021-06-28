@@ -32,7 +32,7 @@ import           Cardano.Slotting.Slot (SlotNo (..))
 import qualified Ouroboros.Consensus.Shelley.Eras as Consensus
 import qualified Shelley.Spec.Ledger.API as Shelley
 import           Shelley.Spec.Ledger.BaseTypes (StrictMaybe (..))
-import qualified Shelley.Spec.Ledger.Coin as Shelley
+import qualified Cardano.Ledger.Coin as Shelley
 import qualified Shelley.Spec.Ledger.Delegation.Certificates as Shelley
 import qualified Shelley.Spec.Ledger.EpochBoundary as ShelleyEpoch
 import qualified Shelley.Spec.Ledger.LedgerState as ShelleyLedger
