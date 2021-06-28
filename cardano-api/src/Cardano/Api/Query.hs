@@ -44,6 +44,7 @@ import           Data.SOP.Strict (SListI)
 import           Data.Set (Set)
 import qualified Data.Set as Set
 import           Data.Typeable
+import           Control.State.Transition.Extended (State)
 import           Prelude
 
 import           Ouroboros.Network.Protocol.LocalStateQuery.Client (Some (..))
@@ -183,6 +184,7 @@ instance (Typeable era, Shelley.TransLedgerState FromCBOR (ShelleyLedgerEra era)
 instance ( IsShelleyBasedEra era
          , ShelleyLedgerEra era ~ ledgerera
          , Consensus.ShelleyBasedEra ledgerera
+         , ToJSON (State (Core.EraRule "PPUP" ledgerera))
          , ToJSON (Core.PParams ledgerera)
          , ToJSON (Shelley.PParamsDelta ledgerera)
          , ToJSON (Core.TxOut ledgerera)) => ToJSON (DebugLedgerState era) where
