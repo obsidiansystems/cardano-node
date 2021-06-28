@@ -12,6 +12,7 @@ module Cardano.Api.Orphans () where
 import           Prelude
 
 import           Control.Iterate.SetAlgebra (BiMap (..), Bimap)
+import           Control.State.Transition.Extended (State)
 import           Data.Aeson (ToJSON (..), object, (.=))
 import qualified Data.Aeson as Aeson
 import           Data.Aeson.Types (ToJSONKey (..), toJSONKeyText)
@@ -75,6 +76,7 @@ instance ( Consensus.ShelleyBasedEra era
          , ToJSON (Core.TxOut era)
          , ToJSON (Core.PParams era)
          , ToJSON (Shelley.PParamsDelta era)
+         , ToJSON (State (Core.EraRule "PPUP" era))
          ) => ToJSON (Shelley.EpochState era) where
   toJSON eState = object [ "esAccountState" .= Shelley.esAccountState eState
                          , "esSnapshots" .= Shelley.esSnapshots eState
@@ -87,6 +89,7 @@ instance ( Consensus.ShelleyBasedEra era
 instance ( Consensus.ShelleyBasedEra era
          , ToJSON (Core.TxOut era)
          , ToJSON (Shelley.PParamsDelta era)
+         , ToJSON (State (Core.EraRule "PPUP" era))
          ) => ToJSON (Shelley.LedgerState era) where
   toJSON lState = object [ "utxoState" .= Shelley._utxoState lState
                          , "delegationState" .= Shelley._delegationState lState
@@ -95,6 +98,7 @@ instance ( Consensus.ShelleyBasedEra era
 instance ( Consensus.ShelleyBasedEra era
          , ToJSON (Core.TxOut era)
          , ToJSON (Shelley.PParamsDelta era)
+         , ToJSON (State (Core.EraRule "PPUP" era))
          ) => ToJSON (Shelley.UTxOState era) where
   toJSON utxoState = object [ "utxo" .= Shelley._utxo utxoState
                             , "deposited" .= Shelley._deposited utxoState
