@@ -110,6 +110,15 @@ jobs:
     - name: Install dependencies
       run: retry 2 cabal build all --only-dependencies
 
+    - uses: actions/cache@v2
+    - name: Cache cabal dist-newstyle
+      with:
+        path: dist-newstyle
+        key: cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project') }}
+        restore-keys: |
+          cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('cabal.project') }}
+          cache-${{ env.CACHE_VERSION }}-${{ runner.os }}-${{ matrix.ghc }}
+
     - name: Build
       run: retry 2 cabal build cardano-node cardano-cli cardano-node-chairman
 
