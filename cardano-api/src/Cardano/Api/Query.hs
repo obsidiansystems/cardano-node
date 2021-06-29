@@ -6,6 +6,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- The Shelley ledger uses promoted data kinds which we have to use, but we do
@@ -58,6 +59,7 @@ import qualified Ouroboros.Consensus.Byron.Ledger as Consensus
 import           Ouroboros.Consensus.Cardano.Block (StandardCrypto)
 import qualified Ouroboros.Consensus.Cardano.Block as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
+import qualified Ouroboros.Consensus.Shelley.Update as Consensus
 import           Ouroboros.Network.Block (Serialised)
 
 import           Cardano.Binary
@@ -129,7 +131,8 @@ data QueryInShelleyBasedEra era result where
        :: QueryInShelleyBasedEra era ProtocolParameters
 
      QueryProtocolParametersUpdate
-       :: QueryInShelleyBasedEra era
+       :: (Consensus.ProposedProtocolUpdates (ShelleyLedgerEra era)) ~ Shelley.ProposedPPUpdates (ShelleyLedgerEra era)
+       => QueryInShelleyBasedEra era
             (Map (Hash GenesisKey) ProtocolParametersUpdate)
 
      QueryStakeDistribution
@@ -461,7 +464,7 @@ fromConsensusQueryResultShelleyBased _ QueryProtocolParameters q' r' =
 
 fromConsensusQueryResultShelleyBased _ QueryProtocolParametersUpdate q' r' =
     case q' of
-      Consensus.GetProposedPParamsUpdates -> fromShelleyProposedPPUpdates r'
+      Consensus.GetProposedPParamsUpdates -> fromShelleyProposedPPUpdates @ledgerera r'
       _                                   -> fromConsensusQueryResultMismatch
 
 fromConsensusQueryResultShelleyBased _ QueryStakeDistribution q' r' =
