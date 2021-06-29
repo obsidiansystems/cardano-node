@@ -126,6 +126,7 @@ library
                       , ouroboros-network-framework
                       , scientific
                       , shelley-spec-ledger
+                      , voltaire-prototype
                       , small-steps
                       , stm
                       , strict-containers
