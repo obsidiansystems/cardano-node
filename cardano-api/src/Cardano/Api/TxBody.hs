@@ -81,6 +81,7 @@ module Cardano.Api.TxBody (
     withdrawalsSupportedInEra,
     certificatesSupportedInEra,
     updateProposalSupportedInEra,
+    voltaireProposalSupportedInEra,
 
     -- * Internal conversion functions & types
     toShelleyTxId,
@@ -141,6 +142,7 @@ import qualified Cardano.Ledger.Shelley.Constraints as Ledger
 import qualified Cardano.Ledger.ShelleyMA.AuxiliaryData as Allegra
 import qualified Cardano.Ledger.ShelleyMA.TxBody as Allegra
 import qualified Cardano.Api.Prototype.Tmp as Voltaire
+import qualified Cardano.Ledger.Voltaire.Prototype.Class as Voltaire
 import qualified Cardano.Ledger.Voltaire.Prototype.TxBody as Voltaire
 import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
@@ -652,6 +654,18 @@ updateProposalSupportedInEra AllegraEra = Just UpdateProposalInAllegraEra
 updateProposalSupportedInEra MaryEra    = Just UpdateProposalInMaryEra
 updateProposalSupportedInEra VoltairePrototypeEra = Just UpdateProposalInVoltairePrototypeEra
 
+data VoltaireProposalSupportedInEra era where
+
+deriving instance Eq   (VoltaireProposalSupportedInEra era)
+deriving instance Show (VoltaireProposalSupportedInEra era)
+
+voltaireProposalSupportedInEra :: CardanoEra era
+                             -> Maybe (VoltaireProposalSupportedInEra era)
+voltaireProposalSupportedInEra ByronEra   = Nothing
+voltaireProposalSupportedInEra ShelleyEra = Nothing
+voltaireProposalSupportedInEra AllegraEra = Nothing
+voltaireProposalSupportedInEra MaryEra    = Nothing
+voltaireProposalSupportedInEra VoltairePrototypeEra = Nothing
 
 -- ----------------------------------------------------------------------------
 -- Building vs viewing transactions
@@ -809,6 +823,10 @@ data TxUpdateProposal era where
 
      TxUpdateProposal     :: UpdateProposalSupportedInEra era
                           -> UpdateProposal
+                          -> TxUpdateProposal era
+     TxVoltaireProposal   :: Voltaire.VoltaireClass era
+                          => VoltaireProposalSupportedInEra era
+                          -> Voltaire.Update era
                           -> TxUpdateProposal era
 
 deriving instance Eq   (TxUpdateProposal era)
@@ -1189,7 +1207,9 @@ makeShelleyTransactionBody era@ShelleyBasedEraShelley
              TxValidityUpperBound _ ttl  -> ttl)
           (case txUpdateProposal of
              TxUpdateProposalNone -> SNothing
-             TxUpdateProposal _ p -> SJust (toShelleyUpdate p))
+             TxUpdateProposal _ p -> SJust (toShelleyUpdate p)
+             TxVoltaireProposal absurd _ -> case absurd of {}
+             )
           (maybeToStrictMaybe
             (Ledger.hashAuxiliaryData @StandardShelley <$> txAuxData)))
         (map toShelleySimpleScript (collectTxBodySimpleScripts txbodycontent))
@@ -1252,7 +1272,8 @@ makeShelleyTransactionBody era@ShelleyBasedEraAllegra
            })
           (case txUpdateProposal of
              TxUpdateProposalNone -> SNothing
-             TxUpdateProposal _ p -> SJust (toShelleyUpdate p))
+             TxUpdateProposal _ p -> SJust (toShelleyUpdate p)
+             TxVoltaireProposal absurd _ -> case absurd of {})
           (maybeToStrictMaybe
             (Ledger.hashAuxiliaryData @StandardAllegra <$> txAuxData))
           mempty) -- No minting in Allegra, only Mary
@@ -1330,7 +1351,8 @@ makeShelleyTransactionBody era@ShelleyBasedEraMary
            })
           (case txUpdateProposal of
              TxUpdateProposalNone -> SNothing
-             TxUpdateProposal _ p -> SJust (toShelleyUpdate p))
+             TxUpdateProposal _ p -> SJust (toShelleyUpdate p)
+             TxVoltaireProposal absurd _ -> case absurd of {})
           (maybeToStrictMaybe
             (Ledger.hashAuxiliaryData @StandardMary <$> txAuxData))
           (case txMintValue of
@@ -1411,7 +1433,8 @@ makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototype
            })
           (case txUpdateProposal of
              TxUpdateProposalNone -> SNothing
-             TxUpdateProposal _ p -> SJust (toPrototypeOneUpdate p))
+             TxUpdateProposal _ p -> SJust (toPrototypeOneUpdate p)
+             TxVoltaireProposal absurd _ -> case absurd of {})
           (maybeToStrictMaybe
             (Ledger.hashAuxiliaryData @Voltaire.StandardVoltaireOne <$> txAuxData))
           (case txMintValue of
