@@ -38,7 +38,7 @@ module Cardano.Api.Eras
   , cardanoEraStyle
 
     -- * Data family instances
-  , AsType(AsByronEra, AsShelleyEra, AsAllegraEra, AsMaryEra,
+  , AsType(AsByronEra, AsShelleyEra, AsAllegraEra, AsMaryEra, AsVoltairePrototypeEra,
            AsByron,    AsShelley,    AsAllegra,    AsMary)
   ) where
 
