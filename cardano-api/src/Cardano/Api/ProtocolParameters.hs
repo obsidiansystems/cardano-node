@@ -4,6 +4,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds #-}
 
 -- | The various Cardano protocol parameters, including:
 --
@@ -41,6 +42,7 @@ module Cardano.Api.ProtocolParameters (
     fromShelleyProposedPPUpdates,
     fromShelleyUpdate,
     fromShelleyGenesis,
+    toPrototypeOneUpdate,
 
     -- * Data family instances
     AsType(..)
@@ -54,6 +56,7 @@ import           Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy.Char8 as LBS
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
+import qualified Data.Sequence.Strict as Seq
 import           Data.Scientific (Scientific)
 import qualified Data.Text as Text
 import           Data.Time (NominalDiffTime, UTCTime)
@@ -76,6 +79,10 @@ import qualified Shelley.Spec.Ledger.BaseTypes as Shelley
 import qualified Shelley.Spec.Ledger.Genesis as Shelley
 import qualified Shelley.Spec.Ledger.Keys as Shelley
 import qualified Shelley.Spec.Ledger.PParams as Shelley
+
+import qualified Cardano.Ledger.Voltaire.Prototype.Class as Prototype
+import qualified Cardano.Api.Prototype.Tmp as Prototype
+import qualified Cardano.Ledger.Voltaire.Prototype.One as One
 
 import           Cardano.Api.Address
 import           Cardano.Api.Hash
@@ -788,3 +795,27 @@ fromShelleyGenesis
                                                       sgProtocolParams
     }
 
+-- Voltaire prototype
+
+toPrototypeOneUpdate
+  :: UpdateProposal
+  -> Prototype.Update Prototype.StandardVoltaireOne
+toPrototypeOneUpdate (UpdateProposal ppup epochNo) =
+  Prototype.emptyUpdate {
+    Prototype._update_submissions = Prototype.Submissions $ Seq.fromList proposalList
+  }
+ where
+  proposalList = toPrototypeOneProposals epochNo ppup
+
+toPrototypeOneProposals
+  :: EpochNo
+  -> Map (Hash GenesisKey) ProtocolParametersUpdate
+  -> [Prototype.Proposal Prototype.StandardVoltaireOne]
+toPrototypeOneProposals epochNo ppupMap =
+    map (uncurry toProposal)
+  $ Map.toList ppDeltaMap
+ where
+  toProposal keyHash pParamsDelta =
+    Prototype.Proposal (One.ProposalHeader keyHash epochNo) pParamsDelta
+  Shelley.ProposedPPUpdates ppDeltaMap =
+    toShelleyProposedPPUpdates @Prototype.StandardVoltaireOne ppupMap
