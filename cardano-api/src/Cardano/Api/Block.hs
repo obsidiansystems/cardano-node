@@ -7,6 +7,7 @@
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DataKinds #-}
 
 -- | Blocks in the blockchain
 --
@@ -62,6 +63,7 @@ import qualified Ouroboros.Consensus.HardFork.Combinator as Consensus
 import qualified Ouroboros.Consensus.HardFork.Combinator.Degenerate as Consensus
 import qualified Ouroboros.Consensus.Shelley.ShelleyHFC as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 
 import qualified Cardano.Chain.Block as Byron
 import qualified Cardano.Chain.UTxO as Byron
@@ -129,6 +131,12 @@ instance Show (Block era) where
         . showsPrec 11 block
         )
 
+    showsPrec p (ShelleyBlock ShelleyBasedEraVoltairePrototype block) =
+      showParen (p >= 11)
+        ( showString "ShelleyBlock ShelleyBasedEraVoltairePrototype "
+        . showsPrec 11 block
+        )
+
 getBlockTxs :: forall era . Block era -> [Tx era]
 getBlockTxs (ByronBlock Consensus.ByronBlock { Consensus.byronBlockRaw }) =
     case byronBlockRaw of
@@ -144,6 +152,7 @@ getBlockTxs (ShelleyBlock shelleyEra Consensus.ShelleyBlock{Consensus.shelleyBlo
       ShelleyBasedEraShelley -> go
       ShelleyBasedEraAllegra -> go
       ShelleyBasedEraMary    -> go
+      ShelleyBasedEraVoltairePrototype -> go
   where
     go :: Consensus.ShelleyBasedEra (ShelleyLedgerEra era) => [Tx era]
     go = case shelleyBlockRaw of Shelley.Block _header (Shelley.TxSeq txs) -> [ShelleyTx shelleyEra x | x <- toList txs]
@@ -193,6 +202,15 @@ fromConsensusBlock CardanoMode =
         BlockInMode (ShelleyBlock ShelleyBasedEraMary b')
                      MaryEraInCardanoMode
 
+fromConsensusBlock PrototypeMode =
+    \b -> case b of
+      Voltaire.BlockShelley b' ->
+        BlockInMode (ShelleyBlock ShelleyBasedEraShelley b')
+                    ShelleyEraInPrototypeMode
+
+      Voltaire.BlockVoltairePrototype b' ->
+        BlockInMode (ShelleyBlock ShelleyBasedEraVoltairePrototype b')
+                    VoltairePrototypeEraInPrototypeMode
 
 -- ----------------------------------------------------------------------------
 -- Block headers
@@ -224,6 +242,7 @@ getBlockHeader (ShelleyBlock shelleyEra block) = case shelleyEra of
   ShelleyBasedEraShelley -> go
   ShelleyBasedEraAllegra -> go
   ShelleyBasedEraMary -> go
+  ShelleyBasedEraVoltairePrototype -> go
   where
     go :: Consensus.ShelleyBasedEra (ShelleyLedgerEra era) => BlockHeader
     go = BlockHeader headerFieldSlot (HeaderHash hashSBS) headerFieldBlockNo
@@ -265,6 +284,7 @@ toConsensusPointInMode :: ConsensusMode mode
 toConsensusPointInMode ByronMode   = toConsensusPointHF
 toConsensusPointInMode ShelleyMode = toConsensusPointHF
 toConsensusPointInMode CardanoMode = toConsensusPointHF
+toConsensusPointInMode PrototypeMode = toConsensusPointHF
 
 fromConsensusPointInMode :: ConsensusMode mode
                          -> Consensus.Point (ConsensusBlockForMode mode)
@@ -272,6 +292,7 @@ fromConsensusPointInMode :: ConsensusMode mode
 fromConsensusPointInMode ByronMode   = fromConsensusPointHF
 fromConsensusPointInMode ShelleyMode = fromConsensusPointHF
 fromConsensusPointInMode CardanoMode = fromConsensusPointHF
+fromConsensusPointInMode PrototypeMode = fromConsensusPointHF
 
 
 -- | Convert a 'Consensus.Point' for multi-era block type
@@ -365,6 +386,14 @@ fromConsensusTip ShelleyMode = conv
 fromConsensusTip CardanoMode = conv
   where
     conv :: Consensus.Tip (Consensus.CardanoBlock Consensus.StandardCrypto)
+         -> ChainTip
+    conv Consensus.TipGenesis = ChainTipAtGenesis
+    conv (Consensus.Tip slot (Consensus.OneEraHash h) block) =
+      ChainTip slot (HeaderHash h) block
+
+fromConsensusTip PrototypeMode = conv
+  where -- TODO: should 'Voltaire.VoltairePrototypeBlock' really be parameterized over "proto"?
+    conv :: Consensus.Tip (Voltaire.VoltairePrototypeBlock 'Voltaire.VoltairePrototype_One Consensus.StandardCrypto)
          -> ChainTip
     conv Consensus.TipGenesis = ChainTipAtGenesis
     conv (Consensus.Tip slot (Consensus.OneEraHash h) block) =
