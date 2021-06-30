@@ -43,6 +43,7 @@ module Cardano.Api.ProtocolParameters (
     fromShelleyUpdate,
     fromShelleyGenesis,
     toPrototypeOneUpdate,
+    toPrototypeTwoUpdate,
 
     -- * Data family instances
     AsType(..)
@@ -83,6 +84,7 @@ import qualified Shelley.Spec.Ledger.PParams as Shelley
 import qualified Cardano.Ledger.Voltaire.Prototype.Class as Prototype
 import qualified Cardano.Api.Prototype.Tmp as Prototype
 import qualified Cardano.Ledger.Voltaire.Prototype.One as One
+import qualified Cardano.Ledger.Voltaire.Prototype.Two as Two
 
 import           Cardano.Api.Address
 import           Cardano.Api.Hash
@@ -819,3 +821,26 @@ toPrototypeOneProposals epochNo ppupMap =
     Prototype.Proposal (One.ProposalHeader keyHash epochNo) pParamsDelta
   Shelley.ProposedPPUpdates ppDeltaMap =
     toShelleyProposedPPUpdates @Prototype.StandardVoltaireOne ppupMap
+
+toPrototypeTwoUpdate
+  :: UpdateProposal
+  -> Prototype.Update Prototype.StandardVoltaireTwo
+toPrototypeTwoUpdate (UpdateProposal ppup epochNo) =
+  Prototype.emptyUpdate {
+    Prototype._update_submissions = Prototype.Submissions $ Seq.fromList proposalList
+  }
+ where
+  proposalList = toPrototypeTwoProposals epochNo ppup
+
+toPrototypeTwoProposals
+  :: EpochNo
+  -> Map (Hash GenesisKey) ProtocolParametersUpdate
+  -> [Prototype.Proposal Prototype.StandardVoltaireTwo]
+toPrototypeTwoProposals epochNo ppupMap =
+    map (uncurry toProposal)
+  $ Map.toList ppDeltaMap
+ where
+  toProposal keyHash pParamsDelta =
+    Prototype.Proposal (One.ProposalHeader keyHash epochNo) (Two.BodyPPUP pParamsDelta)
+  Shelley.ProposedPPUpdates ppDeltaMap =
+    toShelleyProposedPPUpdates @Prototype.StandardVoltaireTwo ppupMap
