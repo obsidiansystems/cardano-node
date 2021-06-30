@@ -29,6 +29,7 @@ import           Ouroboros.Consensus.HardFork.Combinator.AcrossEras (EraMismatch
 import qualified Ouroboros.Consensus.HardFork.Combinator.Degenerate as Consensus
 import qualified Ouroboros.Consensus.Ledger.SupportsMempool as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 
 import           Cardano.Api.Eras
 import           Cardano.Api.Modes
@@ -102,6 +103,16 @@ toConsensusGenTx (TxInMode (ShelleyTx _ tx) MaryEraInCardanoMode) =
   where
     tx' = Consensus.mkShelleyTx tx
 
+-- Voltaire prototype
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) ShelleyEraInPrototypeMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (Z tx'))
+  where
+    tx' = Consensus.mkShelleyTx tx
+
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) VoltairePrototypeEraInPrototypeMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (S (Z tx')))
+  where
+    tx' = Consensus.mkShelleyTx tx
 
 -- ----------------------------------------------------------------------------
 -- Transaction validation errors in the context of eras and consensus modes
@@ -144,6 +155,12 @@ instance Show (TxValidationError era) where
     showsPrec p (ShelleyTxValidationError ShelleyBasedEraMary err) =
       showParen (p >= 11)
         ( showString "ShelleyTxValidationError ShelleyBasedEraMary "
+        . showsPrec 11 err
+        )
+
+    showsPrec p (ShelleyTxValidationError ShelleyBasedEraVoltairePrototype err) =
+      showParen (p >= 11)
+        ( showString "ShelleyTxValidationError ShelleyBasedEraVoltairePrototype "
         . showsPrec 11 err
         )
 
@@ -201,3 +218,15 @@ fromConsensusApplyTxErr CardanoMode (Consensus.ApplyTxErrMary err) =
 fromConsensusApplyTxErr CardanoMode (Consensus.ApplyTxErrWrongEra err) =
     TxValidationEraMismatch err
 
+fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrShelley err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraShelley err)
+      ShelleyEraInPrototypeMode
+
+fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrVoltairePrototype err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraVoltairePrototype err)
+      VoltairePrototypeEraInPrototypeMode
+
+fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrWrongEra err) =
+    TxValidationEraMismatch err
