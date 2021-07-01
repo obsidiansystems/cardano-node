@@ -343,7 +343,7 @@ toConsensusQuery (QueryInEra erainmode (QueryInShelleyBasedEra era q)) =
       AllegraEraInCardanoMode -> toConsensusQueryShelleyBased erainmode q
       MaryEraInCardanoMode    -> toConsensusQueryShelleyBased erainmode q
       ShelleyEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
-      VoltairePrototypeEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
+      VoltairePrototypeOneEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
 
 toConsensusQuery (QueryInEra erainmode (QueryInVoltaireEra era q)) =
     case erainmode of
@@ -354,7 +354,7 @@ toConsensusQuery (QueryInEra erainmode (QueryInVoltaireEra era q)) =
       AllegraEraInCardanoMode -> toConsensusQueryVoltaire erainmode q
       MaryEraInCardanoMode    -> toConsensusQueryVoltaire erainmode q
       ShelleyEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
-      VoltairePrototypeEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
+      VoltairePrototypeOneEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
 
 toConsensusQueryShelleyBased
   :: forall era ledgerera mode block xs result.
@@ -453,7 +453,7 @@ consensusQueryInEraInMode ShelleyEraInCardanoMode = Consensus.QueryIfCurrentShel
 consensusQueryInEraInMode AllegraEraInCardanoMode = Consensus.QueryIfCurrentAllegra
 consensusQueryInEraInMode MaryEraInCardanoMode    = Consensus.QueryIfCurrentMary
 consensusQueryInEraInMode ShelleyEraInPrototypeMode = Voltaire.QueryIfCurrentShelley
-consensusQueryInEraInMode VoltairePrototypeEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototypeOne
+consensusQueryInEraInMode VoltairePrototypeOneEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototypeOne
 
 
 -- ----------------------------------------------------------------------------
@@ -542,7 +542,7 @@ fromConsensusQueryResult (QueryInEra ShelleyEraInPrototypeMode
               r'
       _ -> fromConsensusQueryResultMismatch
 
-fromConsensusQueryResult (QueryInEra VoltairePrototypeEraInPrototypeMode
+fromConsensusQueryResult (QueryInEra VoltairePrototypeOneEraInPrototypeMode
                                      (QueryInShelleyBasedEra _era q)) q' r' =
     case q' of
       Voltaire.QueryIfCurrentVoltairePrototypeOne q'' ->
@@ -560,7 +560,7 @@ fromConsensusQueryResult (QueryInEra ShelleyEraInPrototypeMode
               r'
       _ -> fromConsensusQueryResultMismatch
 
-fromConsensusQueryResult (QueryInEra VoltairePrototypeEraInPrototypeMode
+fromConsensusQueryResult (QueryInEra VoltairePrototypeOneEraInPrototypeMode
                                      (QueryInVoltaireEra _era q)) q' r' =
     case q' of
       Voltaire.QueryIfCurrentVoltairePrototypeOne q'' ->

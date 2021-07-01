@@ -109,7 +109,7 @@ toConsensusGenTx (TxInMode (ShelleyTx _ tx) ShelleyEraInPrototypeMode) =
   where
     tx' = Consensus.mkShelleyTx tx
 
-toConsensusGenTx (TxInMode (ShelleyTx _ tx) VoltairePrototypeEraInPrototypeMode) =
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) VoltairePrototypeOneEraInPrototypeMode) =
     Consensus.HardForkGenTx (Consensus.OneEraGenTx (S (Z tx')))
   where
     tx' = Consensus.mkShelleyTx tx
@@ -226,7 +226,7 @@ fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrShelley err) =
 fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrVoltairePrototypeOne err) =
     TxValidationErrorInMode
       (ShelleyTxValidationError ShelleyBasedEraVoltairePrototype err)
-      VoltairePrototypeEraInPrototypeMode
+      VoltairePrototypeOneEraInPrototypeMode
 
 fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrWrongEra err) =
     TxValidationEraMismatch err

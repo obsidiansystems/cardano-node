@@ -434,11 +434,11 @@ data ScriptLanguageInEra lang era where
      SimpleScriptV1InShelley :: ScriptLanguageInEra SimpleScriptV1 ShelleyEra
      SimpleScriptV1InAllegra :: ScriptLanguageInEra SimpleScriptV1 AllegraEra
      SimpleScriptV1InMary    :: ScriptLanguageInEra SimpleScriptV1 MaryEra
-     SimpleScriptV1InVoltairePrototype :: ScriptLanguageInEra SimpleScriptV1 VoltairePrototypeEra
+     SimpleScriptV1InVoltairePrototype :: ScriptLanguageInEra SimpleScriptV1 VoltairePrototypeOneEra
 
      SimpleScriptV2InAllegra :: ScriptLanguageInEra SimpleScriptV2 AllegraEra
      SimpleScriptV2InMary    :: ScriptLanguageInEra SimpleScriptV2 MaryEra
-     SimpleScriptV2InVoltairePrototype :: ScriptLanguageInEra SimpleScriptV2 VoltairePrototypeEra
+     SimpleScriptV2InVoltairePrototype :: ScriptLanguageInEra SimpleScriptV2 VoltairePrototypeOneEra
 
 
 deriving instance Eq   (ScriptLanguageInEra lang era)
@@ -468,7 +468,7 @@ instance IsShelleyBasedEra era => HasTextEnvelope (ScriptInEra era) where
         ShelleyBasedEraShelley -> "ScriptInEra ShelleyEra"
         ShelleyBasedEraAllegra -> "ScriptInEra AllegraEra"
         ShelleyBasedEraMary    -> "ScriptInEra MaryEra"
-        ShelleyBasedEraVoltairePrototype -> "ScriptInEra VoltairePrototypeEra"
+        ShelleyBasedEraVoltairePrototype -> "ScriptInEra VoltairePrototypeOneEra"
 
 
 -- | Check if a given script language is supported in a given era, and if so
@@ -488,7 +488,7 @@ scriptLanguageSupportedInEra era lang =
       (MaryEra, SimpleScriptLanguage SimpleScriptV1) ->
         Just SimpleScriptV1InMary
 
-      (VoltairePrototypeEra, SimpleScriptLanguage SimpleScriptV1) ->
+      (VoltairePrototypeOneEra, SimpleScriptLanguage SimpleScriptV1) ->
         Just SimpleScriptV1InVoltairePrototype
 
       (AllegraEra, SimpleScriptLanguage SimpleScriptV2) ->
@@ -497,7 +497,7 @@ scriptLanguageSupportedInEra era lang =
       (MaryEra, SimpleScriptLanguage SimpleScriptV2) ->
         Just SimpleScriptV2InMary
 
-      (VoltairePrototypeEra, SimpleScriptLanguage SimpleScriptV2) ->
+      (VoltairePrototypeOneEra, SimpleScriptLanguage SimpleScriptV2) ->
         Just SimpleScriptV2InVoltairePrototype
 
       _ -> Nothing
@@ -946,7 +946,7 @@ instance IsCardanoEra era => FromJSON (ScriptInEra era) where
               Just s' -> ScriptInEra SimpleScriptV1InMary
                                      (SimpleScript SimpleScriptV1 s')
 
-      VoltairePrototypeEra -> toMinimumSimpleScriptVersion
+      VoltairePrototypeOneEra -> toMinimumSimpleScriptVersion
              <$> parseSimpleScript SimpleScriptV2 v
         where
           toMinimumSimpleScriptVersion s =

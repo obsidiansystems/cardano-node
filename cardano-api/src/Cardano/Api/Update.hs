@@ -13,7 +13,7 @@ import Ouroboros.Consensus.Shelley.Update (HasProtocolUpdates, ProposedProtocolU
 import Ouroboros.Consensus.Voltaire.Prototype.Eras ()
 import Cardano.Api.Hash (Hash)
 import Cardano.Api.KeysShelley (GenesisKey)
-import Cardano.Api.Eras (VoltairePrototypeEra, ShelleyLedgerEra)
+import Cardano.Api.Eras (VoltairePrototypeOneEra, ShelleyLedgerEra)
 
 
 class (HasProtocolUpdates (ShelleyLedgerEra era)) => VoltaireProtocolUpdate era where
@@ -22,5 +22,5 @@ class (HasProtocolUpdates (ShelleyLedgerEra era)) => VoltaireProtocolUpdate era 
     -> ProposedProtocolUpdates (ShelleyLedgerEra era)
     -> Map (Hash GenesisKey) ProtocolParametersUpdate
 
-instance VoltaireProtocolUpdate VoltairePrototypeEra where
+instance VoltaireProtocolUpdate VoltairePrototypeOneEra where
   toProtocolParametersUpdate _ = fromShelleyProposedPPUpdates

@@ -335,7 +335,7 @@ toShelleyTxOut (TxOut addr (TxOutAdaOnly AdaOnlyInAllegraEra value)) =
 toShelleyTxOut (TxOut addr (TxOutValue MultiAssetInMaryEra value)) =
     Shelley.TxOut (toShelleyAddr addr) (toMaryValue value)
 
-toShelleyTxOut (TxOut addr (TxOutValue MultiAssetInVoltairePrototypeEra value)) =
+toShelleyTxOut (TxOut addr (TxOutValue MultiAssetInVoltairePrototypeOneEra value)) =
     Shelley.TxOut (toShelleyAddr addr) (toMaryValue value)
 
 fromShelleyTxOut :: Shelley.TxOut StandardShelley -> TxOut ShelleyEra
@@ -363,7 +363,7 @@ fromTxOut shelleyBasedEra' ledgerTxOut =
     ShelleyBasedEraVoltairePrototype
                            -> let (Shelley.TxOut addr value) = ledgerTxOut
                               in TxOut (fromShelleyAddr addr)
-                                        (TxOutValue MultiAssetInVoltairePrototypeEra
+                                        (TxOutValue MultiAssetInVoltairePrototypeOneEra
                                                       (fromMaryValue value))
 
 -- ----------------------------------------------------------------------------
@@ -381,7 +381,7 @@ data MultiAssetSupportedInEra era where
      -- | Multi-asset transactions are supported in the 'Mary' era.
      MultiAssetInMaryEra :: MultiAssetSupportedInEra MaryEra
      -- | Multi-asset transactions are supported in the 'Voltaire' era.
-     MultiAssetInVoltairePrototypeEra :: MultiAssetSupportedInEra VoltairePrototypeEra
+     MultiAssetInVoltairePrototypeOneEra :: MultiAssetSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (MultiAssetSupportedInEra era)
 deriving instance Show (MultiAssetSupportedInEra era)
@@ -413,7 +413,7 @@ multiAssetSupportedInEra ByronEra   = Left AdaOnlyInByronEra
 multiAssetSupportedInEra ShelleyEra = Left AdaOnlyInShelleyEra
 multiAssetSupportedInEra AllegraEra = Left AdaOnlyInAllegraEra
 multiAssetSupportedInEra MaryEra    = Right MultiAssetInMaryEra
-multiAssetSupportedInEra VoltairePrototypeEra = Right MultiAssetInVoltairePrototypeEra
+multiAssetSupportedInEra VoltairePrototypeOneEra = Right MultiAssetInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era requires explicitly specified fees in
@@ -428,7 +428,7 @@ data TxFeesExplicitInEra era where
      TxFeesExplicitInShelleyEra :: TxFeesExplicitInEra ShelleyEra
      TxFeesExplicitInAllegraEra :: TxFeesExplicitInEra AllegraEra
      TxFeesExplicitInMaryEra    :: TxFeesExplicitInEra MaryEra
-     TxFeesExplicitInVoltairePrototypeEra    :: TxFeesExplicitInEra VoltairePrototypeEra
+     TxFeesExplicitInVoltairePrototypeOneEra    :: TxFeesExplicitInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (TxFeesExplicitInEra era)
 deriving instance Show (TxFeesExplicitInEra era)
@@ -451,7 +451,7 @@ txFeesExplicitInEra ByronEra   = Left  TxFeesImplicitInByronEra
 txFeesExplicitInEra ShelleyEra = Right TxFeesExplicitInShelleyEra
 txFeesExplicitInEra AllegraEra = Right TxFeesExplicitInAllegraEra
 txFeesExplicitInEra MaryEra    = Right TxFeesExplicitInMaryEra
-txFeesExplicitInEra VoltairePrototypeEra = Right TxFeesExplicitInVoltairePrototypeEra
+txFeesExplicitInEra VoltairePrototypeOneEra = Right TxFeesExplicitInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports transactions with an upper
@@ -466,7 +466,7 @@ data ValidityUpperBoundSupportedInEra era where
      ValidityUpperBoundInShelleyEra :: ValidityUpperBoundSupportedInEra ShelleyEra
      ValidityUpperBoundInAllegraEra :: ValidityUpperBoundSupportedInEra AllegraEra
      ValidityUpperBoundInMaryEra    :: ValidityUpperBoundSupportedInEra MaryEra
-     ValidityUpperBoundInVoltairePrototypeEra :: ValidityUpperBoundSupportedInEra VoltairePrototypeEra
+     ValidityUpperBoundInVoltairePrototypeOneEra :: ValidityUpperBoundSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (ValidityUpperBoundSupportedInEra era)
 deriving instance Show (ValidityUpperBoundSupportedInEra era)
@@ -477,7 +477,7 @@ validityUpperBoundSupportedInEra ByronEra   = Nothing
 validityUpperBoundSupportedInEra ShelleyEra = Just ValidityUpperBoundInShelleyEra
 validityUpperBoundSupportedInEra AllegraEra = Just ValidityUpperBoundInAllegraEra
 validityUpperBoundSupportedInEra MaryEra    = Just ValidityUpperBoundInMaryEra
-validityUpperBoundSupportedInEra VoltairePrototypeEra = Just ValidityUpperBoundInVoltairePrototypeEra
+validityUpperBoundSupportedInEra VoltairePrototypeOneEra = Just ValidityUpperBoundInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports transactions having /no/
@@ -495,7 +495,7 @@ data ValidityNoUpperBoundSupportedInEra era where
      ValidityNoUpperBoundInByronEra   :: ValidityNoUpperBoundSupportedInEra ByronEra
      ValidityNoUpperBoundInAllegraEra :: ValidityNoUpperBoundSupportedInEra AllegraEra
      ValidityNoUpperBoundInMaryEra    :: ValidityNoUpperBoundSupportedInEra MaryEra
-     ValidityNoUpperBoundInVoltairePrototypeEra :: ValidityNoUpperBoundSupportedInEra VoltairePrototypeEra
+     ValidityNoUpperBoundInVoltairePrototypeOneEra :: ValidityNoUpperBoundSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (ValidityNoUpperBoundSupportedInEra era)
 deriving instance Show (ValidityNoUpperBoundSupportedInEra era)
@@ -506,7 +506,7 @@ validityNoUpperBoundSupportedInEra ByronEra   = Just ValidityNoUpperBoundInByron
 validityNoUpperBoundSupportedInEra ShelleyEra = Nothing
 validityNoUpperBoundSupportedInEra AllegraEra = Just ValidityNoUpperBoundInAllegraEra
 validityNoUpperBoundSupportedInEra MaryEra    = Just ValidityNoUpperBoundInMaryEra
-validityNoUpperBoundSupportedInEra VoltairePrototypeEra = Just ValidityNoUpperBoundInVoltairePrototypeEra
+validityNoUpperBoundSupportedInEra VoltairePrototypeOneEra = Just ValidityNoUpperBoundInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports transactions with a lower
@@ -520,7 +520,7 @@ data ValidityLowerBoundSupportedInEra era where
 
      ValidityLowerBoundInAllegraEra :: ValidityLowerBoundSupportedInEra AllegraEra
      ValidityLowerBoundInMaryEra    :: ValidityLowerBoundSupportedInEra MaryEra
-     ValidityLowerBoundInVoltairePrototypeEra :: ValidityLowerBoundSupportedInEra VoltairePrototypeEra
+     ValidityLowerBoundInVoltairePrototypeOneEra :: ValidityLowerBoundSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (ValidityLowerBoundSupportedInEra era)
 deriving instance Show (ValidityLowerBoundSupportedInEra era)
@@ -531,7 +531,7 @@ validityLowerBoundSupportedInEra ByronEra   = Nothing
 validityLowerBoundSupportedInEra ShelleyEra = Nothing
 validityLowerBoundSupportedInEra AllegraEra = Just ValidityLowerBoundInAllegraEra
 validityLowerBoundSupportedInEra MaryEra    = Just ValidityLowerBoundInMaryEra
-validityLowerBoundSupportedInEra VoltairePrototypeEra = Just ValidityLowerBoundInVoltairePrototypeEra
+validityLowerBoundSupportedInEra VoltairePrototypeOneEra = Just ValidityLowerBoundInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports transaction metadata.
@@ -543,7 +543,7 @@ data TxMetadataSupportedInEra era where
      TxMetadataInShelleyEra :: TxMetadataSupportedInEra ShelleyEra
      TxMetadataInAllegraEra :: TxMetadataSupportedInEra AllegraEra
      TxMetadataInMaryEra    :: TxMetadataSupportedInEra MaryEra
-     TxMetadataInVoltairePrototypeEra :: TxMetadataSupportedInEra VoltairePrototypeEra
+     TxMetadataInVoltairePrototypeOneEra :: TxMetadataSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (TxMetadataSupportedInEra era)
 deriving instance Show (TxMetadataSupportedInEra era)
@@ -554,7 +554,7 @@ txMetadataSupportedInEra ByronEra   = Nothing
 txMetadataSupportedInEra ShelleyEra = Just TxMetadataInShelleyEra
 txMetadataSupportedInEra AllegraEra = Just TxMetadataInAllegraEra
 txMetadataSupportedInEra MaryEra    = Just TxMetadataInMaryEra
-txMetadataSupportedInEra VoltairePrototypeEra = Just TxMetadataInVoltairePrototypeEra
+txMetadataSupportedInEra VoltairePrototypeOneEra = Just TxMetadataInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports auxiliary scripts in
@@ -566,7 +566,7 @@ data AuxScriptsSupportedInEra era where
 
      AuxScriptsInAllegraEra :: AuxScriptsSupportedInEra AllegraEra
      AuxScriptsInMaryEra    :: AuxScriptsSupportedInEra MaryEra
-     AuxScriptsInVoltairePrototypeEra :: AuxScriptsSupportedInEra VoltairePrototypeEra
+     AuxScriptsInVoltairePrototypeOneEra :: AuxScriptsSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (AuxScriptsSupportedInEra era)
 deriving instance Show (AuxScriptsSupportedInEra era)
@@ -577,7 +577,7 @@ auxScriptsSupportedInEra ByronEra   = Nothing
 auxScriptsSupportedInEra ShelleyEra = Nothing
 auxScriptsSupportedInEra AllegraEra = Just AuxScriptsInAllegraEra
 auxScriptsSupportedInEra MaryEra    = Just AuxScriptsInMaryEra
-auxScriptsSupportedInEra VoltairePrototypeEra = Just AuxScriptsInVoltairePrototypeEra
+auxScriptsSupportedInEra VoltairePrototypeOneEra = Just AuxScriptsInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports withdrawals from reward
@@ -591,7 +591,7 @@ data WithdrawalsSupportedInEra era where
      WithdrawalsInShelleyEra :: WithdrawalsSupportedInEra ShelleyEra
      WithdrawalsInAllegraEra :: WithdrawalsSupportedInEra AllegraEra
      WithdrawalsInMaryEra    :: WithdrawalsSupportedInEra MaryEra
-     WithdrawalsInVoltairePrototypeEra :: WithdrawalsSupportedInEra VoltairePrototypeEra
+     WithdrawalsInVoltairePrototypeOneEra :: WithdrawalsSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (WithdrawalsSupportedInEra era)
 deriving instance Show (WithdrawalsSupportedInEra era)
@@ -602,7 +602,7 @@ withdrawalsSupportedInEra ByronEra   = Nothing
 withdrawalsSupportedInEra ShelleyEra = Just WithdrawalsInShelleyEra
 withdrawalsSupportedInEra AllegraEra = Just WithdrawalsInAllegraEra
 withdrawalsSupportedInEra MaryEra    = Just WithdrawalsInMaryEra
-withdrawalsSupportedInEra VoltairePrototypeEra = Just WithdrawalsInVoltairePrototypeEra
+withdrawalsSupportedInEra VoltairePrototypeOneEra = Just WithdrawalsInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports 'Certificate's embedded in
@@ -615,7 +615,7 @@ data CertificatesSupportedInEra era where
      CertificatesInShelleyEra :: CertificatesSupportedInEra ShelleyEra
      CertificatesInAllegraEra :: CertificatesSupportedInEra AllegraEra
      CertificatesInMaryEra    :: CertificatesSupportedInEra MaryEra
-     CertificatesInVoltairePrototypeEra :: CertificatesSupportedInEra VoltairePrototypeEra
+     CertificatesInVoltairePrototypeOneEra :: CertificatesSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (CertificatesSupportedInEra era)
 deriving instance Show (CertificatesSupportedInEra era)
@@ -626,7 +626,7 @@ certificatesSupportedInEra ByronEra   = Nothing
 certificatesSupportedInEra ShelleyEra = Just CertificatesInShelleyEra
 certificatesSupportedInEra AllegraEra = Just CertificatesInAllegraEra
 certificatesSupportedInEra MaryEra    = Just CertificatesInMaryEra
-certificatesSupportedInEra VoltairePrototypeEra = Just CertificatesInVoltairePrototypeEra
+certificatesSupportedInEra VoltairePrototypeOneEra = Just CertificatesInVoltairePrototypeOneEra
 
 
 -- | A representation of whether the era supports 'UpdateProposal's embedded in
@@ -641,7 +641,7 @@ data UpdateProposalSupportedInEra era where
      UpdateProposalInShelleyEra :: UpdateProposalSupportedInEra ShelleyEra
      UpdateProposalInAllegraEra :: UpdateProposalSupportedInEra AllegraEra
      UpdateProposalInMaryEra    :: UpdateProposalSupportedInEra MaryEra
-     UpdateProposalInVoltairePrototypeEra :: UpdateProposalSupportedInEra VoltairePrototypeEra
+     UpdateProposalInVoltairePrototypeOneEra :: UpdateProposalSupportedInEra VoltairePrototypeOneEra
 
 deriving instance Eq   (UpdateProposalSupportedInEra era)
 deriving instance Show (UpdateProposalSupportedInEra era)
@@ -652,7 +652,7 @@ updateProposalSupportedInEra ByronEra   = Nothing
 updateProposalSupportedInEra ShelleyEra = Just UpdateProposalInShelleyEra
 updateProposalSupportedInEra AllegraEra = Just UpdateProposalInAllegraEra
 updateProposalSupportedInEra MaryEra    = Just UpdateProposalInMaryEra
-updateProposalSupportedInEra VoltairePrototypeEra = Just UpdateProposalInVoltairePrototypeEra
+updateProposalSupportedInEra VoltairePrototypeOneEra = Just UpdateProposalInVoltairePrototypeOneEra
 
 data VoltaireProposalSupportedInEra era where
 
@@ -665,7 +665,7 @@ voltaireProposalSupportedInEra ByronEra   = Nothing
 voltaireProposalSupportedInEra ShelleyEra = Nothing
 voltaireProposalSupportedInEra AllegraEra = Nothing
 voltaireProposalSupportedInEra MaryEra    = Nothing
-voltaireProposalSupportedInEra VoltairePrototypeEra = Nothing
+voltaireProposalSupportedInEra VoltairePrototypeOneEra = Nothing
 
 -- ----------------------------------------------------------------------------
 -- Building vs viewing transactions
@@ -998,8 +998,8 @@ pattern AsMaryTxBody :: AsType (TxBody MaryEra)
 pattern AsMaryTxBody = AsTxBody AsMaryEra
 {-# COMPLETE AsMaryTxBody #-}
 
-pattern AsVoltairePrototypeTxBody :: AsType (TxBody VoltairePrototypeEra)
-pattern AsVoltairePrototypeTxBody = AsTxBody AsVoltairePrototypeEra
+pattern AsVoltairePrototypeTxBody :: AsType (TxBody VoltairePrototypeOneEra)
+pattern AsVoltairePrototypeTxBody = AsTxBody AsVoltairePrototypeOneEra
 {-# COMPLETE AsVoltairePrototypeTxBody #-}
 
 instance IsCardanoEra era => SerialiseAsCBOR (TxBody era) where
@@ -1032,7 +1032,7 @@ instance IsCardanoEra era => SerialiseAsCBOR (TxBody era) where
                         (ShelleyTxBody ShelleyBasedEraAllegra) bs
         MaryEra    -> deserialiseShelleyBasedTxBody
                         (ShelleyTxBody ShelleyBasedEraMary) bs
-        VoltairePrototypeEra
+        VoltairePrototypeOneEra
                    -> deserialiseShelleyBasedTxBody
                         (ShelleyTxBody ShelleyBasedEraVoltairePrototype) bs
 
@@ -1084,7 +1084,7 @@ instance IsCardanoEra era => HasTextEnvelope (TxBody era) where
         ShelleyEra -> "TxUnsignedShelley"
         AllegraEra -> "TxBodyAllegra"
         MaryEra    -> "TxBodyMary"
-        VoltairePrototypeEra
+        VoltairePrototypeOneEra
                    -> "TxBodyVoltairePrototype"
 
 
@@ -1394,7 +1394,7 @@ makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototype
       [ do allPositive
            allWithinMaxBound
       | let maxTxOut = fromIntegral (maxBound :: Word64) :: Quantity
-      , txout@(TxOut _ (TxOutValue MultiAssetInVoltairePrototypeEra v)) <- txOuts
+      , txout@(TxOut _ (TxOutValue MultiAssetInVoltairePrototypeOneEra v)) <- txOuts
       , let allPositive       = case [ q | (_,q) <- valueToList v, q < 0 ] of
                                   []  -> Right ()
                                   q:_ -> Left (TxBodyOutputNegative q txout)

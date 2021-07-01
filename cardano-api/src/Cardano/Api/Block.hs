@@ -210,7 +210,7 @@ fromConsensusBlock PrototypeMode =
 
       Voltaire.BlockVoltairePrototypeOne b' ->
         BlockInMode (ShelleyBlock ShelleyBasedEraVoltairePrototype b')
-                    VoltairePrototypeEraInPrototypeMode
+                    VoltairePrototypeOneEraInPrototypeMode
 
 -- ----------------------------------------------------------------------------
 -- Block headers

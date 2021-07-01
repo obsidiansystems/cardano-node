@@ -12,7 +12,7 @@ module Cardano.Api.Eras
   , ShelleyEra
   , AllegraEra
   , MaryEra
-  , VoltairePrototypeEra
+  , VoltairePrototypeOneEra
   , CardanoEra(..)
   , IsCardanoEra(..)
   , AnyCardanoEra(..)
@@ -38,7 +38,7 @@ module Cardano.Api.Eras
   , cardanoEraStyle
 
     -- * Data family instances
-  , AsType(AsByronEra, AsShelleyEra, AsAllegraEra, AsMaryEra, AsVoltairePrototypeEra,
+  , AsType(AsByronEra, AsShelleyEra, AsAllegraEra, AsMaryEra, AsVoltairePrototypeOneEra,
            AsByron,    AsShelley,    AsAllegra,    AsMary)
   ) where
 
@@ -68,7 +68,7 @@ data AllegraEra
 data MaryEra
 
 -- | A type used as a tag to distinguish the VoltairePrototype era One.
-data VoltairePrototypeEra
+data VoltairePrototypeOneEra
 
 instance HasTypeProxy ByronEra where
     data AsType ByronEra = AsByronEra
@@ -86,9 +86,9 @@ instance HasTypeProxy MaryEra where
     data AsType MaryEra = AsMaryEra
     proxyToAsType _ = AsMaryEra
 
-instance HasTypeProxy VoltairePrototypeEra where
-    data AsType VoltairePrototypeEra = AsVoltairePrototypeEra
-    proxyToAsType _ = AsVoltairePrototypeEra
+instance HasTypeProxy VoltairePrototypeOneEra where
+    data AsType VoltairePrototypeOneEra = AsVoltairePrototypeOneEra
+    proxyToAsType _ = AsVoltairePrototypeOneEra
 
 -- ----------------------------------------------------------------------------
 -- Deprecated aliases
@@ -140,7 +140,7 @@ data CardanoEra era where
      ShelleyEra :: CardanoEra ShelleyEra
      AllegraEra :: CardanoEra AllegraEra
      MaryEra    :: CardanoEra MaryEra
-     VoltairePrototypeEra :: CardanoEra VoltairePrototypeEra
+     VoltairePrototypeOneEra :: CardanoEra VoltairePrototypeOneEra
 
 deriving instance Eq   (CardanoEra era)
 deriving instance Ord  (CardanoEra era)
@@ -151,14 +151,14 @@ instance ToJSON (CardanoEra era) where
    toJSON ShelleyEra = "Shelley"
    toJSON AllegraEra = "Allegra"
    toJSON MaryEra    = "Mary"
-   toJSON VoltairePrototypeEra = "VoltairePrototype"
+   toJSON VoltairePrototypeOneEra = "VoltairePrototype"
 
 instance TestEquality CardanoEra where
     testEquality ByronEra   ByronEra   = Just Refl
     testEquality ShelleyEra ShelleyEra = Just Refl
     testEquality AllegraEra AllegraEra = Just Refl
     testEquality MaryEra    MaryEra    = Just Refl
-    testEquality VoltairePrototypeEra VoltairePrototypeEra = Just Refl
+    testEquality VoltairePrototypeOneEra VoltairePrototypeOneEra = Just Refl
     testEquality _          _          = Nothing
 
 
@@ -181,8 +181,8 @@ instance IsCardanoEra AllegraEra where
 instance IsCardanoEra MaryEra where
    cardanoEra      = MaryEra
 
-instance IsCardanoEra VoltairePrototypeEra where
-   cardanoEra      = VoltairePrototypeEra
+instance IsCardanoEra VoltairePrototypeOneEra where
+   cardanoEra      = VoltairePrototypeOneEra
 
 data AnyCardanoEra where
      AnyCardanoEra :: IsCardanoEra era  -- Provide class constraint
@@ -208,7 +208,7 @@ anyCardanoEra ByronEra   = AnyCardanoEra ByronEra
 anyCardanoEra ShelleyEra = AnyCardanoEra ShelleyEra
 anyCardanoEra AllegraEra = AnyCardanoEra AllegraEra
 anyCardanoEra MaryEra    = AnyCardanoEra MaryEra
-anyCardanoEra VoltairePrototypeEra = AnyCardanoEra VoltairePrototypeEra
+anyCardanoEra VoltairePrototypeOneEra = AnyCardanoEra VoltairePrototypeOneEra
 
 -- | This pairs up some era-dependent type with a 'CardanoEra' value that tells
 -- us what era it is, but hides the era type. This is useful when the era is
@@ -237,7 +237,7 @@ data ShelleyBasedEra era where
      ShelleyBasedEraShelley :: ShelleyBasedEra ShelleyEra
      ShelleyBasedEraAllegra :: ShelleyBasedEra AllegraEra
      ShelleyBasedEraMary    :: ShelleyBasedEra MaryEra
-     ShelleyBasedEraVoltairePrototype :: ShelleyBasedEra VoltairePrototypeEra
+     ShelleyBasedEraVoltairePrototype :: ShelleyBasedEra VoltairePrototypeOneEra
 
 deriving instance Eq   (ShelleyBasedEra era)
 deriving instance Ord  (ShelleyBasedEra era)
@@ -260,7 +260,7 @@ instance IsShelleyBasedEra AllegraEra where
 instance IsShelleyBasedEra MaryEra where
    shelleyBasedEra = ShelleyBasedEraMary
 
-instance IsShelleyBasedEra VoltairePrototypeEra where
+instance IsShelleyBasedEra VoltairePrototypeOneEra where
    shelleyBasedEra = ShelleyBasedEraVoltairePrototype
 
 -- | This pairs up some era-dependent type with a 'ShelleyBasedEra' value that
@@ -303,7 +303,7 @@ cardanoEraStyle ByronEra   = LegacyByronEra
 cardanoEraStyle ShelleyEra = ShelleyBasedEra ShelleyBasedEraShelley
 cardanoEraStyle AllegraEra = ShelleyBasedEra ShelleyBasedEraAllegra
 cardanoEraStyle MaryEra    = ShelleyBasedEra ShelleyBasedEraMary
-cardanoEraStyle VoltairePrototypeEra = ShelleyBasedEra ShelleyBasedEraVoltairePrototype
+cardanoEraStyle VoltairePrototypeOneEra = ShelleyBasedEra ShelleyBasedEraVoltairePrototype
 
 -- ----------------------------------------------------------------------------
 -- Conversion to Shelley ledger library types
@@ -321,4 +321,4 @@ type family ShelleyLedgerEra era where
   ShelleyLedgerEra ShelleyEra = Ledger.StandardShelley
   ShelleyLedgerEra AllegraEra = Ledger.StandardAllegra
   ShelleyLedgerEra MaryEra    = Ledger.StandardMary
-  ShelleyLedgerEra VoltairePrototypeEra = Ledger.StandardVoltaireOne
+  ShelleyLedgerEra VoltairePrototypeOneEra = Ledger.StandardVoltaireOne

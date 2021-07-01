@@ -204,7 +204,7 @@ instance IsCardanoEra era => SerialiseAsCBOR (Tx era) where
                         (ShelleyTx ShelleyBasedEraAllegra) bs
         MaryEra    -> deserialiseShelleyBasedTx
                         (ShelleyTx ShelleyBasedEraMary) bs
-        VoltairePrototypeEra
+        VoltairePrototypeOneEra
                    -> deserialiseShelleyBasedTx
                         (ShelleyTx ShelleyBasedEraVoltairePrototype) bs
 
@@ -229,8 +229,8 @@ instance IsCardanoEra era => HasTextEnvelope (Tx era) where
         ShelleyEra -> "TxSignedShelley"
         AllegraEra -> "Tx AllegraEra"
         MaryEra    -> "Tx MaryEra"
-        VoltairePrototypeEra
-                   -> "Tx VoltairePrototypeEra"
+        VoltairePrototypeOneEra
+                   -> "Tx VoltairePrototypeOneEra"
 
 
 data KeyWitness era where
@@ -363,7 +363,7 @@ instance IsCardanoEra era => SerialiseAsCBOR (KeyWitness era) where
         ShelleyEra -> decodeShelleyBasedWitness ShelleyBasedEraShelley bs
         AllegraEra -> decodeShelleyBasedWitness ShelleyBasedEraAllegra bs
         MaryEra    -> decodeShelleyBasedWitness ShelleyBasedEraMary    bs
-        VoltairePrototypeEra -> decodeShelleyBasedWitness ShelleyBasedEraVoltairePrototype bs
+        VoltairePrototypeOneEra -> decodeShelleyBasedWitness ShelleyBasedEraVoltairePrototype bs
 
 
 encodeShelleyBasedKeyWitness :: ToCBOR w => w -> CBOR.Encoding
@@ -399,7 +399,7 @@ instance IsCardanoEra era => HasTextEnvelope (KeyWitness era) where
         ShelleyEra -> "TxWitnessShelley"
         AllegraEra -> "TxWitness AllegraEra"
         MaryEra    -> "TxWitness MaryEra"
-        VoltairePrototypeEra -> "TxWitness VoltairePrototypeEra"
+        VoltairePrototypeOneEra -> "TxWitness VoltairePrototypeOneEra"
 
 
 pattern Tx :: Ledger.Era era => TxBody era -> [KeyWitness era] -> Tx era

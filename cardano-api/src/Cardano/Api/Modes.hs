@@ -135,7 +135,7 @@ toEraInMode ShelleyEra CardanoMode = Just ShelleyEraInCardanoMode
 toEraInMode AllegraEra CardanoMode = Just AllegraEraInCardanoMode
 toEraInMode MaryEra    CardanoMode = Just MaryEraInCardanoMode
 toEraInMode ShelleyEra PrototypeMode = Just ShelleyEraInPrototypeMode
-toEraInMode VoltairePrototypeEra PrototypeMode = Just VoltairePrototypeEraInPrototypeMode
+toEraInMode VoltairePrototypeOneEra PrototypeMode = Just VoltairePrototypeOneEraInPrototypeMode
 toEraInMode _ _                    = Nothing
 
 
@@ -153,7 +153,7 @@ data EraInMode era mode where
      MaryEraInCardanoMode    :: EraInMode MaryEra    CardanoMode
       -- prototypes in prototype consensus modes
      ShelleyEraInPrototypeMode :: EraInMode ShelleyEra PrototypeMode
-     VoltairePrototypeEraInPrototypeMode :: EraInMode VoltairePrototypeEra PrototypeMode
+     VoltairePrototypeOneEraInPrototypeMode :: EraInMode VoltairePrototypeOneEra PrototypeMode
 
 deriving instance Show (EraInMode era mode)
 
@@ -166,7 +166,7 @@ eraInModeToEra ShelleyEraInCardanoMode = ShelleyEra
 eraInModeToEra AllegraEraInCardanoMode = AllegraEra
 eraInModeToEra MaryEraInCardanoMode    = MaryEra
 eraInModeToEra ShelleyEraInPrototypeMode = ShelleyEra
-eraInModeToEra VoltairePrototypeEraInPrototypeMode = VoltairePrototypeEra
+eraInModeToEra VoltairePrototypeOneEraInPrototypeMode = VoltairePrototypeOneEra
 
 data AnyEraInMode mode where
      AnyEraInMode :: EraInMode era mode -> AnyEraInMode mode
@@ -184,7 +184,7 @@ anyEraInModeToAnyEra (AnyEraInMode erainmode) =
     AllegraEraInCardanoMode -> AnyCardanoEra AllegraEra
     MaryEraInCardanoMode    -> AnyCardanoEra MaryEra
     ShelleyEraInPrototypeMode -> AnyCardanoEra ShelleyEra
-    VoltairePrototypeEraInPrototypeMode -> AnyCardanoEra VoltairePrototypeEra
+    VoltairePrototypeOneEraInPrototypeMode -> AnyCardanoEra VoltairePrototypeOneEra
 
 
 -- | The consensus-mode-specific parameters needed to connect to a local node
@@ -236,7 +236,7 @@ type family ConsensusBlockForEra era where
   ConsensusBlockForEra ShelleyEra = Consensus.ShelleyBlock StandardShelley
   ConsensusBlockForEra AllegraEra = Consensus.ShelleyBlock StandardAllegra
   ConsensusBlockForEra MaryEra    = Consensus.ShelleyBlock StandardMary
-  ConsensusBlockForEra VoltairePrototypeEra = Consensus.ShelleyBlock StandardVoltaireOne
+  ConsensusBlockForEra VoltairePrototypeOneEra = Consensus.ShelleyBlock StandardVoltaireOne
 
 
 
@@ -265,7 +265,7 @@ toConsensusEraIndex AllegraEraInCardanoMode = eraIndex2
 toConsensusEraIndex MaryEraInCardanoMode    = eraIndex3
 
 toConsensusEraIndex ShelleyEraInPrototypeMode = eraIndex0
-toConsensusEraIndex VoltairePrototypeEraInPrototypeMode = eraIndex1
+toConsensusEraIndex VoltairePrototypeOneEraInPrototypeMode = eraIndex1
 
 fromConsensusEraIndex :: ConsensusBlockForMode mode ~ Consensus.HardForkBlock xs
                       => ConsensusMode mode
@@ -314,4 +314,4 @@ fromConsensusEraIndex PrototypeMode = fromPrototypeEraIndex
       AnyEraInMode ShelleyEraInPrototypeMode
 
     fromPrototypeEraIndex (Consensus.EraIndex (S (Z (K ())))) =
-      AnyEraInMode VoltairePrototypeEraInPrototypeMode
+      AnyEraInMode VoltairePrototypeOneEraInPrototypeMode
