@@ -223,7 +223,7 @@ fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrShelley err) =
       (ShelleyTxValidationError ShelleyBasedEraShelley err)
       ShelleyEraInPrototypeMode
 
-fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrVoltairePrototype err) =
+fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrVoltairePrototypeOne err) =
     TxValidationErrorInMode
       (ShelleyTxValidationError ShelleyBasedEraVoltairePrototype err)
       VoltairePrototypeEraInPrototypeMode

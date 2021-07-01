@@ -208,7 +208,7 @@ fromConsensusBlock PrototypeMode =
         BlockInMode (ShelleyBlock ShelleyBasedEraShelley b')
                     ShelleyEraInPrototypeMode
 
-      Voltaire.BlockVoltairePrototype b' ->
+      Voltaire.BlockVoltairePrototypeOne b' ->
         BlockInMode (ShelleyBlock ShelleyBasedEraVoltairePrototype b')
                     VoltairePrototypeEraInPrototypeMode
 
@@ -392,8 +392,8 @@ fromConsensusTip CardanoMode = conv
       ChainTip slot (HeaderHash h) block
 
 fromConsensusTip PrototypeMode = conv
-  where -- TODO: should 'Voltaire.VoltairePrototypeBlock' really be parameterized over "proto"?
-    conv :: Consensus.Tip (Voltaire.VoltairePrototypeBlock 'Voltaire.VoltairePrototype_One Consensus.StandardCrypto)
+  where
+    conv :: Consensus.Tip (Voltaire.VoltairePrototypeBlock Consensus.StandardCrypto)
          -> ChainTip
     conv Consensus.TipGenesis = ChainTipAtGenesis
     conv (Consensus.Tip slot (Consensus.OneEraHash h) block) =

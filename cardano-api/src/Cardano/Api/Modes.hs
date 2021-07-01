@@ -229,8 +229,7 @@ type family ConsensusBlockForMode mode where
   ConsensusBlockForMode ByronMode   = Consensus.ByronBlockHFC
   ConsensusBlockForMode ShelleyMode = Consensus.ShelleyBlockHFC StandardShelley
   ConsensusBlockForMode CardanoMode = Consensus.CardanoBlock StandardCrypto
-  ConsensusBlockForMode PrototypeMode
-    = Consensus.VoltairePrototypeBlock 'Consensus.VoltairePrototype_One StandardCrypto
+  ConsensusBlockForMode PrototypeMode = Consensus.VoltairePrototypeBlock StandardCrypto
 
 type family ConsensusBlockForEra era where
   ConsensusBlockForEra ByronEra   = Consensus.ByronBlock
@@ -309,7 +308,7 @@ fromConsensusEraIndex CardanoMode = fromShelleyEraIndex
 fromConsensusEraIndex PrototypeMode = fromPrototypeEraIndex
   where
     fromPrototypeEraIndex :: Consensus.EraIndex
-                             (Consensus.VoltairePrototypeEras 'Consensus.VoltairePrototype_One StandardCrypto)
+                             (Consensus.VoltairePrototypeEras StandardCrypto)
                         -> AnyEraInMode PrototypeMode
     fromPrototypeEraIndex (Consensus.EraIndex (Z (K ()))) =
       AnyEraInMode ShelleyEraInPrototypeMode

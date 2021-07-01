@@ -453,7 +453,7 @@ consensusQueryInEraInMode ShelleyEraInCardanoMode = Consensus.QueryIfCurrentShel
 consensusQueryInEraInMode AllegraEraInCardanoMode = Consensus.QueryIfCurrentAllegra
 consensusQueryInEraInMode MaryEraInCardanoMode    = Consensus.QueryIfCurrentMary
 consensusQueryInEraInMode ShelleyEraInPrototypeMode = Voltaire.QueryIfCurrentShelley
-consensusQueryInEraInMode VoltairePrototypeEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototype
+consensusQueryInEraInMode VoltairePrototypeEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototypeOne
 
 
 -- ----------------------------------------------------------------------------
@@ -545,7 +545,7 @@ fromConsensusQueryResult (QueryInEra ShelleyEraInPrototypeMode
 fromConsensusQueryResult (QueryInEra VoltairePrototypeEraInPrototypeMode
                                      (QueryInShelleyBasedEra _era q)) q' r' =
     case q' of
-      Voltaire.QueryIfCurrentVoltairePrototype q'' ->
+      Voltaire.QueryIfCurrentVoltairePrototypeOne q'' ->
         bimap fromConsensusEraMismatch
               (fromConsensusQueryResultShelleyBased ShelleyBasedEraVoltairePrototype  q q'')
               r'
@@ -563,7 +563,7 @@ fromConsensusQueryResult (QueryInEra ShelleyEraInPrototypeMode
 fromConsensusQueryResult (QueryInEra VoltairePrototypeEraInPrototypeMode
                                      (QueryInVoltaireEra _era q)) q' r' =
     case q' of
-      Voltaire.QueryIfCurrentVoltairePrototype q'' ->
+      Voltaire.QueryIfCurrentVoltairePrototypeOne q'' ->
         bimap fromConsensusEraMismatch
               (fromConsensusQueryResultVoltaire ShelleyBasedEraVoltairePrototype q q'')
               r'

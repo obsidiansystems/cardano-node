@@ -10,6 +10,7 @@ import Cardano.Prelude
 
 import Cardano.Api.ProtocolParameters (ProtocolParametersUpdate, fromShelleyProposedPPUpdates)
 import Ouroboros.Consensus.Shelley.Update (HasProtocolUpdates, ProposedProtocolUpdates)
+import Ouroboros.Consensus.Voltaire.Prototype.Eras ()
 import Cardano.Api.Hash (Hash)
 import Cardano.Api.KeysShelley (GenesisKey)
 import Cardano.Api.Eras (VoltairePrototypeEra, ShelleyLedgerEra)

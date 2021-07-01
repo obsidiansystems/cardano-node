@@ -51,8 +51,7 @@ import           Cardano.Ledger.Era as Ledger (Crypto)
 
 import           Ouroboros.Consensus.Shelley.Eras as Ledger (StandardAllegra, StandardCrypto,
                      StandardMary, StandardShelley)
-import           Ouroboros.Consensus.Voltaire.Prototype.Eras as Ledger (StandardVoltairePrototype)
-
+import           Cardano.Api.Prototype.Tmp as Ledger (StandardVoltaireOne)
 import           Cardano.Api.HasTypeProxy
 
 
@@ -68,7 +67,7 @@ data AllegraEra
 -- | A type used as a tag to distinguish the Mary era.
 data MaryEra
 
--- | A type used as a tag to distinguish the VoltairePrototype era.
+-- | A type used as a tag to distinguish the VoltairePrototype era One.
 data VoltairePrototypeEra
 
 instance HasTypeProxy ByronEra where
@@ -322,4 +321,4 @@ type family ShelleyLedgerEra era where
   ShelleyLedgerEra ShelleyEra = Ledger.StandardShelley
   ShelleyLedgerEra AllegraEra = Ledger.StandardAllegra
   ShelleyLedgerEra MaryEra    = Ledger.StandardMary
-  ShelleyLedgerEra VoltairePrototypeEra = Ledger.StandardVoltairePrototype
+  ShelleyLedgerEra VoltairePrototypeEra = Ledger.StandardVoltaireOne
