@@ -57,6 +57,7 @@ import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Consensus
 import qualified Cardano.Chain.Slotting as Byron (EpochSlots (..))
 
 import           Cardano.Api.Eras
+import           Cardano.Api.Prototype.Tmp (StandardVoltaireOne)
 
 
 -- ----------------------------------------------------------------------------
@@ -122,6 +123,7 @@ deriving instance Show AnyConsensusMode
 --
 data ConsensusModeIsMultiEra mode where
      CardanoModeIsMultiEra :: ConsensusModeIsMultiEra CardanoMode
+     PrototypeModeIsMultiEra :: ConsensusModeIsMultiEra PrototypeMode
 
 deriving instance Show (ConsensusModeIsMultiEra mode)
 
@@ -235,6 +237,7 @@ type family ConsensusBlockForEra era where
   ConsensusBlockForEra ShelleyEra = Consensus.ShelleyBlock StandardShelley
   ConsensusBlockForEra AllegraEra = Consensus.ShelleyBlock StandardAllegra
   ConsensusBlockForEra MaryEra    = Consensus.ShelleyBlock StandardMary
+  ConsensusBlockForEra VoltairePrototypeEra = Consensus.ShelleyBlock StandardVoltaireOne
 
 
 

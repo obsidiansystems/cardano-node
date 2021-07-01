@@ -60,6 +60,7 @@ import           Ouroboros.Consensus.Cardano.Block (StandardCrypto)
 import qualified Ouroboros.Consensus.Cardano.Block as Consensus
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
 import qualified Ouroboros.Consensus.Shelley.Update as Consensus
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 import           Ouroboros.Network.Block (Serialised)
 
 import           Cardano.Binary
@@ -83,6 +84,7 @@ import           Cardano.Api.Orphans ()
 import           Cardano.Api.ProtocolParameters
 import           Cardano.Api.TxBody
 import           Cardano.Api.Value
+import qualified Cardano.Api.Update as Update
 
 
 -- ----------------------------------------------------------------------------
@@ -113,6 +115,10 @@ data QueryInEra era result where
      QueryInShelleyBasedEra :: ShelleyBasedEra era
                             -> QueryInShelleyBasedEra era result
                             -> QueryInEra era result
+
+     QueryInVoltaireEra :: ShelleyBasedEra era
+                        -> QueryInVoltaireEra era result
+                        -> QueryInEra era result
 
 deriving instance Show (QueryInEra era result)
 
@@ -159,6 +165,47 @@ data QueryInShelleyBasedEra era result where
        :: QueryInShelleyBasedEra era (ProtocolState era)
 
 deriving instance Show (QueryInShelleyBasedEra era result)
+
+
+data QueryInVoltaireEra era result where
+     VoltaireQueryChainPoint
+       :: QueryInVoltaireEra era ChainPoint
+
+     VoltaireQueryEpoch
+       :: QueryInVoltaireEra era EpochNo
+
+     VoltaireQueryGenesisParameters
+       :: QueryInVoltaireEra era GenesisParameters
+
+     VoltaireQueryProtocolParameters
+       :: QueryInVoltaireEra era ProtocolParameters
+
+     VoltaireQueryProtocolParametersUpdate
+       :: (Update.VoltaireProtocolUpdate era)
+       => QueryInVoltaireEra era
+            (Map (Hash GenesisKey) ProtocolParametersUpdate)
+
+     VoltaireQueryStakeDistribution
+       :: QueryInVoltaireEra era (Map (Hash StakePoolKey) Rational)
+
+     VoltaireQueryUTxO
+       :: Maybe (Set AddressAny)
+       -> QueryInVoltaireEra era (UTxO era)
+
+     VoltaireQueryStakeAddresses
+       :: Set StakeCredential
+       -> NetworkId
+       -> QueryInVoltaireEra era (Map StakeAddress Lovelace,
+                                      Map StakeAddress PoolId)
+
+     VoltaireQueryDebugLedgerState
+       :: QueryInVoltaireEra era (SerialisedDebugLedgerState era)
+
+     VoltaireQueryProtocolState
+       :: QueryInVoltaireEra era (ProtocolState era)
+
+deriving instance Show (QueryInVoltaireEra era result)
+
 
 -- ----------------------------------------------------------------------------
 -- Wrapper types used in queries
@@ -231,6 +278,9 @@ fromUTxO eraConversion utxo =
     ShelleyBasedEraMary ->
       let Shelley.UTxO sUtxo = utxo
       in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraMary)) $ Map.toList sUtxo
+    ShelleyBasedEraVoltairePrototype ->
+      let Shelley.UTxO sUtxo = utxo
+      in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraVoltairePrototype)) $ Map.toList sUtxo
 
 fromShelleyPoolDistr :: Shelley.PoolDistr StandardCrypto
                      -> Map (Hash StakePoolKey) Rational
@@ -275,6 +325,9 @@ toConsensusQuery :: forall mode block result.
 toConsensusQuery (QueryCurrentEra CardanoModeIsMultiEra) =
     Some (Consensus.QueryHardFork Consensus.GetCurrentEra)
 
+toConsensusQuery (QueryCurrentEra PrototypeModeIsMultiEra) =
+    Some (Consensus.QueryHardFork Consensus.GetCurrentEra)
+
 toConsensusQuery (QueryInEra ByronEraInByronMode QueryByronUpdateState) =
     Some (Consensus.DegenQuery Consensus.GetUpdateInterfaceState)
 
@@ -289,7 +342,19 @@ toConsensusQuery (QueryInEra erainmode (QueryInShelleyBasedEra era q)) =
       ShelleyEraInCardanoMode -> toConsensusQueryShelleyBased erainmode q
       AllegraEraInCardanoMode -> toConsensusQueryShelleyBased erainmode q
       MaryEraInCardanoMode    -> toConsensusQueryShelleyBased erainmode q
+      ShelleyEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
+      VoltairePrototypeEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
 
+toConsensusQuery (QueryInEra erainmode (QueryInVoltaireEra era q)) =
+    case erainmode of
+      ByronEraInByronMode     -> case era of {}
+      ShelleyEraInShelleyMode -> toConsensusQueryVoltaire erainmode q
+      ByronEraInCardanoMode   -> case era of {}
+      ShelleyEraInCardanoMode -> toConsensusQueryVoltaire erainmode q
+      AllegraEraInCardanoMode -> toConsensusQueryVoltaire erainmode q
+      MaryEraInCardanoMode    -> toConsensusQueryVoltaire erainmode q
+      ShelleyEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
+      VoltairePrototypeEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
 
 toConsensusQueryShelleyBased
   :: forall era ledgerera mode block xs result.
@@ -340,6 +405,38 @@ toConsensusQueryShelleyBased erainmode QueryDebugLedgerState =
 toConsensusQueryShelleyBased erainmode QueryProtocolState =
     Some (consensusQueryInEraInMode erainmode (Consensus.GetCBOR Consensus.DebugChainDepState))
 
+toConsensusQueryVoltaire
+  :: forall era ledgerera mode block xs result.
+     ConsensusBlockForEra era ~ Consensus.ShelleyBlock ledgerera
+  => Ledger.Crypto ledgerera ~ Consensus.StandardCrypto
+  => ConsensusBlockForMode mode ~ block
+  => block ~ Consensus.HardForkBlock xs
+  => EraInMode era mode
+  -> QueryInVoltaireEra era result
+  -> Some (Consensus.Query block)
+toConsensusQueryVoltaire erainmode query =
+  case query of
+    VoltaireQueryChainPoint ->
+      toConsensusQueryShelleyBased erainmode QueryChainPoint
+    VoltaireQueryEpoch ->
+      toConsensusQueryShelleyBased erainmode QueryEpoch
+    VoltaireQueryGenesisParameters ->
+      toConsensusQueryShelleyBased erainmode QueryGenesisParameters
+    VoltaireQueryProtocolParameters ->
+      toConsensusQueryShelleyBased erainmode QueryProtocolParameters
+    VoltaireQueryProtocolParametersUpdate ->
+      Some (consensusQueryInEraInMode erainmode Consensus.GetProposedPParamsUpdates)
+    VoltaireQueryStakeDistribution ->
+      toConsensusQueryShelleyBased erainmode QueryStakeDistribution
+    VoltaireQueryUTxO arg ->
+      toConsensusQueryShelleyBased erainmode (QueryUTxO arg)
+    VoltaireQueryStakeAddresses arg1 arg2 ->
+      toConsensusQueryShelleyBased erainmode (QueryStakeAddresses arg1 arg2)
+    VoltaireQueryDebugLedgerState ->
+      toConsensusQueryShelleyBased erainmode QueryDebugLedgerState
+    VoltaireQueryProtocolState ->
+      toConsensusQueryShelleyBased erainmode QueryProtocolState
+
 consensusQueryInEraInMode
   :: forall era mode erablock modeblock result result' xs.
      ConsensusBlockForEra era   ~ erablock
@@ -355,6 +452,8 @@ consensusQueryInEraInMode ByronEraInCardanoMode   = Consensus.QueryIfCurrentByro
 consensusQueryInEraInMode ShelleyEraInCardanoMode = Consensus.QueryIfCurrentShelley
 consensusQueryInEraInMode AllegraEraInCardanoMode = Consensus.QueryIfCurrentAllegra
 consensusQueryInEraInMode MaryEraInCardanoMode    = Consensus.QueryIfCurrentMary
+consensusQueryInEraInMode ShelleyEraInPrototypeMode = Voltaire.QueryIfCurrentShelley
+consensusQueryInEraInMode VoltairePrototypeEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototype
 
 
 -- ----------------------------------------------------------------------------
@@ -371,6 +470,12 @@ fromConsensusQueryResult (QueryCurrentEra CardanoModeIsMultiEra) q' r' =
     case q' of
       Consensus.QueryHardFork Consensus.GetCurrentEra ->
         anyEraInModeToAnyEra (fromConsensusEraIndex CardanoMode r')
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryCurrentEra PrototypeModeIsMultiEra) q' r' =
+    case q' of
+      Consensus.QueryHardFork Consensus.GetCurrentEra ->
+        anyEraInModeToAnyEra (fromConsensusEraIndex PrototypeMode r')
       _ -> fromConsensusQueryResultMismatch
 
 fromConsensusQueryResult (QueryInEra ByronEraInByronMode
@@ -428,6 +533,82 @@ fromConsensusQueryResult (QueryInEra MaryEraInCardanoMode
               r'
       _ -> fromConsensusQueryResultMismatch
 
+fromConsensusQueryResult (QueryInEra ShelleyEraInPrototypeMode
+                                     (QueryInShelleyBasedEra _era q)) q' r' =
+    case q' of
+      Voltaire.QueryIfCurrentShelley q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultShelleyBased ShelleyBasedEraShelley q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra VoltairePrototypeEraInPrototypeMode
+                                     (QueryInShelleyBasedEra _era q)) q' r' =
+    case q' of
+      Voltaire.QueryIfCurrentVoltairePrototype q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultShelleyBased ShelleyBasedEraVoltairePrototype  q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra ShelleyEraInPrototypeMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case q' of
+      Voltaire.QueryIfCurrentShelley q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraShelley q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra VoltairePrototypeEraInPrototypeMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case q' of
+      Voltaire.QueryIfCurrentVoltairePrototype q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraVoltairePrototype q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra ByronEraInByronMode
+                                     (QueryInVoltaireEra era _)) _ _ =
+    case era of {}
+
+fromConsensusQueryResult (QueryInEra ByronEraInCardanoMode
+                                     (QueryInVoltaireEra era _)) _ _ =
+    case era of {}
+
+fromConsensusQueryResult (QueryInEra ShelleyEraInShelleyMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case (q', r') of
+      (Consensus.DegenQuery q'', Consensus.DegenQueryResult r'') ->
+        Right (fromConsensusQueryResultVoltaire ShelleyBasedEraShelley q q'' r'')
+
+fromConsensusQueryResult (QueryInEra ShelleyEraInCardanoMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case q' of
+      Consensus.QueryIfCurrentShelley q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraShelley q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra AllegraEraInCardanoMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case q' of
+      Consensus.QueryIfCurrentAllegra q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraAllegra q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra MaryEraInCardanoMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case q' of
+      Consensus.QueryIfCurrentMary q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraMary q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
 
 fromConsensusQueryResultShelleyBased
   :: forall era ledgerera result result'.
@@ -500,6 +681,51 @@ fromConsensusQueryResultShelleyBased _ QueryProtocolState q' r' =
     case q' of
       Consensus.GetCBOR Consensus.DebugChainDepState -> ProtocolState r'
       _                                              -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResultVoltaire
+  :: forall era ledgerera result result'.
+     ShelleyLedgerEra era ~ ledgerera
+  => Shelley.PParams ledgerera ~ Core.PParams ledgerera
+  => Shelley.PParamsDelta ledgerera ~ Shelley.PParamsUpdate ledgerera
+  => Consensus.ShelleyBasedEra ledgerera
+  => Ledger.Crypto ledgerera ~ Consensus.StandardCrypto
+  => ShelleyBasedEra era
+  -> QueryInVoltaireEra era result
+  -> Consensus.Query (Consensus.ShelleyBlock ledgerera) result'
+  -> result'
+  -> result
+fromConsensusQueryResultVoltaire se VoltaireQueryChainPoint =
+    fromConsensusQueryResultShelleyBased se QueryChainPoint
+
+fromConsensusQueryResultVoltaire se VoltaireQueryEpoch =
+    fromConsensusQueryResultShelleyBased se QueryEpoch
+
+fromConsensusQueryResultVoltaire se VoltaireQueryGenesisParameters =
+    fromConsensusQueryResultShelleyBased se QueryGenesisParameters
+
+fromConsensusQueryResultVoltaire se VoltaireQueryProtocolParameters =
+    fromConsensusQueryResultShelleyBased se QueryProtocolParameters
+
+fromConsensusQueryResultVoltaire _ VoltaireQueryProtocolParametersUpdate =
+    \q' r' ->
+    case q' of
+      Consensus.GetProposedPParamsUpdates -> Update.toProtocolParametersUpdate (Proxy :: Proxy era) r'
+      _                                   -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResultVoltaire se VoltaireQueryStakeDistribution =
+    fromConsensusQueryResultShelleyBased se QueryStakeDistribution
+
+fromConsensusQueryResultVoltaire se (VoltaireQueryUTxO arg) =
+    fromConsensusQueryResultShelleyBased se (QueryUTxO arg)
+
+fromConsensusQueryResultVoltaire se (VoltaireQueryStakeAddresses arg1 nId) =
+    fromConsensusQueryResultShelleyBased se (QueryStakeAddresses arg1 nId)
+
+fromConsensusQueryResultVoltaire se VoltaireQueryDebugLedgerState =
+    fromConsensusQueryResultShelleyBased se QueryDebugLedgerState
+
+fromConsensusQueryResultVoltaire se VoltaireQueryProtocolState =
+    fromConsensusQueryResultShelleyBased se QueryProtocolState
 
 -- | This should /only/ happen if we messed up the mapping in 'toConsensusQuery'
 -- and 'fromConsensusQueryResult' so they are inconsistent with each other.
