@@ -114,6 +114,11 @@ toConsensusGenTx (TxInMode (ShelleyTx _ tx) VoltairePrototypeOneEraInPrototypeMo
   where
     tx' = Consensus.mkShelleyTx tx
 
+toConsensusGenTx (TxInMode (ShelleyTx _ tx) VoltairePrototypeTwoEraInPrototypeMode) =
+    Consensus.HardForkGenTx (Consensus.OneEraGenTx (S (S (Z tx'))))
+  where
+    tx' = Consensus.mkShelleyTx tx
+
 -- ----------------------------------------------------------------------------
 -- Transaction validation errors in the context of eras and consensus modes
 --
@@ -158,12 +163,17 @@ instance Show (TxValidationError era) where
         . showsPrec 11 err
         )
 
-    showsPrec p (ShelleyTxValidationError ShelleyBasedEraVoltairePrototype err) =
+    showsPrec p (ShelleyTxValidationError ShelleyBasedEraVoltairePrototypeOne err) =
       showParen (p >= 11)
-        ( showString "ShelleyTxValidationError ShelleyBasedEraVoltairePrototype "
+        ( showString "ShelleyTxValidationError ShelleyBasedEraVoltairePrototypeOne "
         . showsPrec 11 err
         )
 
+    showsPrec p (ShelleyTxValidationError ShelleyBasedEraVoltairePrototypeTwo err) =
+      showParen (p >= 11)
+        ( showString "ShelleyTxValidationError ShelleyBasedEraVoltairePrototypeTwo "
+        . showsPrec 11 err
+        )
 
 -- | A 'TxValidationError' in one of the eras supported by a given protocol
 -- mode.
@@ -225,8 +235,13 @@ fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrShelley err) =
 
 fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrVoltairePrototypeOne err) =
     TxValidationErrorInMode
-      (ShelleyTxValidationError ShelleyBasedEraVoltairePrototype err)
+      (ShelleyTxValidationError ShelleyBasedEraVoltairePrototypeOne err)
       VoltairePrototypeOneEraInPrototypeMode
+
+fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrVoltairePrototypeTwo err) =
+    TxValidationErrorInMode
+      (ShelleyTxValidationError ShelleyBasedEraVoltairePrototypeTwo err)
+      VoltairePrototypeTwoEraInPrototypeMode
 
 fromConsensusApplyTxErr PrototypeMode (Voltaire.ApplyTxErrWrongEra err) =
     TxValidationEraMismatch err

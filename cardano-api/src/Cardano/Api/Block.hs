@@ -131,9 +131,15 @@ instance Show (Block era) where
         . showsPrec 11 block
         )
 
-    showsPrec p (ShelleyBlock ShelleyBasedEraVoltairePrototype block) =
+    showsPrec p (ShelleyBlock ShelleyBasedEraVoltairePrototypeOne block) =
       showParen (p >= 11)
-        ( showString "ShelleyBlock ShelleyBasedEraVoltairePrototype "
+        ( showString "ShelleyBlock ShelleyBasedEraVoltairePrototypeOne "
+        . showsPrec 11 block
+        )
+
+    showsPrec p (ShelleyBlock ShelleyBasedEraVoltairePrototypeTwo block) =
+      showParen (p >= 11)
+        ( showString "ShelleyBlock ShelleyBasedEraVoltairePrototypeTwo "
         . showsPrec 11 block
         )
 
@@ -152,7 +158,8 @@ getBlockTxs (ShelleyBlock shelleyEra Consensus.ShelleyBlock{Consensus.shelleyBlo
       ShelleyBasedEraShelley -> go
       ShelleyBasedEraAllegra -> go
       ShelleyBasedEraMary    -> go
-      ShelleyBasedEraVoltairePrototype -> go
+      ShelleyBasedEraVoltairePrototypeOne -> go
+      ShelleyBasedEraVoltairePrototypeTwo -> go
   where
     go :: Consensus.ShelleyBasedEra (ShelleyLedgerEra era) => [Tx era]
     go = case shelleyBlockRaw of Shelley.Block _header (Shelley.TxSeq txs) -> [ShelleyTx shelleyEra x | x <- toList txs]
@@ -209,8 +216,12 @@ fromConsensusBlock PrototypeMode =
                     ShelleyEraInPrototypeMode
 
       Voltaire.BlockVoltairePrototypeOne b' ->
-        BlockInMode (ShelleyBlock ShelleyBasedEraVoltairePrototype b')
+        BlockInMode (ShelleyBlock ShelleyBasedEraVoltairePrototypeOne b')
                     VoltairePrototypeOneEraInPrototypeMode
+
+      Voltaire.BlockVoltairePrototypeTwo b' ->
+        BlockInMode (ShelleyBlock ShelleyBasedEraVoltairePrototypeTwo b')
+                    VoltairePrototypeTwoEraInPrototypeMode
 
 -- ----------------------------------------------------------------------------
 -- Block headers
@@ -242,7 +253,8 @@ getBlockHeader (ShelleyBlock shelleyEra block) = case shelleyEra of
   ShelleyBasedEraShelley -> go
   ShelleyBasedEraAllegra -> go
   ShelleyBasedEraMary -> go
-  ShelleyBasedEraVoltairePrototype -> go
+  ShelleyBasedEraVoltairePrototypeOne -> go
+  ShelleyBasedEraVoltairePrototypeTwo -> go
   where
     go :: Consensus.ShelleyBasedEra (ShelleyLedgerEra era) => BlockHeader
     go = BlockHeader headerFieldSlot (HeaderHash hashSBS) headerFieldBlockNo

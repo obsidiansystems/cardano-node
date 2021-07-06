@@ -278,9 +278,12 @@ fromUTxO eraConversion utxo =
     ShelleyBasedEraMary ->
       let Shelley.UTxO sUtxo = utxo
       in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraMary)) $ Map.toList sUtxo
-    ShelleyBasedEraVoltairePrototype ->
+    ShelleyBasedEraVoltairePrototypeOne ->
       let Shelley.UTxO sUtxo = utxo
-      in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraVoltairePrototype)) $ Map.toList sUtxo
+      in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraVoltairePrototypeOne)) $ Map.toList sUtxo
+    ShelleyBasedEraVoltairePrototypeTwo ->
+      let Shelley.UTxO sUtxo = utxo
+      in UTxO . Map.fromList . map (bimap fromShelleyTxIn (fromTxOut ShelleyBasedEraVoltairePrototypeTwo)) $ Map.toList sUtxo
 
 fromShelleyPoolDistr :: Shelley.PoolDistr StandardCrypto
                      -> Map (Hash StakePoolKey) Rational
@@ -344,6 +347,7 @@ toConsensusQuery (QueryInEra erainmode (QueryInShelleyBasedEra era q)) =
       MaryEraInCardanoMode    -> toConsensusQueryShelleyBased erainmode q
       ShelleyEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
       VoltairePrototypeOneEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
+      VoltairePrototypeTwoEraInPrototypeMode -> toConsensusQueryShelleyBased erainmode q
 
 toConsensusQuery (QueryInEra erainmode (QueryInVoltaireEra era q)) =
     case erainmode of
@@ -355,6 +359,7 @@ toConsensusQuery (QueryInEra erainmode (QueryInVoltaireEra era q)) =
       MaryEraInCardanoMode    -> toConsensusQueryVoltaire erainmode q
       ShelleyEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
       VoltairePrototypeOneEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
+      VoltairePrototypeTwoEraInPrototypeMode -> toConsensusQueryVoltaire erainmode q
 
 toConsensusQueryShelleyBased
   :: forall era ledgerera mode block xs result.
@@ -454,6 +459,7 @@ consensusQueryInEraInMode AllegraEraInCardanoMode = Consensus.QueryIfCurrentAlle
 consensusQueryInEraInMode MaryEraInCardanoMode    = Consensus.QueryIfCurrentMary
 consensusQueryInEraInMode ShelleyEraInPrototypeMode = Voltaire.QueryIfCurrentShelley
 consensusQueryInEraInMode VoltairePrototypeOneEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototypeOne
+consensusQueryInEraInMode VoltairePrototypeTwoEraInPrototypeMode = Voltaire.QueryIfCurrentVoltairePrototypeTwo
 
 
 -- ----------------------------------------------------------------------------
@@ -547,7 +553,16 @@ fromConsensusQueryResult (QueryInEra VoltairePrototypeOneEraInPrototypeMode
     case q' of
       Voltaire.QueryIfCurrentVoltairePrototypeOne q'' ->
         bimap fromConsensusEraMismatch
-              (fromConsensusQueryResultShelleyBased ShelleyBasedEraVoltairePrototype  q q'')
+              (fromConsensusQueryResultShelleyBased ShelleyBasedEraVoltairePrototypeOne  q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra VoltairePrototypeTwoEraInPrototypeMode
+                                     (QueryInShelleyBasedEra _era q)) q' r' =
+    case q' of
+      Voltaire.QueryIfCurrentVoltairePrototypeTwo q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultShelleyBased ShelleyBasedEraVoltairePrototypeTwo  q q'')
               r'
       _ -> fromConsensusQueryResultMismatch
 
@@ -565,9 +580,19 @@ fromConsensusQueryResult (QueryInEra VoltairePrototypeOneEraInPrototypeMode
     case q' of
       Voltaire.QueryIfCurrentVoltairePrototypeOne q'' ->
         bimap fromConsensusEraMismatch
-              (fromConsensusQueryResultVoltaire ShelleyBasedEraVoltairePrototype q q'')
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraVoltairePrototypeOne q q'')
               r'
       _ -> fromConsensusQueryResultMismatch
+
+fromConsensusQueryResult (QueryInEra VoltairePrototypeTwoEraInPrototypeMode
+                                     (QueryInVoltaireEra _era q)) q' r' =
+    case q' of
+      Voltaire.QueryIfCurrentVoltairePrototypeTwo q'' ->
+        bimap fromConsensusEraMismatch
+              (fromConsensusQueryResultVoltaire ShelleyBasedEraVoltairePrototypeTwo q q'')
+              r'
+      _ -> fromConsensusQueryResultMismatch
+
 
 fromConsensusQueryResult (QueryInEra ByronEraInByronMode
                                      (QueryInVoltaireEra era _)) _ _ =
