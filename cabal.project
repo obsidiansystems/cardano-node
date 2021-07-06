@@ -180,7 +180,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/obsidiansystems/ouroboros-network
-  tag: e1e756e20c0701d95bd51228cd567a96f3cde0e6
+  tag: dab704db5a62dbf286c2f2bccb1120589ea03db0
   subdir:
     io-sim
     io-sim-classes

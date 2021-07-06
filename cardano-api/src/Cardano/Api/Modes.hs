@@ -216,7 +216,7 @@ data ConsensusModeParams mode where
        -> ConsensusModeParams CardanoMode
 
      -- prototypes
-     ExampleModeParams
+     PrototypeModeParams
        :: ConsensusModeParams PrototypeMode
 
 deriving instance Show (ConsensusModeParams mode)

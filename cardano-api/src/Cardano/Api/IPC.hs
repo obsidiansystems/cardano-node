@@ -164,6 +164,7 @@ consensusModeOnly :: ConsensusModeParams mode
 consensusModeOnly ByronModeParams{}   = ByronMode
 consensusModeOnly ShelleyModeParams{} = ShelleyMode
 consensusModeOnly CardanoModeParams{} = CardanoMode
+consensusModeOnly PrototypeModeParams{} = PrototypeMode
 
 
 -- ----------------------------------------------------------------------------
@@ -366,6 +367,10 @@ mkLocalNodeClientParams modeparams clients =
           (ProtocolClientInfoArgsCardano epochSlots)
           (convLocalNodeClientProtocols CardanoMode clients)
 
+      PrototypeModeParams ->
+        LocalNodeClientParams
+          ProtocolClientInfoArgsVoltaire
+          (convLocalNodeClientProtocols PrototypeMode clients)
 
 convLocalNodeClientProtocols :: forall mode block.
                                 ConsensusBlockForMode mode ~ block

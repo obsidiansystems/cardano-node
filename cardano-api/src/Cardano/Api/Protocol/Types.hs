@@ -25,6 +25,11 @@ import           Ouroboros.Consensus.Cardano
 import           Ouroboros.Consensus.Cardano.Node
 import           Ouroboros.Consensus.Cardano.Block
 import           Ouroboros.Consensus.Cardano.ByronHFC (ByronBlockHFC)
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Node as Voltaire
+import qualified Cardano.Ledger.Voltaire.Prototype.One.Translation as One ()
+import qualified Cardano.Ledger.Voltaire.Prototype.Two.Translation as Two ()
+import qualified Cardano.Api.Prototype.Tmp as Voltaire
 import           Ouroboros.Consensus.HardFork.Combinator.Embed.Unary
 import           Ouroboros.Consensus.Node.ProtocolInfo (ProtocolClientInfo(..), ProtocolInfo(..))
 import           Ouroboros.Consensus.Node.Run (RunNode)
@@ -80,6 +85,26 @@ instance IOLike m => Protocol m (CardanoBlock StandardCrypto) where
       paramsShelleyAllegra
       paramsAllegraMary
 
+instance IOLike m => Protocol m (Voltaire.VoltairePrototypeBlock StandardCrypto) where
+  data ProtocolInfoArgs m (Voltaire.VoltairePrototypeBlock StandardCrypto) = ProtocolInfoArgsPrototype
+    (ProtocolParamsShelleyBased StandardShelley)
+    ProtocolParamsShelley
+    Voltaire.ProtocolParamsVoltairePrototype
+    (Voltaire.ProtocolParamsTransition (ShelleyBlock StandardShelley) (ShelleyBlock Voltaire.StandardVoltaireOne))
+    (Voltaire.ProtocolParamsTransition (ShelleyBlock Voltaire.StandardVoltaireOne) (ShelleyBlock Voltaire.StandardVoltaireTwo))
+  protocolInfo (ProtocolInfoArgsPrototype
+               paramsShelleyBased
+               paramsShelley
+               paramsVoltairePrototype
+               paramsShelleyOne
+               paramsOneTwo) =
+    Voltaire.protocolInfoVoltairePrototype
+      paramsShelleyBased
+      paramsShelley
+      paramsVoltairePrototype
+      paramsShelleyOne
+      paramsOneTwo
+
 instance ProtocolClient ByronBlockHFC where
   data ProtocolClientInfoArgs ByronBlockHFC =
     ProtocolClientInfoArgsByron EpochSlots
@@ -91,6 +116,12 @@ instance ProtocolClient (CardanoBlock StandardCrypto) where
     ProtocolClientInfoArgsCardano EpochSlots
   protocolClientInfo (ProtocolClientInfoArgsCardano epochSlots) =
     protocolClientInfoCardano epochSlots
+
+instance ProtocolClient (Voltaire.VoltairePrototypeBlock StandardCrypto) where
+  data ProtocolClientInfoArgs (Voltaire.VoltairePrototypeBlock StandardCrypto) =
+    ProtocolClientInfoArgsVoltaire
+  protocolClientInfo ProtocolClientInfoArgsVoltaire =
+    Voltaire.protocolClientInfoVoltairePrototype
 
 instance IOLike m => Protocol m (ShelleyBlockHFC StandardShelley) where
   data ProtocolInfoArgs m (ShelleyBlockHFC StandardShelley) = ProtocolInfoArgsShelley
@@ -109,6 +140,7 @@ data BlockType blk where
   ByronBlockType :: BlockType ByronBlockHFC
   ShelleyBlockType :: BlockType (ShelleyBlockHFC StandardShelley)
   CardanoBlockType :: BlockType (CardanoBlock StandardCrypto)
+  VoltaireBlockType :: BlockType (Voltaire.VoltairePrototypeBlock StandardCrypto)
 
 deriving instance Eq (BlockType blk)
 deriving instance Show (BlockType blk)
