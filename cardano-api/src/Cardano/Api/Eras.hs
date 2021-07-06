@@ -31,6 +31,10 @@ module Cardano.Api.Eras
   , IsShelleyBasedEra(..)
   , InAnyShelleyBasedEra(..)
 
+    -- * Voltaire-based eras
+  , VoltaireBasedEra(..)
+  , IsVoltaireBasedEra(..)
+
     -- ** Mapping to era types from the Shelley ledger library
   , ShelleyLedgerEra
 
@@ -291,6 +295,37 @@ data InAnyShelleyBasedEra thing where
                           => ShelleyBasedEra era   -- and explicit value.
                           -> thing era
                           -> InAnyShelleyBasedEra thing
+
+
+-- ----------------------------------------------------------------------------
+-- Voltaire-based eras
+--
+
+-- | Values of this type witness the fact that the era is Voltaire-based. This
+-- can be used to constrain the era to being a Voltaire-based on. It allows
+-- non-uniform handling making case distinctions on the constructor.
+--
+data VoltaireBasedEra era where
+     VoltaireBasedEraPrototypeOne :: VoltaireBasedEra VoltairePrototypeOneEra
+     VoltaireBasedEraPrototypeTwo :: VoltaireBasedEra VoltairePrototypeTwoEra
+
+deriving instance Eq   (VoltaireBasedEra era)
+deriving instance Ord  (VoltaireBasedEra era)
+deriving instance Show (VoltaireBasedEra era)
+
+-- | The class of eras that are based on Shelley. This allows uniform handling
+-- of Shelley-based eras, but also non-uniform by making case distinctions on
+-- the 'ShelleyBasedEra' constructors.
+--
+class (IsCardanoEra era, Ledger.Crypto (ShelleyLedgerEra era) ~ StandardCrypto)
+   => IsVoltaireBasedEra era where
+   voltaireBasedEra :: VoltaireBasedEra era
+
+instance IsVoltaireBasedEra VoltairePrototypeOneEra where
+   voltaireBasedEra = VoltaireBasedEraPrototypeOne
+
+instance IsVoltaireBasedEra VoltairePrototypeTwoEra where
+   voltaireBasedEra = VoltaireBasedEraPrototypeTwo
 
 
 -- ----------------------------------------------------------------------------
