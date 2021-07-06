@@ -13,10 +13,9 @@ module Cardano.Api.Prototype.LedgerState
   , envSecurityParam
   , LedgerState
       ( ..
-      , LedgerStateByron
       , LedgerStateShelley
-      , LedgerStateAllegra
-      , LedgerStateMary
+      , LedgerStateVoltairePrototypeOne
+      , LedgerStateVoltairePrototypeTwo
       )
   , initialLedgerState
   , applyBlock
@@ -60,11 +59,11 @@ import           System.FilePath
 
 import           Cardano.Api.Block
 import           Cardano.Api.Eras
-import           Cardano.Api.IPC (ConsensusModeParams (CardanoModeParams), EpochSlots (..),
+import           Cardano.Api.IPC (ConsensusModeParams (PrototypeModeParams),
                    LocalChainSyncClient (LocalChainSyncClientPipelined),
                    LocalNodeClientProtocols (..), LocalNodeClientProtocolsInMode,
                    LocalNodeConnectInfo (..), connectToLocalNode)
-import           Cardano.Api.Modes (CardanoMode)
+import           Cardano.Api.Modes (PrototypeMode, PrototypeMode)
 import           Cardano.Api.NetworkId (NetworkId)
 import qualified Cardano.Chain.Genesis
 import qualified Cardano.Chain.Update
@@ -77,12 +76,14 @@ import           Cardano.Slotting.Slot (WithOrigin (At, Origin))
 import qualified Cardano.Slotting.Slot as Slot
 import           Network.TypedProtocol.Pipelined (Nat (..))
 import qualified Ouroboros.Consensus.Block.Abstract as Consensus
-import qualified Ouroboros.Consensus.Byron.Ledger.Block as Byron
 import qualified Ouroboros.Consensus.Cardano as Consensus
 import qualified Ouroboros.Consensus.Cardano.Block as Consensus
 import qualified Ouroboros.Consensus.Cardano.CanHardFork as Consensus
-import qualified Ouroboros.Consensus.Cardano.Node as Consensus
 import qualified Ouroboros.Consensus.Config as Consensus
+import qualified Ouroboros.Consensus.Voltaire.Prototype as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Node as Voltaire
+import qualified Cardano.Api.Prototype.Tmp as Voltaire
 import qualified Ouroboros.Consensus.HardFork.Combinator.AcrossEras as HFC
 import qualified Ouroboros.Consensus.HardFork.Combinator.Basics as HFC
 import qualified Ouroboros.Consensus.Ledger.Abstract as Ledger
@@ -155,40 +156,34 @@ applyBlock
   -- ^ The new ledger state (or an error).
 applyBlock env oldState enableValidation block
   = applyBlock' env oldState enableValidation =<< case block of
-      ByronBlock byronBlock -> Right $ Consensus.BlockByron byronBlock
+      ByronBlock _ -> Left "Byron block in Voltaire Era"
       ShelleyBlock blockEra shelleyBlock -> case blockEra of
-        ShelleyBasedEraShelley -> Right $ Consensus.BlockShelley shelleyBlock
-        ShelleyBasedEraAllegra -> Right $ Consensus.BlockAllegra shelleyBlock
-        ShelleyBasedEraMary    -> Right $ Consensus.BlockMary shelleyBlock
-        ShelleyBasedEraVoltairePrototypeOne -> Left
-          "Voltaire One block in Cardano Era"
-        ShelleyBasedEraVoltairePrototypeTwo -> Left
-          "Voltaire Two block in Cardano Era"
-
-pattern LedgerStateByron
-  :: Ledger.LedgerState Byron.ByronBlock
-  -> LedgerState
-pattern LedgerStateByron st <- LedgerState (Consensus.LedgerStateByron st)
+        ShelleyBasedEraShelley -> Right $ Voltaire.BlockShelley shelleyBlock
+        ShelleyBasedEraAllegra -> Left "Allegra block in Voltaire era"
+        ShelleyBasedEraMary    -> Left "Mary block in Voltaire era"
+        ShelleyBasedEraVoltairePrototypeOne -> Right $
+          Voltaire.BlockVoltairePrototypeOne shelleyBlock
+        ShelleyBasedEraVoltairePrototypeTwo -> Right $
+          Voltaire.BlockVoltairePrototypeTwo shelleyBlock
 
 pattern LedgerStateShelley
   :: Ledger.LedgerState (Shelley.ShelleyBlock (Shelley.ShelleyEra Shelley.StandardCrypto))
   -> LedgerState
-pattern LedgerStateShelley st <- LedgerState  (Consensus.LedgerStateShelley st)
+pattern LedgerStateShelley st <- LedgerState  (Voltaire.LedgerStateShelley st)
 
-pattern LedgerStateAllegra
-  :: Ledger.LedgerState (Shelley.ShelleyBlock (Shelley.AllegraEra Shelley.StandardCrypto))
+pattern LedgerStateVoltairePrototypeOne
+  :: Ledger.LedgerState (Shelley.ShelleyBlock Voltaire.StandardVoltaireOne)
   -> LedgerState
-pattern LedgerStateAllegra st <- LedgerState  (Consensus.LedgerStateAllegra st)
+pattern LedgerStateVoltairePrototypeOne st <- LedgerState  (Voltaire.LedgerStateVoltairePrototypeOne st)
 
-pattern LedgerStateMary
-  :: Ledger.LedgerState (Shelley.ShelleyBlock (Shelley.MaryEra Shelley.StandardCrypto))
+pattern LedgerStateVoltairePrototypeTwo
+  :: Ledger.LedgerState (Shelley.ShelleyBlock Voltaire.StandardVoltaireTwo)
   -> LedgerState
-pattern LedgerStateMary st <- LedgerState  (Consensus.LedgerStateMary st)
+pattern LedgerStateVoltairePrototypeTwo st <- LedgerState  (Voltaire.LedgerStateVoltairePrototypeTwo st)
 
-{-# COMPLETE LedgerStateByron
-           , LedgerStateShelley
-           , LedgerStateAllegra
-           , LedgerStateMary #-}
+{-# COMPLETE LedgerStateShelley
+           , LedgerStateVoltairePrototypeOne
+           , LedgerStateVoltairePrototypeTwo #-}
 
 data FoldBlocksError
   = FoldBlocksInitialLedgerStateError InitialLedgerStateError
@@ -214,7 +209,7 @@ foldBlocks
   -- instead of @reapplyBlock@ from the @ApplyBlock@ type class.
   -> a
   -- ^ The initial accumulator state.
-  -> (Env -> LedgerState -> BlockInMode CardanoMode -> a -> IO a)
+  -> (Env -> LedgerState -> BlockInMode PrototypeMode -> a -> IO a)
   -- ^ Accumulator function Takes:
   --  * Environment (this is a constant over the whole fold)
   --  * The current Ledger state (with the current block applied)
@@ -253,15 +248,15 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
     Just err -> throwE (FoldBlocksApplyBlockError err)
     Nothing -> lift $ readIORef stateIORef
   where
-    connectInfo :: LocalNodeConnectInfo CardanoMode
+    connectInfo :: LocalNodeConnectInfo PrototypeMode
     connectInfo =
         LocalNodeConnectInfo {
-          localConsensusModeParams = CardanoModeParams (EpochSlots 21600),
+          localConsensusModeParams = PrototypeModeParams,
           localNodeNetworkId       = networkId,
           localNodeSocketPath      = socketPath
         }
 
-    protocols :: IORef a -> IORef (Maybe Text) -> Env -> LedgerState -> LocalNodeClientProtocolsInMode CardanoMode
+    protocols :: IORef a -> IORef (Maybe Text) -> Env -> LedgerState -> LocalNodeClientProtocolsInMode PrototypeMode
     protocols stateIORef errorIORef env ledgerState =
         LocalNodeClientProtocols {
           localChainSyncClient    = LocalChainSyncClientPipelined (chainSyncClient 50 stateIORef errorIORef env ledgerState),
@@ -275,7 +270,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
       -> LedgerStateHistory -- ^ History of k ledger states.
       -> SlotNo             -- ^ Slot number of the new ledger state.
       -> LedgerState        -- ^ New ledger state to add to the history
-      -> BlockInMode CardanoMode
+      -> BlockInMode PrototypeMode
                             -- ^ The block that (when applied to the previous
                             -- ledger state) resulted in the new ledger state.
       -> (LedgerStateHistory, LedgerStateHistory)
@@ -301,7 +296,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
                     -> Env
                     -> LedgerState
                     -> ChainSyncClientPipelined
-                        (BlockInMode CardanoMode)
+                        (BlockInMode PrototypeMode)
                         ChainPoint
                         ChainTip
                         IO ()
@@ -318,7 +313,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
             -> WithOrigin BlockNo
             -> Nat n -- Number of requests inflight.
             -> LedgerStateHistory
-            -> ClientPipelinedStIdle n (BlockInMode CardanoMode) ChainPoint ChainTip IO ()
+            -> ClientPipelinedStIdle n (BlockInMode PrototypeMode) ChainPoint ChainTip IO ()
           clientIdle_RequestMoreN clientTip serverTip n knownLedgerStates
             = case pipelineDecisionMax pipelineSize n clientTip serverTip  of
                 Collect -> case n of
@@ -328,7 +323,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
           clientNextN
             :: Nat n -- Number of requests inflight.
             -> LedgerStateHistory
-            -> ClientStNext n (BlockInMode CardanoMode) ChainPoint ChainTip IO ()
+            -> ClientStNext n (BlockInMode PrototypeMode) ChainPoint ChainTip IO ()
           clientNextN n knownLedgerStates =
             ClientStNext {
                 recvMsgRollForward = \blockInMode@(BlockInMode block@(Block (BlockHeader slotNo _ currBlockNo) _) _era) serverChainTip -> do
@@ -367,7 +362,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
           clientIdle_DoneN
             :: Nat n -- Number of requests inflight.
             -> Maybe Text -- Return value (maybe an error)
-            -> IO (ClientPipelinedStIdle n (BlockInMode CardanoMode) ChainPoint ChainTip IO ())
+            -> IO (ClientPipelinedStIdle n (BlockInMode PrototypeMode) ChainPoint ChainTip IO ())
           clientIdle_DoneN n errorMay = case n of
             Succ predN -> return (CollectResponse Nothing (clientNext_DoneN predN errorMay)) -- Ignore remaining message responses
             Zero -> do
@@ -377,7 +372,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
           clientNext_DoneN
             :: Nat n -- Number of requests inflight.
             -> Maybe Text -- Return value (maybe an error)
-            -> ClientStNext n (BlockInMode CardanoMode) ChainPoint ChainTip IO ()
+            -> ClientStNext n (BlockInMode PrototypeMode) ChainPoint ChainTip IO ()
           clientNext_DoneN n errorMay =
             ClientStNext {
                 recvMsgRollForward = \_ _ -> clientIdle_DoneN n errorMay
@@ -396,7 +391,7 @@ foldBlocks nodeConfigFilePath socketPath networkId enableValidation state0 accum
 -- * The ledger state after applying the new block
 -- * The new block
 --
-type LedgerStateHistory = Seq (SlotNo, LedgerState, WithOrigin (BlockInMode CardanoMode))
+type LedgerStateHistory = Seq (SlotNo, LedgerState, WithOrigin (BlockInMode PrototypeMode))
 
 --------------------------------------------------------------------------------
 -- Everything below was copied/adapted from db-sync                           --
@@ -440,23 +435,18 @@ readNetworkConfig (NetworkConfigFile ncf) = do
       }
 
 data NodeConfig = NodeConfig
-  { ncPBftSignatureThreshold :: !(Maybe Double)
-  , ncByronGenesisFile :: !GenesisFile
+  { ncByronGenesisFile :: !GenesisFile
   , ncByronGenesisHash :: !GenesisHashByron
   , ncShelleyGenesisFile :: !GenesisFile
   , ncShelleyGenesisHash :: !GenesisHashShelley
   , ncRequiresNetworkMagic :: !Cardano.Crypto.RequiresNetworkMagic
-  , ncByronSoftwareVersion :: !Cardano.Chain.Update.SoftwareVersion
   , ncByronProtocolVersion :: !Cardano.Chain.Update.ProtocolVersion
 
   -- Shelley hardfok parameters
-  , ncByronToShelley :: !ByronToShelley
+  , ncShelleyToOne :: !ShelleyToOne
 
   -- Allegra hardfok parameters
-  , ncShelleyToAllegra :: !ShelleyToAllegra
-
-  -- Mary hardfok parameters
-  , ncAllegraToMary :: !AllegraToMary
+  , ncOneToTwo :: !OneToTwo
   }
 
 instance FromJSON NodeConfig where
@@ -466,17 +456,14 @@ instance FromJSON NodeConfig where
       parse :: Object -> Data.Aeson.Types.Internal.Parser NodeConfig
       parse o =
         NodeConfig
-          <$> o .:? "PBftSignatureThreshold"
-          <*> fmap GenesisFile (o .: "ByronGenesisFile")
+          <$> fmap GenesisFile (o .: "ByronGenesisFile")
           <*> fmap GenesisHashByron (o .: "ByronGenesisHash")
           <*> fmap GenesisFile (o .: "ShelleyGenesisFile")
           <*> fmap GenesisHashShelley (o .: "ShelleyGenesisHash")
           <*> o .: "RequiresNetworkMagic"
-          <*> parseByronSoftwareVersion o
           <*> parseByronProtocolVersion o
-          <*> (Consensus.ProtocolParamsTransition <$> parseShelleyHardForkEpoch o)
-          <*> (Consensus.ProtocolParamsTransition <$> parseAllegraHardForkEpoch o)
-          <*> (Consensus.ProtocolParamsTransition <$> parseMaryHardForkEpoch o)
+          <*> (Voltaire.ProtocolParamsTransition <$> parseShelleyHardForkEpoch o)
+          <*> (Voltaire.ProtocolParamsTransition <$> parseAllegraHardForkEpoch o)
 
       parseByronProtocolVersion :: Object -> Data.Aeson.Types.Internal.Parser Cardano.Chain.Update.ProtocolVersion
       parseByronProtocolVersion o =
@@ -484,12 +471,6 @@ instance FromJSON NodeConfig where
           <$> o .: "LastKnownBlockVersion-Major"
           <*> o .: "LastKnownBlockVersion-Minor"
           <*> o .: "LastKnownBlockVersion-Alt"
-
-      parseByronSoftwareVersion :: Object -> Data.Aeson.Types.Internal.Parser Cardano.Chain.Update.SoftwareVersion
-      parseByronSoftwareVersion o =
-        Cardano.Chain.Update.SoftwareVersion
-          <$> fmap Cardano.Chain.Update.ApplicationName (o .: "ApplicationName")
-          <*> o .: "ApplicationVersion"
 
       parseShelleyHardForkEpoch :: Object -> Data.Aeson.Types.Internal.Parser Consensus.TriggerHardFork
       parseShelleyHardForkEpoch o =
@@ -503,13 +484,6 @@ instance FromJSON NodeConfig where
         asum
           [ Consensus.TriggerHardForkAtEpoch <$> o .: "TestAllegraHardForkAtEpoch"
           , pure $ Consensus.TriggerHardForkAtVersion 3 -- Mainnet default
-          ]
-
-      parseMaryHardForkEpoch :: Object -> Data.Aeson.Types.Internal.Parser Consensus.TriggerHardFork
-      parseMaryHardForkEpoch o =
-        asum
-          [ Consensus.TriggerHardForkAtEpoch <$> o .: "TestMaryHardForkAtEpoch"
-          , pure $ Consensus.TriggerHardForkAtVersion 4 -- Mainnet default
           ]
 
 parseNodeConfig :: ByteString -> Either Text NodeConfig
@@ -540,7 +514,7 @@ initLedgerStateVar genesisConfig = LedgerState
 newtype LedgerState = LedgerState
   { clsState :: Ledger.LedgerState
                   (HFC.HardForkBlock
-                    (Consensus.CardanoEras Consensus.StandardCrypto))
+                    (Voltaire.VoltairePrototypeEras Consensus.StandardCrypto))
   }
 
 -- Usually only one constructor, but may have two when we are preparing for a HFC event.
@@ -552,19 +526,15 @@ data ShelleyConfig = ShelleyConfig
   , scGenesisHash :: !GenesisHashShelley
   }
 
-type ByronToShelley =
-  Consensus.ProtocolParamsTransition Byron.ByronBlock
+type ShelleyToOne =
+  Voltaire.ProtocolParamsTransition
     (Shelley.ShelleyBlock Shelley.StandardShelley)
+    (Shelley.ShelleyBlock Voltaire.StandardVoltaireOne)
 
-type ShelleyToAllegra =
-  Consensus.ProtocolParamsTransition
-    (Shelley.ShelleyBlock Shelley.StandardShelley)
-    (Shelley.ShelleyBlock Shelley.StandardAllegra)
-
-type AllegraToMary =
-  Consensus.ProtocolParamsTransition
-    (Shelley.ShelleyBlock Shelley.StandardAllegra)
-    (Shelley.ShelleyBlock Shelley.StandardMary)
+type OneToTwo =
+  Voltaire.ProtocolParamsTransition
+    (Shelley.ShelleyBlock Voltaire.StandardVoltaireOne)
+    (Shelley.ShelleyBlock Voltaire.StandardVoltaireTwo)
 
 newtype GenesisFile = GenesisFile
   { unGenesisFile :: FilePath
@@ -599,16 +569,9 @@ mkProtocolInfoCardano ::
   Consensus.ProtocolInfo
     IO
     (HFC.HardForkBlock
-            (Consensus.CardanoEras Consensus.StandardCrypto))
-mkProtocolInfoCardano (GenesisCardano dnc byronGenesis shelleyGenesis)
-  = Consensus.protocolInfoCardano
-          Consensus.ProtocolParamsByron
-            { Consensus.byronGenesis = byronGenesis
-            , Consensus.byronPbftSignatureThreshold = Consensus.PBftSignatureThreshold <$> ncPBftSignatureThreshold dnc
-            , Consensus.byronProtocolVersion = ncByronProtocolVersion dnc
-            , Consensus.byronSoftwareVersion = ncByronSoftwareVersion dnc
-            , Consensus.byronLeaderCredentials = Nothing
-            }
+            (Voltaire.VoltairePrototypeEras Consensus.StandardCrypto))
+mkProtocolInfoCardano (GenesisCardano dnc _ shelleyGenesis)
+  = Voltaire.protocolInfoVoltairePrototype
           Consensus.ProtocolParamsShelleyBased
             { Consensus.shelleyBasedGenesis = scConfig shelleyGenesis
             , Consensus.shelleyBasedInitialNonce = shelleyPraosNonce shelleyGenesis
@@ -617,15 +580,11 @@ mkProtocolInfoCardano (GenesisCardano dnc byronGenesis shelleyGenesis)
           Consensus.ProtocolParamsShelley
             { Consensus.shelleyProtVer = shelleyProtVer dnc
             }
-          Consensus.ProtocolParamsAllegra
-            { Consensus.allegraProtVer = shelleyProtVer dnc
+          Voltaire.ProtocolParamsVoltairePrototype
+            { Voltaire.exampleProtVer = error "TODO"
             }
-          Consensus.ProtocolParamsMary
-            { Consensus.maryProtVer = shelleyProtVer dnc
-            }
-          (ncByronToShelley dnc)
-          (ncShelleyToAllegra dnc)
-          (ncAllegraToMary dnc)
+          (ncShelleyToOne dnc)
+          (ncOneToTwo dnc)
 
 shelleyPraosNonce :: ShelleyConfig -> Shelley.Spec.Nonce
 shelleyPraosNonce sCfg = Shelley.Spec.Nonce (Cardano.Crypto.Hash.Class.castHash . unGenesisHashShelley $ scGenesisHash sCfg)
@@ -755,8 +714,8 @@ newtype StakeCred
   deriving (Eq, Ord)
 
 data Env = Env
-  { envLedgerConfig :: HFC.HardForkLedgerConfig (Consensus.CardanoEras Shelley.StandardCrypto)
-  , envProtocolConfig :: Shelley.ConsensusConfig (HFC.HardForkProtocol (Consensus.CardanoEras Shelley.StandardCrypto))
+  { envLedgerConfig :: HFC.HardForkLedgerConfig (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto)
+  , envProtocolConfig :: Shelley.ConsensusConfig (HFC.HardForkProtocol (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto))
   }
 
 envSecurityParam :: Env -> Word64
@@ -775,7 +734,7 @@ applyBlock'
   -> Bool
   -- ^ True to validate
   ->  HFC.HardForkBlock
-            (Consensus.CardanoEras Consensus.StandardCrypto)
+            (Voltaire.VoltairePrototypeEras Consensus.StandardCrypto)
   -> Either Text LedgerState
 applyBlock' env oldState enableValidation block = do
   let config = envLedgerConfig env
@@ -789,14 +748,14 @@ applyBlock' env oldState enableValidation block = do
 -- the block matches the head hash of the ledger state.
 tickThenReapplyCheckHash
     :: HFC.HardForkLedgerConfig
-        (Consensus.CardanoEras Shelley.StandardCrypto)
-    -> Consensus.CardanoBlock Consensus.StandardCrypto
+        (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto)
+    -> Voltaire.VoltairePrototypeBlock Consensus.StandardCrypto
     -> Shelley.LedgerState
         (HFC.HardForkBlock
-            (Consensus.CardanoEras Shelley.StandardCrypto))
+            (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto))
     -> Either Text (Shelley.LedgerState
         (HFC.HardForkBlock
-            (Consensus.CardanoEras Shelley.StandardCrypto)))
+            (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto)))
 tickThenReapplyCheckHash cfg block lsb =
   if Consensus.blockPrevHash block == Ledger.ledgerTipHash lsb
     then Right $ Ledger.tickThenReapply cfg block lsb
@@ -825,14 +784,14 @@ tickThenReapplyCheckHash cfg block lsb =
 -- the block matches the head hash of the ledger state.
 tickThenApply
     :: HFC.HardForkLedgerConfig
-        (Consensus.CardanoEras Shelley.StandardCrypto)
-    -> Consensus.CardanoBlock Consensus.StandardCrypto
+        (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto)
+    -> Voltaire.VoltairePrototypeBlock Consensus.StandardCrypto
     -> Shelley.LedgerState
         (HFC.HardForkBlock
-            (Consensus.CardanoEras Shelley.StandardCrypto))
+            (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto))
     -> Either Text (Shelley.LedgerState
         (HFC.HardForkBlock
-            (Consensus.CardanoEras Shelley.StandardCrypto)))
+            (Voltaire.VoltairePrototypeEras Shelley.StandardCrypto)))
 tickThenApply cfg block lsb
   = either (Left . Text.pack . show) Right
   $ runExcept
@@ -842,7 +801,7 @@ renderByteArray :: ByteArrayAccess bin => bin -> Text
 renderByteArray =
   Text.decodeUtf8 . Base16.encode . Data.ByteArray.convert
 
-unChainHash :: Ouroboros.Network.Block.ChainHash (Consensus.CardanoBlock era) -> ByteString
+unChainHash :: Ouroboros.Network.Block.ChainHash (Voltaire.VoltairePrototypeBlock era) -> ByteString
 unChainHash ch =
   case ch of
     Ouroboros.Network.Block.GenesisHash -> "genesis"
