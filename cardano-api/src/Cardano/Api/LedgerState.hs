@@ -154,12 +154,16 @@ applyBlock
   -> Either Text LedgerState
   -- ^ The new ledger state (or an error).
 applyBlock env oldState enableValidation block
-  = applyBlock' env oldState enableValidation $ case block of
-      ByronBlock byronBlock -> Consensus.BlockByron byronBlock
+  = applyBlock' env oldState enableValidation =<< case block of
+      ByronBlock byronBlock -> Right $ Consensus.BlockByron byronBlock
       ShelleyBlock blockEra shelleyBlock -> case blockEra of
-        ShelleyBasedEraShelley -> Consensus.BlockShelley shelleyBlock
-        ShelleyBasedEraAllegra -> Consensus.BlockAllegra shelleyBlock
-        ShelleyBasedEraMary    -> Consensus.BlockMary shelleyBlock
+        ShelleyBasedEraShelley -> Right $ Consensus.BlockShelley shelleyBlock
+        ShelleyBasedEraAllegra -> Right $ Consensus.BlockAllegra shelleyBlock
+        ShelleyBasedEraMary    -> Right $ Consensus.BlockMary shelleyBlock
+        ShelleyBasedEraVoltairePrototypeOne -> Left
+          "Voltaire One block in Cardano Era"
+        ShelleyBasedEraVoltairePrototypeTwo -> Left
+          "Voltaire Two block in Cardano Era"
 
 pattern LedgerStateByron
   :: Ledger.LedgerState Byron.ByronBlock
