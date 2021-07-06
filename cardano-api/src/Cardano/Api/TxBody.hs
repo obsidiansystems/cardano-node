@@ -111,7 +111,7 @@ import           Data.List (intercalate)
 import qualified Data.List.NonEmpty as NonEmpty
 import           Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
-import           Data.Maybe (fromMaybe)
+import           Data.Maybe (fromMaybe, catMaybes)
 import qualified Data.Sequence.Strict as Seq
 import qualified Data.Set as Set
 import           Data.String (IsString)
@@ -857,9 +857,9 @@ data TxUpdateProposal era where
      TxUpdateProposal     :: UpdateProposalSupportedInEra era
                           -> UpdateProposal
                           -> TxUpdateProposal era
-     TxVoltaireProposal   :: Voltaire.VoltaireClass era
+     TxVoltaireProposal   :: Voltaire.VoltaireClass (ShelleyLedgerEra era)
                           => VoltaireProposalSupportedInEra era
-                          -> Voltaire.Update era
+                          -> Voltaire.Update (ShelleyLedgerEra era)
                           -> TxUpdateProposal era
 
 deriving instance Eq   (TxUpdateProposal era)
@@ -1154,6 +1154,7 @@ data TxBodyError era =
      | TxBodyOutputOverflow Quantity (TxOut era)
      | TxBodyMetadataError [(Word64, TxMetadataRangeError)]
      | TxBodyMintAdaError
+     | TxBodyMirInCertificate [(Shelley.MIRPot, MIRTarget)]
      deriving Show
 
 instance Error (TxBodyError era) where
@@ -1174,6 +1175,9 @@ instance Error (TxBodyError era) where
         | (k, err) <- errs ]
     displayError TxBodyMintAdaError =
       "Transaction cannot mint ada, only non-ada assets"
+    displayError (TxBodyMirInCertificate lst) =
+      "Transaction contains MIR certificate(s): " ++
+        show lst
 
 
 makeTransactionBody :: forall era.
@@ -1499,6 +1503,97 @@ makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototypeOne
         txAuxData
   where
     txAuxData :: Maybe (Ledger.AuxiliaryData Voltaire.StandardVoltaireOne)
+    txAuxData
+      | Map.null ms
+      , null ss   = Nothing
+      | otherwise = Just (toAllegraAuxiliaryData ms ss)
+      where
+        ms = case txMetadata of
+               TxMetadataNone                     -> Map.empty
+               TxMetadataInEra _ (TxMetadata ms') -> ms'
+        ss = case txAuxScripts of
+               TxAuxScriptsNone   -> []
+               TxAuxScripts _ ss' -> ss'
+
+-- NB: Copy of the 'ShelleyBasedEraVoltairePrototypeOne' case except:
+--    * handle "TxVoltaireProposal" case in "txUpdateProposal"
+--    * fail on MIR transfer in certificates
+makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototypeTwo
+                           txbodycontent@TxBodyContent {
+                             txIns,
+                             txOuts,
+                             txFee,
+                             txValidityRange = (lowerBound, upperBound),
+                             txMetadata,
+                             txAuxScripts,
+                             txWithdrawals,
+                             txCertificates,
+                             txUpdateProposal,
+                             txMintValue
+                           } = do
+
+    guard (not (null txIns)) ?! TxBodyEmptyTxIns
+    sequence_
+      [ do allPositive
+           allWithinMaxBound
+      | let maxTxOut = fromIntegral (maxBound :: Word64) :: Quantity
+      , txout@(TxOut _ (TxOutValue MultiAssetInVoltairePrototypeTwoEra v)) <- txOuts
+      , let allPositive       = case [ q | (_,q) <- valueToList v, q < 0 ] of
+                                  []  -> Right ()
+                                  q:_ -> Left (TxBodyOutputNegative q txout)
+            allWithinMaxBound = case [ q | (_,q) <- valueToList v, q > maxTxOut ] of
+                                  []  -> Right ()
+                                  q:_ -> Left (TxBodyOutputOverflow q txout)
+      ]
+    case txMetadata of
+      TxMetadataNone      -> return ()
+      TxMetadataInEra _ m -> validateTxMetadata m ?!. TxBodyMetadataError
+    case txMintValue of
+      TxMintNone        -> return ()
+      TxMintValue _ v _ -> guard (selectLovelace v == 0) ?! TxBodyMintAdaError
+    case txCertificates of
+      TxCertificatesNone    -> return ()
+      TxCertificates _ cs _ ->
+        let mirList = catMaybes $ map getMir cs
+            getMir (MIRCertificate pot target) = Just (pot, target)
+            getMir _ = Nothing
+        in guard (null mirList) ?! TxBodyMirInCertificate mirList
+
+    return $
+      ShelleyTxBody era
+        (Voltaire.TxBody
+          (Set.fromList (map (toShelleyTxIn . fst) txIns))
+          (Seq.fromList (map toShelleyTxOut txOuts))
+          (case txCertificates of
+             TxCertificatesNone    -> Seq.empty
+             TxCertificates _ cs _ -> Seq.fromList (map toShelleyCertificate cs))
+          (case txWithdrawals of
+             TxWithdrawalsNone  -> Shelley.Wdrl Map.empty
+             TxWithdrawals _ ws -> toShelleyWithdrawal ws)
+          (case txFee of
+             TxFeeImplicit era'  -> case era' of {}
+             TxFeeExplicit _ fee -> toShelleyLovelace fee)
+          (Allegra.ValidityInterval {
+             Allegra.invalidBefore    = case lowerBound of
+                                          TxValidityNoLowerBound   -> SNothing
+                                          TxValidityLowerBound _ s -> SJust s,
+             Allegra.invalidHereafter = case upperBound of
+                                          TxValidityNoUpperBound _ -> SNothing
+                                          TxValidityUpperBound _ s -> SJust s
+           })
+          (case txUpdateProposal of
+             TxUpdateProposalNone -> SNothing
+             TxUpdateProposal _ p -> SJust (toPrototypeTwoUpdate p)
+             TxVoltaireProposal _ p -> SJust p)
+          (maybeToStrictMaybe
+            (Ledger.hashAuxiliaryData @Voltaire.StandardVoltaireTwo <$> txAuxData))
+          (case txMintValue of
+             TxMintNone        -> mempty
+             TxMintValue _ v _ -> toMaryValue v))
+        (map toShelleySimpleScript (collectTxBodySimpleScripts txbodycontent))
+        txAuxData
+  where
+    txAuxData :: Maybe (Ledger.AuxiliaryData Voltaire.StandardVoltaireTwo)
     txAuxData
       | Map.null ms
       , null ss   = Nothing
