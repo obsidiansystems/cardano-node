@@ -65,6 +65,7 @@ library
                         Cardano.Api.KeysPraos
                         Cardano.Api.KeysShelley
                         Cardano.Api.LedgerState
+                        Cardano.Api.Prototype.LedgerState
                         Cardano.Api.Modes
                         Cardano.Api.NetworkId
                         Cardano.Api.OperationalCertificate
