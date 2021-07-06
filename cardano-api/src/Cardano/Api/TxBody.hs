@@ -69,6 +69,7 @@ module Cardano.Api.TxBody (
     WithdrawalsSupportedInEra(..),
     CertificatesSupportedInEra(..),
     UpdateProposalSupportedInEra(..),
+    VoltaireProposalSupportedInEra(..),
 
     -- ** Feature availability functions
     multiAssetSupportedInEra,
