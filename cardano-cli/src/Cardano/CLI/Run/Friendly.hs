@@ -6,6 +6,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 -- | User-friendly pretty-printing for textual user interfaces (TUI)
 module Cardano.CLI.Run.Friendly (friendlyTxBodyBS) where
@@ -18,7 +19,7 @@ import           Data.Yaml.Pretty (defConfig, encodePretty, setConfCompare)
 
 import           Cardano.Api as Api (AddressInEra (..),
                    AddressTypeInEra (ByronAddressInAnyEra, ShelleyAddressInEra), CardanoEra,
-                   ShelleyBasedEra (ShelleyBasedEraAllegra, ShelleyBasedEraMary, ShelleyBasedEraShelley),
+                   ShelleyBasedEra (ShelleyBasedEraAllegra, ShelleyBasedEraMary, ShelleyBasedEraShelley, ShelleyBasedEraVoltairePrototypeOne, ShelleyBasedEraVoltairePrototypeTwo),
                    ShelleyEra, TxBody, serialiseAddress)
 import           Cardano.Api.Byron (TxBody (ByronTxBody))
 import           Cardano.Api.Shelley (TxBody (ShelleyTxBody), fromShelleyAddr)
@@ -27,6 +28,9 @@ import qualified Cardano.Chain.UTxO as Byron
 import           Cardano.Ledger.Shelley as Ledger (ShelleyEra)
 import           Cardano.Ledger.ShelleyMA (MaryOrAllegra (Allegra, Mary), ShelleyMAEra)
 import qualified Cardano.Ledger.ShelleyMA.TxBody as ShelleyMA
+import           Cardano.Ledger.Voltaire.Prototype.Class (VoltaireClass)
+import qualified Cardano.Ledger.Voltaire.Prototype.TxBody as Voltaire
+import qualified Cardano.Ledger.Voltaire.Prototype as Voltaire
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
 import           Shelley.Spec.Ledger.API (Addr (..), TxOut (TxOut))
 import qualified Shelley.Spec.Ledger.API as Shelley
@@ -50,6 +54,10 @@ friendlyTxBody era txbody =
         addAuxData aux $ friendlyTxBodyAllegra body
       ShelleyTxBody ShelleyBasedEraMary body _scripts aux ->
         addAuxData aux $ friendlyTxBodyMary body
+      ShelleyTxBody ShelleyBasedEraVoltairePrototypeOne body _scripts aux ->
+        addAuxData aux $ friendlyTxBodyVoltaire body
+      ShelleyTxBody ShelleyBasedEraVoltairePrototypeTwo body _scripts aux ->
+        addAuxData aux $ friendlyTxBodyVoltaire body
 
 addAuxData :: Show a => Maybe a -> Object -> Object
 addAuxData = HashMap.insert "auxiliary data" . maybe Null (toJSON . textShow)
@@ -121,6 +129,33 @@ friendlyTxBodyMary
     , "mint" .= mint
     ]
 
+friendlyTxBodyVoltaire ::
+  ( Typeable proto
+  , VoltaireClass (Voltaire.VoltairePrototypeEra proto StandardCrypto)
+  ) => Voltaire.TxBody (Voltaire.VoltairePrototypeEra proto StandardCrypto) -> Object
+friendlyTxBodyVoltaire
+  (Voltaire.TxBody
+    inputs
+    outputs
+    certificates
+    (Shelley.Wdrl withdrawals)
+    txfee
+    validity
+    update
+    adHash
+    mint) =
+  HashMap.fromList
+    [ "inputs" .= inputs
+    , "outputs" .= fmap friendlyTxOutVoltaire outputs
+    , "certificates" .= fmap textShow certificates
+    , "withdrawals" .= withdrawals
+    , "fee" .= txfee
+    , "validity interval" .= friendlyValidityInterval validity
+    , "update" .= fmap textShow update
+    , "auxiliary data hash" .= fmap textShow adHash
+    , "mint" .= mint
+    ]
+
 friendlyValidityInterval :: ShelleyMA.ValidityInterval -> Value
 friendlyValidityInterval
   ShelleyMA.ValidityInterval{invalidBefore, invalidHereafter} =
@@ -139,6 +174,13 @@ friendlyTxOutAllegra (TxOut addr amount) =
 
 friendlyTxOutMary :: TxOut (ShelleyMAEra 'Mary StandardCrypto) -> Value
 friendlyTxOutMary (TxOut addr amount) =
+  Object $ HashMap.insert "amount" (toJSON amount) $ friendlyAddress addr
+
+friendlyTxOutVoltaire ::
+  ( VoltaireClass (Voltaire.VoltairePrototypeEra proto StandardCrypto)
+  , Typeable proto
+  ) => TxOut (Voltaire.VoltairePrototypeEra proto StandardCrypto) -> Value
+friendlyTxOutVoltaire (TxOut addr amount) =
   Object $ HashMap.insert "amount" (toJSON amount) $ friendlyAddress addr
 
 friendlyAddress :: Addr StandardCrypto -> Object
