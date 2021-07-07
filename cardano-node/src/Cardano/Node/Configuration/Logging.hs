@@ -67,6 +67,7 @@ import           Cardano.Slotting.Slot (EpochSize (..))
 import qualified Ouroboros.Consensus.BlockchainTime.WallClock.Types as WCT
 import           Ouroboros.Consensus.Byron.Ledger.Conversions
 import           Ouroboros.Consensus.Cardano.Block
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 import           Ouroboros.Consensus.Cardano.CanHardFork
 import qualified Ouroboros.Consensus.Config as Consensus
 import           Ouroboros.Consensus.Config.SupportsNode (ConfigSupportsNode (..))
@@ -326,6 +327,11 @@ nodeBasicInfo nc (SomeConsensusProtocol whichP pForInfo) nodeStartTime' = do
                ++ getGenesisValues "Shelley" cfgShelley
                ++ getGenesisValues "Allegra" cfgAllegra
                ++ getGenesisValues "Mary"    cfgMary
+          VoltaireBlockType ->
+            let Voltaire.VoltairePrototypeLedgerConfig cfgShelley cfgOne cfgTwo = Consensus.configLedger cfg
+            in    getGenesisValues "Shelley" cfgShelley
+               ++ getGenesisValues "PrototypeOne" cfgOne
+               ++ getGenesisValues "PrototypeTwo" cfgTwo
       items = nub $
         [ ("protocol",      pack . protocolName $ ncProtocol nc)
         , ("version",       pack . showVersion $ version)
