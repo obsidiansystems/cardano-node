@@ -16,6 +16,15 @@ import           Cardano.Node.Types
 
 import           Cardano.Node.Protocol.Byron
 import           Cardano.Node.Protocol.Cardano
+                  ( CardanoProtocolInstantiationError,
+                    mkSomeConsensusProtocolCardano,
+                    renderCardanoProtocolInstantiationError
+                  )
+import           Cardano.Node.Protocol.Voltaire
+                  ( VoltaireProtocolInstantiationError,
+                    mkSomeConsensusProtocolVoltaire,
+                    renderVoltaireProtocolInstantiationError
+                  )
 import           Cardano.Node.Protocol.Shelley
 import           Cardano.Node.Protocol.Types (SomeConsensusProtocol (..))
 
@@ -47,6 +56,14 @@ mkConsensusProtocol NodeConfiguration{ncProtocolConfig, ncProtocolFiles} =
             hardForkConfig
             (Just ncProtocolFiles)
 
+      NodeProtocolConfigurationVoltaire shelleyConfig
+                                        hardForkConfig ->
+        firstExceptT VoltaireProtocolInstantiationError $
+          mkSomeConsensusProtocolVoltaire
+            shelleyConfig
+            hardForkConfig
+            (Just ncProtocolFiles)
+
 ------------------------------------------------------------------------------
 -- Errors
 --
@@ -55,6 +72,7 @@ data ProtocolInstantiationError =
     ByronProtocolInstantiationError   ByronProtocolInstantiationError
   | ShelleyProtocolInstantiationError ShelleyProtocolInstantiationError
   | CardanoProtocolInstantiationError CardanoProtocolInstantiationError
+  | VoltaireProtocolInstantiationError VoltaireProtocolInstantiationError
   deriving Show
 
 
@@ -69,3 +87,6 @@ renderProtocolInstantiationError pie =
 
     CardanoProtocolInstantiationError cpie ->
       renderCardanoProtocolInstantiationError cpie
+
+    VoltaireProtocolInstantiationError cpie ->
+      renderVoltaireProtocolInstantiationError cpie

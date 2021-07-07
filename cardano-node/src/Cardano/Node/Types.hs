@@ -262,6 +262,8 @@ data NodeProtocolConfiguration =
      | NodeProtocolConfigurationCardano NodeByronProtocolConfiguration
                                         NodeShelleyProtocolConfiguration
                                         NodeHardForkProtocolConfiguration
+     | NodeProtocolConfigurationVoltaire NodeShelleyProtocolConfiguration
+                                         NodeHardForkProtocolConfiguration
   deriving (Eq, Show)
 
 data NodeShelleyProtocolConfiguration =
@@ -380,6 +382,10 @@ instance AdjustFilePaths NodeProtocolConfiguration where
                                      (adjustFilePaths f pcs)
                                      pch
 
+  adjustFilePaths f (NodeProtocolConfigurationVoltaire pcs pch) =
+    NodeProtocolConfigurationVoltaire (adjustFilePaths f pcs)
+                                      pch
+
 instance AdjustFilePaths NodeByronProtocolConfiguration where
   adjustFilePaths f x@NodeByronProtocolConfiguration {
                         npcByronGenesisFile
@@ -419,6 +425,7 @@ protocolName :: Protocol -> String
 protocolName ByronProtocol   = "Byron"
 protocolName ShelleyProtocol = "Shelley"
 protocolName CardanoProtocol = "Byron; Shelley"
+protocolName VoltaireProtocol = "Shelley; VoltaireOne, VoltaireTwo"
 
 
 data VRFPrivateKeyFilePermissionError

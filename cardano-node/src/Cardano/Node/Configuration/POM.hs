@@ -151,6 +151,10 @@ instance FromJSON PartialNodeConfiguration where
             Last . Just  <$> (NodeProtocolConfigurationCardano <$> parseByronProtocol v
                                                                <*> parseShelleyProtocol v
                                                                <*> parseHardForkProtocol v)
+
+          VoltaireProtocol ->
+            Last . Just  <$> (NodeProtocolConfigurationVoltaire <$> parseShelleyProtocol v
+                                                                <*> parseHardForkProtocol v)
       pure PartialNodeConfiguration {
              pncProtocolConfig = pncProtocolConfig'
            , pncSocketPath = pncSocketPath'
@@ -322,6 +326,7 @@ ncProtocol nc =
     NodeProtocolConfigurationByron{}   -> ByronProtocol
     NodeProtocolConfigurationShelley{} -> ShelleyProtocol
     NodeProtocolConfigurationCardano{} -> CardanoProtocol
+    NodeProtocolConfigurationVoltaire{} -> VoltaireProtocol
 
 pncProtocol :: PartialNodeConfiguration -> Either Text Protocol
 pncProtocol pnc =
@@ -330,6 +335,7 @@ pncProtocol pnc =
     Last (Just NodeProtocolConfigurationByron{})   -> Right ByronProtocol
     Last (Just NodeProtocolConfigurationShelley{}) -> Right ShelleyProtocol
     Last (Just NodeProtocolConfigurationCardano{}) -> Right CardanoProtocol
+    Last (Just NodeProtocolConfigurationVoltaire{}) -> Right VoltaireProtocol
 
 parseNodeConfigurationFP :: Maybe ConfigYamlFilePath -> IO PartialNodeConfiguration
 parseNodeConfigurationFP Nothing = parseNodeConfigurationFP . getLast $ pncConfigFile defaultPartialNodeConfiguration
