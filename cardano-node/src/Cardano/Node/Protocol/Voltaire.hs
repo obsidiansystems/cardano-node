@@ -6,11 +6,11 @@
 {-# OPTIONS_GHC -Wno-orphans  #-}
 
 module Cardano.Node.Protocol.Voltaire
-  ( mkSomeConsensusProtocolCardano
+  ( mkSomeConsensusProtocolVoltaire
 
     -- * Errors
-  , CardanoProtocolInstantiationError(..)
-  , renderCardanoProtocolInstantiationError
+  , VoltaireProtocolInstantiationError(..)
+  , renderVoltaireProtocolInstantiationError
   ) where
 
 import           Prelude
@@ -19,11 +19,11 @@ import           Control.Monad.Trans.Except (ExceptT)
 import           Control.Monad.Trans.Except.Extra (firstExceptT)
 import qualified Data.Text as T
 
-import qualified Cardano.Chain.Update as Byron
 
 import           Ouroboros.Consensus.Cardano
 import qualified Ouroboros.Consensus.Cardano as Consensus
 import qualified Ouroboros.Consensus.Cardano.CanHardFork as Consensus
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Node as Voltaire
 import           Ouroboros.Consensus.HardFork.Combinator.Condense ()
 
 import           Ouroboros.Consensus.Cardano.Condense ()
@@ -32,21 +32,19 @@ import           Cardano.Api.Orphans ()
 import           Cardano.Api.Protocol.Types
 import           Cardano.Node.Types
 
-import           Cardano.Tracing.OrphanInstances.Byron ()
-import           Cardano.Tracing.OrphanInstances.Shelley ()
+import           Cardano.Tracing.OrphanInstances.Voltaire ()
 
-import qualified Cardano.Node.Protocol.Byron as Byron
 import qualified Cardano.Node.Protocol.Shelley as Shelley
 
 import           Cardano.Node.Protocol.Types
 
 ------------------------------------------------------------------------------
--- Real Cardano protocol
+-- Real Voltaire protocol
 --
 
--- | Make 'SomeConsensusProtocol' using the Cardano instance.
+-- | Make 'SomeConsensusProtocol' using the Voltaire instance.
 --
--- The Cardano protocol instance is currently the sequential composition of
+-- The Voltaire protocol instance is currently the sequential composition of
 -- the Byron and Shelley protocols, and will likely be extended in future
 -- with further sequentially composed protocol revisions.
 --
@@ -56,84 +54,35 @@ import           Cardano.Node.Protocol.Types
 -- This also serves a purpose as a sanity check that we have all the necessary
 -- type class instances available.
 --
-mkSomeConsensusProtocolCardano
-  :: NodeByronProtocolConfiguration
-  -> NodeShelleyProtocolConfiguration
+mkSomeConsensusProtocolVoltaire
+  :: NodeShelleyProtocolConfiguration
   -> NodeHardForkProtocolConfiguration
   -> Maybe ProtocolFilepaths
-  -> ExceptT CardanoProtocolInstantiationError IO SomeConsensusProtocol
-mkSomeConsensusProtocolCardano NodeByronProtocolConfiguration {
-                             npcByronGenesisFile,
-                             npcByronGenesisFileHash,
-                             npcByronReqNetworkMagic,
-                             npcByronPbftSignatureThresh,
-                             npcByronApplicationName,
-                             npcByronApplicationVersion,
-                             npcByronSupportedProtocolVersionMajor,
-                             npcByronSupportedProtocolVersionMinor,
-                             npcByronSupportedProtocolVersionAlt
-                           }
-                           NodeShelleyProtocolConfiguration {
+  -> ExceptT VoltaireProtocolInstantiationError IO SomeConsensusProtocol
+mkSomeConsensusProtocolVoltaire NodeShelleyProtocolConfiguration {
                              npcShelleyGenesisFile,
                              npcShelleyGenesisFileHash
                            }
                            NodeHardForkProtocolConfiguration {
-                             npcTestShelleyHardForkAtEpoch,
-                             npcTestShelleyHardForkAtVersion,
                              npcTestAllegraHardForkAtEpoch,
                              npcTestAllegraHardForkAtVersion,
                              npcTestMaryHardForkAtEpoch,
                              npcTestMaryHardForkAtVersion
                            }
                            files = do
-    byronGenesis <-
-      firstExceptT CardanoProtocolInstantiationErrorByron $
-        Byron.readGenesis npcByronGenesisFile
-                          npcByronGenesisFileHash
-                          npcByronReqNetworkMagic
-
-    byronLeaderCredentials <-
-      firstExceptT CardanoProtocolInstantiationErrorByron $
-        Byron.readLeaderCredentials byronGenesis files
-
     (shelleyGenesis, shelleyGenesisHash) <-
-      firstExceptT CardanoProtocolInstantiationErrorShelley $
+      firstExceptT VoltaireProtocolInstantiationErrorShelley $
         Shelley.readGenesis npcShelleyGenesisFile
                             npcShelleyGenesisFileHash
 
     shelleyLeaderCredentials <-
-      firstExceptT CardanoProtocolInstantiationErrorShelley $
+      firstExceptT VoltaireProtocolInstantiationErrorShelley $
         Shelley.readLeaderCredentials files
 
     --TODO: all these protocol versions below are confusing and unnecessary.
     -- It could and should all be automated and these config entries eliminated.
     return $!
-      SomeConsensusProtocol CardanoBlockType $ ProtocolInfoArgsCardano
-        Consensus.ProtocolParamsByron {
-          byronGenesis = byronGenesis,
-          byronPbftSignatureThreshold =
-            PBftSignatureThreshold <$> npcByronPbftSignatureThresh,
-
-          -- This is /not/ the Byron protocol version. It is the protocol
-          -- version that this node will use in blocks it creates. It is used
-          -- in the Byron update mechanism to signal that this block-producing
-          -- node is ready to move to the new protocol. For example, when the
-          -- protocol version (according to the ledger state) is 0, this setting
-          -- should be 1 when we are ready to move. Similarly when the current
-          -- protocol version is 1, this should be 2 to indicate we are ready
-          -- to move into the Shelley era.
-          byronProtocolVersion =
-            Byron.ProtocolVersion
-              npcByronSupportedProtocolVersionMajor
-              npcByronSupportedProtocolVersionMinor
-              npcByronSupportedProtocolVersionAlt,
-          byronSoftwareVersion =
-            Byron.SoftwareVersion
-              npcByronApplicationName
-              npcByronApplicationVersion,
-          byronLeaderCredentials =
-            byronLeaderCredentials
-        }
+      SomeConsensusProtocol VoltaireBlockType $ ProtocolInfoArgsPrototype
         Consensus.ProtocolParamsShelleyBased {
           shelleyBasedGenesis = shelleyGenesis,
           shelleyBasedInitialNonce =
@@ -144,64 +93,32 @@ mkSomeConsensusProtocolCardano NodeByronProtocolConfiguration {
           -- This is /not/ the Shelley protocol version. It is the protocol
           -- version that this node will declare that it understands, when it
           -- is in the Shelley era. That is, it is the version of protocol
-          -- /after/ Shelley, i.e. Allegra.
+          -- /after/ Shelley, i.e. VoltaireOne.
           shelleyProtVer =
             ProtVer 3 0
         }
-        Consensus.ProtocolParamsAllegra {
-          -- This is /not/ the Allegra protocol version. It is the protocol
+        Voltaire.ProtocolParamsVoltairePrototype {
+          -- This is /not/ the VoltaireOne protocol version. It is the protocol
           -- version that this node will declare that it understands, when it
-          -- is in the Allegra era. That is, it is the version of protocol
-          -- /after/ Allegra, i.e. Mary.
-          allegraProtVer =
-            ProtVer 4 0
-        }
-        Consensus.ProtocolParamsMary {
-          -- This is /not/ the Mary protocol version. It is the protocol
-          -- version that this node will declare that it understands, when it
-          -- is in the Mary era. Since Mary is currently the last known
-          -- protocol version then this is also the Mary protocol version.
-          maryProtVer =
-            ProtVer 4 0
+          -- is in the VoltaireOne era. That is, it is the version of protocol
+          -- /after/ VoltaireOne, i.e. VoltaireTwo.
+          Voltaire.exampleProtVer = ProtVer 4 0
         }
         -- ProtocolParamsTransition specifies the parameters needed to transition between two eras
-        -- The comments below also apply for the Shelley -> Allegra and Allegra -> Mary hard forks.
-        -- Byron to Shelley hard fork parameters
-        Consensus.ProtocolParamsTransition {
-          transitionTrigger =
-            -- What will trigger the Byron -> Shelley hard fork?
-            case npcTestShelleyHardForkAtEpoch of
+        -- The comments below also apply for the Shelley -> VoltaireOne and VoltaireOne -> VoltaireTwo hard forks.
 
-               -- This specifies the major protocol version number update that will
-               -- trigger us moving to the Shelley protocol.
-               --
-               -- Version 0 is Byron with Ouroboros classic
-               -- Version 1 is Byron with Ouroboros Permissive BFT
-               -- Version 2 is Shelley
-               -- Version 3 is Allegra
-               -- Version 4 is Mary
-               --
-               -- But we also provide an override to allow for simpler test setups
-               -- such as triggering at the 0 -> 1 transition .
-               --
-               Nothing -> Consensus.TriggerHardForkAtVersion
-                            (maybe 2 fromIntegral npcTestShelleyHardForkAtVersion)
-
-               -- Alternatively, for testing we can transition at a specific epoch.
-               --
-               Just epochNo -> Consensus.TriggerHardForkAtEpoch epochNo
-        }
-        -- Shelley to Allegra hard fork parameters
-        Consensus.ProtocolParamsTransition {
-          transitionTrigger =
+        -- Shelley to VoltaireOne hard fork parameters
+        Voltaire.ProtocolParamsTransition {
+          Voltaire.transitionTrigger =
             case npcTestAllegraHardForkAtEpoch of
                Nothing -> Consensus.TriggerHardForkAtVersion
                             (maybe 3 fromIntegral npcTestAllegraHardForkAtVersion)
                Just epochNo -> Consensus.TriggerHardForkAtEpoch epochNo
         }
-        -- Allegra to Mary hard fork parameters
-        Consensus.ProtocolParamsTransition {
-          transitionTrigger =
+
+        -- VoltaireOne to VoltaireOne hard fork parameters
+        Voltaire.ProtocolParamsTransition {
+          Voltaire.transitionTrigger =
             case npcTestMaryHardForkAtEpoch of
                Nothing -> Consensus.TriggerHardForkAtVersion
                             (maybe 4 fromIntegral npcTestMaryHardForkAtVersion)
@@ -212,20 +129,13 @@ mkSomeConsensusProtocolCardano NodeByronProtocolConfiguration {
 -- Errors
 --
 
-data CardanoProtocolInstantiationError =
-       CardanoProtocolInstantiationErrorByron
-         Byron.ByronProtocolInstantiationError
-
-     | CardanoProtocolInstantiationErrorShelley
-         Shelley.ShelleyProtocolInstantiationError
+data VoltaireProtocolInstantiationError =
+    VoltaireProtocolInstantiationErrorShelley
+        Shelley.ShelleyProtocolInstantiationError
   deriving Show
 
-renderCardanoProtocolInstantiationError :: CardanoProtocolInstantiationError
-                                        -> T.Text
-renderCardanoProtocolInstantiationError
-  (CardanoProtocolInstantiationErrorByron err) =
-    Byron.renderByronProtocolInstantiationError err
-
-renderCardanoProtocolInstantiationError
-  (CardanoProtocolInstantiationErrorShelley err) =
+renderVoltaireProtocolInstantiationError :: VoltaireProtocolInstantiationError
+                                         -> T.Text
+renderVoltaireProtocolInstantiationError
+  (VoltaireProtocolInstantiationErrorShelley err) =
     Shelley.renderShelleyProtocolInstantiationError err

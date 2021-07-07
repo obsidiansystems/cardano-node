@@ -69,6 +69,7 @@ library
                        Cardano.Node.Protocol.Byron
                        Cardano.Node.Protocol.Cardano
                        Cardano.Node.Protocol.Shelley
+                       Cardano.Node.Protocol.Voltaire
                        Cardano.Node.Protocol.Types
                        Cardano.Node.Query
                        Cardano.Node.Parsers
@@ -90,6 +91,7 @@ library
                        Cardano.Tracing.OrphanInstances.HardFork
                        Cardano.Tracing.OrphanInstances.Network
                        Cardano.Tracing.OrphanInstances.Shelley
+                       Cardano.Tracing.OrphanInstances.Voltaire
 
   other-modules:       Paths_cardano_node
                        Cardano.Node.Configuration.Socket
@@ -106,6 +108,7 @@ library
                       , cardano-ledger-byron
                       , cardano-ledger-core
                       , cardano-ledger-shelley-ma
+                      , voltaire-prototype
                       , cardano-prelude
                       , cardano-slotting
                       , contra-tracer
