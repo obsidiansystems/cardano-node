@@ -168,6 +168,7 @@ test-suite cardano-api-test
                       , QuickCheck
                       , shelley-spec-ledger
                       , shelley-spec-ledger-test
+                      , voltaire-prototype
                       , tasty
                       , tasty-hedgehog
                       , tasty-quickcheck

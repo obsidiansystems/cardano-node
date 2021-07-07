@@ -16,6 +16,8 @@ module Cardano.Api (
     ShelleyEra,
     AllegraEra,
     MaryEra,
+    VoltairePrototypeOneEra,
+    VoltairePrototypeTwoEra,
     CardanoEra(..),
     IsCardanoEra(..),
     AnyCardanoEra(..),
@@ -28,6 +30,10 @@ module Cardano.Api (
     InAnyShelleyBasedEra(..),
     CardanoEraStyle(..),
     cardanoEraStyle,
+
+    -- * Voltaire-based eras
+    VoltaireBasedEra(..),
+    IsVoltaireBasedEra(..),
 
     -- ** Deprecated
     Byron,
@@ -194,6 +200,7 @@ module Cardano.Api (
     WithdrawalsSupportedInEra(..),
     CertificatesSupportedInEra(..),
     UpdateProposalSupportedInEra(..),
+    VoltaireProposalSupportedInEra(..),
 
     -- ** Feature availability functions
     multiAssetSupportedInEra,

@@ -47,6 +47,7 @@ import qualified Cardano.Binary as CBOR
 import qualified Cardano.Crypto.Hash as Crypto
 import qualified Cardano.Crypto.Seed as Crypto
 import qualified Shelley.Spec.Ledger.TxBody as Ledger (EraIndependentTxBody)
+import qualified Cardano.Ledger.Voltaire.Prototype.Class as Voltaire
 
 
 import           Hedgehog (Gen, Range)
@@ -353,6 +354,8 @@ genTxOutValue era =
     ShelleyEra -> TxOutAdaOnly AdaOnlyInShelleyEra <$> genLovelace
     AllegraEra -> TxOutAdaOnly AdaOnlyInAllegraEra <$> genLovelace
     MaryEra -> TxOutValue MultiAssetInMaryEra <$> genValueForTxOut
+    VoltairePrototypeOneEra -> TxOutValue MultiAssetInVoltairePrototypeOneEra <$> genValueForTxOut
+    VoltairePrototypeTwoEra -> TxOutValue MultiAssetInVoltairePrototypeTwoEra <$> genValueForTxOut
 
 genTxOut :: CardanoEra era -> Gen (TxOut era)
 genTxOut era =
@@ -364,6 +367,14 @@ genTxOut era =
         <$> (shelleyAddressInEra <$> genAddressShelley)
         <*> (TxOutAdaOnly AdaOnlyInAllegraEra <$> genLovelace)
     MaryEra ->
+      TxOut
+        <$> (shelleyAddressInEra <$> genAddressShelley)
+        <*> genTxOutValue era
+    VoltairePrototypeOneEra ->
+      TxOut
+        <$> (shelleyAddressInEra <$> genAddressShelley)
+        <*> genTxOutValue era
+    VoltairePrototypeTwoEra ->
       TxOut
         <$> (shelleyAddressInEra <$> genAddressShelley)
         <*> genTxOutValue era
@@ -379,6 +390,8 @@ genTxValidityLowerBound era =
     ShelleyEra -> pure TxValidityNoLowerBound
     AllegraEra -> TxValidityLowerBound ValidityLowerBoundInAllegraEra <$> genTtl
     MaryEra -> TxValidityLowerBound ValidityLowerBoundInMaryEra <$> genTtl
+    VoltairePrototypeOneEra -> TxValidityLowerBound ValidityLowerBoundInVoltairePrototypeOneEra <$> genTtl
+    VoltairePrototypeTwoEra -> TxValidityLowerBound ValidityLowerBoundInVoltairePrototypeTwoEra <$> genTtl
 
 -- TODO: Accept a range for generating ttl.
 genTxValidityUpperBound :: CardanoEra era -> Gen (TxValidityUpperBound era)
@@ -388,6 +401,8 @@ genTxValidityUpperBound era =
     ShelleyEra -> TxValidityUpperBound ValidityUpperBoundInShelleyEra <$> genTtl
     AllegraEra -> TxValidityUpperBound ValidityUpperBoundInAllegraEra <$> genTtl
     MaryEra -> TxValidityUpperBound ValidityUpperBoundInMaryEra <$> genTtl
+    VoltairePrototypeOneEra -> TxValidityUpperBound ValidityUpperBoundInVoltairePrototypeOneEra <$> genTtl
+    VoltairePrototypeTwoEra -> TxValidityUpperBound ValidityUpperBoundInVoltairePrototypeTwoEra <$> genTtl
 
 genTxValidityRange
   :: CardanoEra era
@@ -416,6 +431,16 @@ genTxMetadataInEra era =
         [ pure TxMetadataNone
         , TxMetadataInEra TxMetadataInMaryEra <$> genTxMetadata
         ]
+    VoltairePrototypeOneEra ->
+      Gen.choice
+        [ pure TxMetadataNone
+        , TxMetadataInEra TxMetadataInVoltairePrototypeOneEra <$> genTxMetadata
+        ]
+    VoltairePrototypeTwoEra ->
+      Gen.choice
+        [ pure TxMetadataNone
+        , TxMetadataInEra TxMetadataInVoltairePrototypeTwoEra <$> genTxMetadata
+        ]
 
 genTxAuxScripts :: CardanoEra era -> Gen (TxAuxScripts era)
 genTxAuxScripts era =
@@ -428,6 +453,12 @@ genTxAuxScripts era =
     MaryEra    -> TxAuxScripts AuxScriptsInMaryEra
                            <$> Gen.list (Range.linear 0 3)
                                         (genScriptInEra MaryEra)
+    VoltairePrototypeOneEra -> TxAuxScripts AuxScriptsInVoltairePrototypeOneEra
+                           <$> Gen.list (Range.linear 0 3)
+                                        (genScriptInEra VoltairePrototypeOneEra)
+    VoltairePrototypeTwoEra -> TxAuxScripts AuxScriptsInVoltairePrototypeTwoEra
+                           <$> Gen.list (Range.linear 0 3)
+                                        (genScriptInEra VoltairePrototypeTwoEra)
 
 genTxWithdrawals :: CardanoEra era -> Gen (TxWithdrawals BuildTx era)
 genTxWithdrawals era =
@@ -447,6 +478,16 @@ genTxWithdrawals era =
       Gen.choice
         [ pure TxWithdrawalsNone
         , pure (TxWithdrawals WithdrawalsInMaryEra mempty) -- TODO: Generate withdrawals
+        ]
+    VoltairePrototypeOneEra ->
+      Gen.choice
+        [ pure TxWithdrawalsNone
+        , pure (TxWithdrawals WithdrawalsInVoltairePrototypeOneEra mempty) -- TODO: Generate withdrawals
+        ]
+    VoltairePrototypeTwoEra ->
+      Gen.choice
+        [ pure TxWithdrawalsNone
+        , pure (TxWithdrawals WithdrawalsInVoltairePrototypeTwoEra mempty) -- TODO: Generate withdrawals
         ]
 
 genTxCertificates :: CardanoEra era -> Gen (TxCertificates BuildTx era)
@@ -468,6 +509,17 @@ genTxCertificates era =
         [ pure TxCertificatesNone
         , pure (TxCertificates CertificatesInMaryEra mempty $ BuildTxWith mempty) -- TODO: Generate certificates
         ]
+    VoltairePrototypeOneEra ->
+      Gen.choice
+        [ pure TxCertificatesNone
+        , pure (TxCertificates CertificatesInVoltairePrototypeOneEra mempty $ BuildTxWith mempty) -- TODO: Generate certificates
+        ]
+    VoltairePrototypeTwoEra ->
+      Gen.choice
+        [ pure TxCertificatesNone
+        , pure (TxCertificates CertificatesInVoltairePrototypeTwoEra mempty $ BuildTxWith mempty) -- TODO: Generate certificates
+          -- NB: Should fail in the presence of a MIRCert
+        ]
 
 genTxUpdateProposal :: CardanoEra era -> Gen (TxUpdateProposal era)
 genTxUpdateProposal era =
@@ -488,6 +540,17 @@ genTxUpdateProposal era =
         [ pure TxUpdateProposalNone
         , pure (TxUpdateProposal UpdateProposalInMaryEra emptyUpdateProposal) -- TODO: Generate proposals
         ]
+    VoltairePrototypeOneEra ->
+      Gen.choice
+        [ pure TxUpdateProposalNone
+        , pure (TxUpdateProposal UpdateProposalInVoltairePrototypeOneEra emptyUpdateProposal) -- TODO: Generate proposals
+        ]
+    VoltairePrototypeTwoEra ->
+      Gen.choice
+        [ pure TxUpdateProposalNone
+        , pure (TxUpdateProposal UpdateProposalInVoltairePrototypeTwoEra emptyUpdateProposal) -- TODO: Generate proposals
+        , pure (TxVoltaireProposal VoltaireProposalSupportedInVoltairePrototypeTwoEra Voltaire.emptyUpdate) -- TODO: Generate Voltaire proposal
+        ]
   where
     emptyUpdateProposal :: UpdateProposal
     emptyUpdateProposal = UpdateProposal Map.empty (EpochNo 0)
@@ -502,6 +565,16 @@ genTxMintValue era =
       Gen.choice
         [ pure TxMintNone
         , TxMintValue MultiAssetInMaryEra <$> genValueForMinting <*> return (BuildTxWith mempty)
+        ]
+    VoltairePrototypeOneEra ->
+      Gen.choice
+        [ pure TxMintNone
+        , TxMintValue MultiAssetInVoltairePrototypeOneEra <$> genValueForMinting <*> return (BuildTxWith mempty)
+        ]
+    VoltairePrototypeTwoEra ->
+      Gen.choice
+        [ pure TxMintNone
+        , TxMintValue MultiAssetInVoltairePrototypeTwoEra <$> genValueForMinting <*> return (BuildTxWith mempty)
         ]
 
 genTxBodyContent :: CardanoEra era -> Gen (TxBodyContent BuildTx era)
@@ -537,6 +610,8 @@ genTxFee era =
     ShelleyEra -> TxFeeExplicit TxFeesExplicitInShelleyEra <$> genLovelace
     AllegraEra -> TxFeeExplicit TxFeesExplicitInAllegraEra <$> genLovelace
     MaryEra -> TxFeeExplicit TxFeesExplicitInMaryEra <$> genLovelace
+    VoltairePrototypeOneEra -> TxFeeExplicit TxFeesExplicitInVoltairePrototypeOneEra <$> genLovelace
+    VoltairePrototypeTwoEra -> TxFeeExplicit TxFeesExplicitInVoltairePrototypeTwoEra <$> genLovelace
 
 genTxBody :: CardanoEra era -> Gen (TxBody era)
 genTxBody era =
@@ -550,6 +625,16 @@ genTxBody era =
         Right txBody -> pure txBody
     MaryEra -> do
       res <- makeTransactionBody <$> genTxBodyContent MaryEra
+      case res of
+        Left err -> fail (show err) -- TODO: Render function for TxBodyError
+        Right txBody -> pure txBody
+    VoltairePrototypeOneEra -> do
+      res <- makeTransactionBody <$> genTxBodyContent VoltairePrototypeOneEra
+      case res of
+        Left err -> fail (show err) -- TODO: Render function for TxBodyError
+        Right txBody -> pure txBody
+    VoltairePrototypeTwoEra -> do
+      res <- makeTransactionBody <$> genTxBodyContent VoltairePrototypeTwoEra
       case res of
         Left err -> fail (show err) -- TODO: Render function for TxBodyError
         Right txBody -> pure txBody
@@ -567,6 +652,8 @@ genTx era =
         ShelleyEra -> genShelleyBasedWitnessList
         AllegraEra -> genShelleyBasedWitnessList
         MaryEra -> genShelleyBasedWitnessList
+        VoltairePrototypeOneEra -> genShelleyBasedWitnessList
+        VoltairePrototypeTwoEra -> genShelleyBasedWitnessList
 
     genShelleyBasedWitnessList :: IsShelleyBasedEra era => Gen [KeyWitness era]
     genShelleyBasedWitnessList = do
