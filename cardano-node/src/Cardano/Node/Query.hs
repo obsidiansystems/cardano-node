@@ -87,6 +87,10 @@ answerQueryWithLedgerState blkType protocol extLedgerState query = runIdentity $
         HF.forwardCompatQuery
           answerQueryHelper
           query
+      Protocol.VoltaireBlockType {} ->
+        HF.forwardCompatQuery
+          answerQueryHelper
+          query
   where
     cfg :: TopLevelConfig blk
     cfg = pInfoConfig $ Protocol.protocolInfo protocol
