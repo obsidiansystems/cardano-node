@@ -581,10 +581,15 @@ mkProtocolInfoCardano (GenesisCardano dnc _ shelleyGenesis)
             { Consensus.shelleyProtVer = shelleyProtVer dnc
             }
           Voltaire.ProtocolParamsVoltairePrototype
-            { Voltaire.exampleProtVer = error "TODO"
+            { Voltaire.exampleProtVer = voltaireProtVer
             }
           (ncShelleyToOne dnc)
           (ncOneToTwo dnc)
+ where
+  shelleyMajor =
+    Shelley.Spec.pvMajor (shelleyProtVer dnc)
+  voltaireProtVer =
+    Shelley.Spec.ProtVer (shelleyMajor + 1) 0
 
 shelleyPraosNonce :: ShelleyConfig -> Shelley.Spec.Nonce
 shelleyPraosNonce sCfg = Shelley.Spec.Nonce (Cardano.Crypto.Hash.Class.castHash . unGenesisHashShelley $ scGenesisHash sCfg)
