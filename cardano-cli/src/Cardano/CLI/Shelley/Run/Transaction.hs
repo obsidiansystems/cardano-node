@@ -174,11 +174,14 @@ renderEra (AnyCardanoEra ByronEra)   = "Byron"
 renderEra (AnyCardanoEra ShelleyEra) = "Shelley"
 renderEra (AnyCardanoEra AllegraEra) = "Allegra"
 renderEra (AnyCardanoEra MaryEra)    = "Mary"
+renderEra (AnyCardanoEra VoltairePrototypeOneEra) = "VoltaireOne"
+renderEra (AnyCardanoEra VoltairePrototypeTwoEra) = "VoltaireTwo"
 
 renderMode :: AnyConsensusMode -> Text
 renderMode (AnyConsensusMode ByronMode) = "ByronMode"
 renderMode (AnyConsensusMode ShelleyMode) = "ShelleyMode"
 renderMode (AnyConsensusMode CardanoMode) = "CardanoMode"
+renderMode (AnyConsensusMode PrototypeMode) = "PrototypeMode"
 
 renderFeature :: TxFeature -> Text
 renderFeature TxFeatureShelleyAddresses     = "Shelley addresses"
@@ -426,6 +429,20 @@ validateTxAuxScripts era files =
              validateScriptSupportedInEra era script
         | ScriptFile file <- files ]
       return (TxAuxScripts AuxScriptsInMaryEra scripts)
+    Just AuxScriptsInVoltairePrototypeOneEra -> do
+      scripts <- sequence
+        [ do script <- firstExceptT ShelleyTxCmdReadJsonFileError $
+                         readFileScriptInAnyLang file
+             validateScriptSupportedInEra era script
+        | ScriptFile file <- files ]
+      return (TxAuxScripts AuxScriptsInVoltairePrototypeOneEra scripts)
+    Just AuxScriptsInVoltairePrototypeTwoEra -> do
+      scripts <- sequence
+        [ do script <- firstExceptT ShelleyTxCmdReadJsonFileError $
+                         readFileScriptInAnyLang file
+             validateScriptSupportedInEra era script
+        | ScriptFile file <- files ]
+      return (TxAuxScripts AuxScriptsInVoltairePrototypeTwoEra scripts)
 
 validateTxWithdrawals
   :: forall era. IsCardanoEra era
@@ -1015,6 +1032,8 @@ readFileInAnyCardanoEra
      , HasTextEnvelope (thing ShelleyEra)
      , HasTextEnvelope (thing AllegraEra)
      , HasTextEnvelope (thing MaryEra)
+     , HasTextEnvelope (thing VoltairePrototypeOneEra)
+     , HasTextEnvelope (thing VoltairePrototypeTwoEra)
      )
   => (forall era. AsType era -> AsType (thing era))
   -> FilePath
@@ -1028,6 +1047,8 @@ readFileInAnyCardanoEra asThing file =
       , FromSomeType (asThing AsShelleyEra) (InAnyCardanoEra ShelleyEra)
       , FromSomeType (asThing AsAllegraEra) (InAnyCardanoEra AllegraEra)
       , FromSomeType (asThing AsMaryEra)    (InAnyCardanoEra MaryEra)
+      , FromSomeType (asThing AsVoltairePrototypeOneEra) (InAnyCardanoEra VoltairePrototypeOneEra)
+      , FromSomeType (asThing AsVoltairePrototypeTwoEra) (InAnyCardanoEra VoltairePrototypeTwoEra)
       ]
       file
 
