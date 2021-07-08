@@ -541,6 +541,8 @@ writeFilteredUTxOs shelleyBasedEra' mOutFile utxo =
           ShelleyBasedEraShelley -> writeUTxo fpath utxo
           ShelleyBasedEraAllegra -> writeUTxo fpath utxo
           ShelleyBasedEraMary -> writeUTxo fpath utxo
+          ShelleyBasedEraVoltairePrototypeOne -> writeUTxo fpath utxo
+          ShelleyBasedEraVoltairePrototypeTwo -> writeUTxo fpath utxo
  where
    writeUTxo fpath utxo' =
      handleIOExceptT (ShelleyQueryCmdWriteFileError . FileIOError fpath)
@@ -556,6 +558,10 @@ printFilteredUTxOs shelleyBasedEra' (UTxO utxo) = do
     ShelleyBasedEraAllegra ->
       mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
     ShelleyBasedEraMary    ->
+      mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
+    ShelleyBasedEraVoltairePrototypeOne ->
+      mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
+    ShelleyBasedEraVoltairePrototypeTwo ->
       mapM_ (printUtxo shelleyBasedEra') $ Map.toList utxo
  where
    title :: Text
@@ -586,6 +592,24 @@ printUtxo shelleyBasedEra' txInOutTuple =
              , "        " <> printableValue value
              ]
     ShelleyBasedEraMary ->
+      let (TxIn (TxId txhash) (TxIx index), TxOut _ value) = txInOutTuple
+      in Text.putStrLn $
+           mconcat
+             [ Text.decodeLatin1 (hashToBytesAsHex txhash)
+             , textShowN 6 index
+             , "        " <> printableValue value
+             ]
+
+    ShelleyBasedEraVoltairePrototypeOne ->
+      let (TxIn (TxId txhash) (TxIx index), TxOut _ value) = txInOutTuple
+      in Text.putStrLn $
+           mconcat
+             [ Text.decodeLatin1 (hashToBytesAsHex txhash)
+             , textShowN 6 index
+             , "        " <> printableValue value
+             ]
+
+    ShelleyBasedEraVoltairePrototypeTwo ->
       let (TxIn (TxId txhash) (TxIx index), TxOut _ value) = txInOutTuple
       in Text.putStrLn $
            mconcat
@@ -719,6 +743,12 @@ determineEra cModeParams localNodeConnInfo =
       case eraQ of
         Left acqFail -> left $ ShelleyQueryCmdAcquireFailure acqFail
         Right anyCarEra -> return anyCarEra
+    PrototypeMode -> do
+      eraQ <- liftIO . queryNodeLocalState localNodeConnInfo Nothing
+                     $ QueryCurrentEra PrototypeModeIsMultiEra
+      case eraQ of
+        Left acqFail -> left $ ShelleyQueryCmdAcquireFailure acqFail
+        Right anyCarEra -> return anyCarEra
 
 executeQuery
   :: forall result era mode. CardanoEra era
@@ -761,4 +791,6 @@ obtainLedgerEraClassConstraints
 obtainLedgerEraClassConstraints ShelleyBasedEraShelley f = f
 obtainLedgerEraClassConstraints ShelleyBasedEraAllegra f = f
 obtainLedgerEraClassConstraints ShelleyBasedEraMary    f = f
+obtainLedgerEraClassConstraints ShelleyBasedEraVoltairePrototypeOne f = f
+obtainLedgerEraClassConstraints ShelleyBasedEraVoltairePrototypeTwo f = f
 

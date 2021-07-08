@@ -41,9 +41,11 @@ import qualified Shelley.Spec.Ledger.EpochBoundary as Ledger
 import qualified Shelley.Spec.Ledger.Rewards as Ledger
 import qualified Shelley.Spec.Ledger.STS.Prtcl as Ledger
 import qualified Shelley.Spec.Ledger.STS.Tickn as Ledger
-import           Shelley.Spec.Ledger.TxBody (TxId (..))
+import           Shelley.Spec.Ledger.TxBody (TxId (..), MIRTarget, MIRPot)
 
 import qualified Cardano.Ledger.Mary.Value as Ledger.Mary
+import qualified Cardano.Ledger.Voltaire.Prototype.Two as Voltaire.Two
+import qualified Cardano.Ledger.Shelley.Constraints as Ledger.Shelley
 
 instance ToJSON (OneEraHash xs) where
   toJSON = toJSON
@@ -95,3 +97,13 @@ deriving newtype  instance ToJSON    (Ledger.Mary.PolicyID StandardCrypto)
 
 instance (ToJSONKey k, ToJSON v) => ToJSON (SetAlgebra.BiMap v k v) where
   toJSON = toJSON . SetAlgebra.forwards -- to normal Map
+
+deriving instance ToJSON (Ledger.Shelley.PParamsDelta era)
+  => ToJSON (Voltaire.Two.PPUPState era)
+deriving newtype instance ToJSON (Ledger.Shelley.PParamsDelta era)
+  => ToJSON (Voltaire.Two.ProposedUpdates era)
+deriving instance ToJSON (Ledger.Shelley.PParamsDelta era)
+  => ToJSON (Voltaire.Two.ProposalBody era)
+deriving instance ToJSON (Voltaire.Two.MIRCert crypto)
+deriving instance ToJSON (MIRTarget crypto)
+deriving instance ToJSON MIRPot
