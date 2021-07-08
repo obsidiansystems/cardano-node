@@ -46,6 +46,7 @@ library
                       , containers
                       , hedgehog
                       , shelley-spec-ledger
+                      , voltaire-prototype
                       , tasty
                       , tasty-hedgehog
                       , text
