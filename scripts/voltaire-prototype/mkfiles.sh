@@ -21,12 +21,10 @@ fi
 # copy and tweak the configuration
 cp configuration/defaults/byron-mainnet/configuration.yaml ${ROOT}/
 
-echo "DEBUG: before"
 sed -e 's/Protocol: RealPBFT/Protocol: Voltaire/' \
     -e 's/minSeverity: Info/minSeverity: Warning/'\
     -e 's/LastKnownBlockVersion-Minor: 2/LastKnownBlockVersion-Minor: 0/'\
     -i '' ${ROOT}/configuration.yaml
-echo "DEBUG: after"
 
 # Set up our template
 cardano-cli genesis create --testnet-magic 42 --genesis-dir ${ROOT}
