@@ -48,6 +48,7 @@ library
                         Cardano.Api.Protocol.Cardano
                         Cardano.Api.Protocol.Shelley
                         Cardano.Api.Protocol.Types
+                        Cardano.Api.Protocol.Voltaire
 
   other-modules:
                         -- Splitting up the big Typed module:
