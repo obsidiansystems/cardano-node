@@ -1598,6 +1598,14 @@ pCardanoEra = asum
       (  Opt.long "mary-era"
       <> Opt.help "Specify the Mary era (default)"
       )
+  , Opt.flag' (AnyCardanoEra VoltairePrototypeOneEra)
+      (  Opt.long "prototype-era-one"
+      <> Opt.help "Specify the Voltaire One prototype era"
+      )
+  , Opt.flag' (AnyCardanoEra VoltairePrototypeTwoEra)
+      (  Opt.long "prototype-era-two"
+      <> Opt.help "Specify the Voltaire Two prototype era"
+      )
 
     -- Default for now:
   , pure (AnyCardanoEra MaryEra)
@@ -2395,6 +2403,10 @@ pConsensusModeParams = asum
       <> Opt.help "For talking to a node running in full Cardano mode (default)."
       )
        *> pCardanoConsensusMode
+  , Opt.flag' (AnyConsensusModeParams PrototypeModeParams)
+      (  Opt.long "prototype-mode"
+      <> Opt.help "For talking to a node running in prototype consensus mode."
+      )
   , -- Default to the Cardano consensus mode.
     pure . AnyConsensusModeParams . CardanoModeParams $ EpochSlots defaultByronEpochSlots
   ]
