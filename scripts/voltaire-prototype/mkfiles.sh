@@ -20,10 +20,13 @@ fi
 
 # copy and tweak the configuration
 cp configuration/defaults/byron-mainnet/configuration.yaml ${ROOT}/
-sed -i ${ROOT}/configuration.yaml \
-    -e 's/Protocol: RealPBFT/Protocol: Voltaire/' \
+
+echo "DEBUG: before"
+sed -e 's/Protocol: RealPBFT/Protocol: Voltaire/' \
     -e 's/minSeverity: Info/minSeverity: Warning/'\
-    -e 's/LastKnownBlockVersion-Minor: 2/LastKnownBlockVersion-Minor: 0/'
+    -e 's/LastKnownBlockVersion-Minor: 2/LastKnownBlockVersion-Minor: 0/'\
+    -i '' ${ROOT}/configuration.yaml
+echo "DEBUG: after"
 
 # Set up our template
 cardano-cli genesis create --testnet-magic 42 --genesis-dir ${ROOT}
@@ -35,14 +38,14 @@ SUPPLY=1000000000
 # We're going to use really quick epochs (300 seconds), by using short slots 0.2s
 # and K=10, but we'll keep long KES periods so we don't have to bother
 # cycling KES keys
-sed -i ${ROOT}/genesis.spec.json \
-    -e 's/"slotLength": 1/"slotLength": 0.2/' \
+sed -e 's/"slotLength": 1/"slotLength": 0.2/' \
     -e 's/"activeSlotsCoeff": 5.0e-2/"activeSlotsCoeff": 0.1/' \
     -e 's/"securityParam": 2160/"securityParam": 10/' \
     -e 's/"epochLength": 432000/"epochLength": 1500/' \
     -e 's/"maxLovelaceSupply": 0/"maxLovelaceSupply": 1000000000/' \
     -e 's/"decentralisationParam": 1/"decentralisationParam": 0.7/' \
-    -e 's/"updateQuorum": 5/"updateQuorum": 2/'
+    -e 's/"updateQuorum": 5/"updateQuorum": 2/'\
+    -i '' ${ROOT}/genesis.spec.json
 
 # Now generate for real:
 
