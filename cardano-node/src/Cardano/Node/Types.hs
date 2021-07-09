@@ -263,7 +263,6 @@ data NodeProtocolConfiguration =
                                         NodeShelleyProtocolConfiguration
                                         NodeHardForkProtocolConfiguration
      | NodeProtocolConfigurationVoltaire NodeShelleyProtocolConfiguration
-                                         NodeHardForkProtocolConfiguration
   deriving (Eq, Show)
 
 data NodeShelleyProtocolConfiguration =
@@ -382,9 +381,8 @@ instance AdjustFilePaths NodeProtocolConfiguration where
                                      (adjustFilePaths f pcs)
                                      pch
 
-  adjustFilePaths f (NodeProtocolConfigurationVoltaire pcs pch) =
+  adjustFilePaths f (NodeProtocolConfigurationVoltaire pcs) =
     NodeProtocolConfigurationVoltaire (adjustFilePaths f pcs)
-                                      pch
 
 instance AdjustFilePaths NodeByronProtocolConfiguration where
   adjustFilePaths f x@NodeByronProtocolConfiguration {

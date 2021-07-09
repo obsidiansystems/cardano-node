@@ -56,18 +56,11 @@ import           Cardano.Node.Protocol.Types
 --
 mkSomeConsensusProtocolVoltaire
   :: NodeShelleyProtocolConfiguration
-  -> NodeHardForkProtocolConfiguration
   -> Maybe ProtocolFilepaths
   -> ExceptT VoltaireProtocolInstantiationError IO SomeConsensusProtocol
 mkSomeConsensusProtocolVoltaire NodeShelleyProtocolConfiguration {
                              npcShelleyGenesisFile,
                              npcShelleyGenesisFileHash
-                           }
-                           NodeHardForkProtocolConfiguration {
-                             npcTestAllegraHardForkAtEpoch,
-                             npcTestAllegraHardForkAtVersion,
-                             npcTestMaryHardForkAtEpoch,
-                             npcTestMaryHardForkAtVersion
                            }
                            files = do
     (shelleyGenesis, shelleyGenesisHash) <-
@@ -95,34 +88,26 @@ mkSomeConsensusProtocolVoltaire NodeShelleyProtocolConfiguration {
           -- is in the Shelley era. That is, it is the version of protocol
           -- /after/ Shelley, i.e. VoltaireOne.
           shelleyProtVer =
-            ProtVer 3 0
+            ProtVer 1 0
         }
         Voltaire.ProtocolParamsVoltairePrototype {
           -- This is /not/ the VoltaireOne protocol version. It is the protocol
           -- version that this node will declare that it understands, when it
           -- is in the VoltaireOne era. That is, it is the version of protocol
           -- /after/ VoltaireOne, i.e. VoltaireTwo.
-          Voltaire.exampleProtVer = ProtVer 4 0
+          Voltaire.exampleProtVer = ProtVer 2 0
         }
         -- ProtocolParamsTransition specifies the parameters needed to transition between two eras
         -- The comments below also apply for the Shelley -> VoltaireOne and VoltaireOne -> VoltaireTwo hard forks.
 
         -- Shelley to VoltaireOne hard fork parameters
         Voltaire.ProtocolParamsTransition {
-          Voltaire.transitionTrigger =
-            case npcTestAllegraHardForkAtEpoch of
-               Nothing -> Consensus.TriggerHardForkAtVersion
-                            (maybe 3 fromIntegral npcTestAllegraHardForkAtVersion)
-               Just epochNo -> Consensus.TriggerHardForkAtEpoch epochNo
+          Voltaire.transitionTrigger = Consensus.TriggerHardForkAtVersion 1
         }
 
         -- VoltaireOne to VoltaireOne hard fork parameters
         Voltaire.ProtocolParamsTransition {
-          Voltaire.transitionTrigger =
-            case npcTestMaryHardForkAtEpoch of
-               Nothing -> Consensus.TriggerHardForkAtVersion
-                            (maybe 4 fromIntegral npcTestMaryHardForkAtVersion)
-               Just epochNo -> Consensus.TriggerHardForkAtEpoch epochNo
+          Voltaire.transitionTrigger = Consensus.TriggerHardForkAtVersion 2
         }
 
 ------------------------------------------------------------------------------

@@ -153,8 +153,7 @@ instance FromJSON PartialNodeConfiguration where
                                                                <*> parseHardForkProtocol v)
 
           VoltaireProtocol ->
-            Last . Just  <$> (NodeProtocolConfigurationVoltaire <$> parseShelleyProtocol v
-                                                                <*> parseHardForkProtocol v)
+            Last . Just  <$> (NodeProtocolConfigurationVoltaire <$> parseShelleyProtocol v)
       pure PartialNodeConfiguration {
              pncProtocolConfig = pncProtocolConfig'
            , pncSocketPath = pncSocketPath'

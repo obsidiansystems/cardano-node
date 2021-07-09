@@ -56,12 +56,10 @@ mkConsensusProtocol NodeConfiguration{ncProtocolConfig, ncProtocolFiles} =
             hardForkConfig
             (Just ncProtocolFiles)
 
-      NodeProtocolConfigurationVoltaire shelleyConfig
-                                        hardForkConfig ->
+      NodeProtocolConfigurationVoltaire shelleyConfig ->
         firstExceptT VoltaireProtocolInstantiationError $
           mkSomeConsensusProtocolVoltaire
             shelleyConfig
-            hardForkConfig
             (Just ncProtocolFiles)
 
 ------------------------------------------------------------------------------
