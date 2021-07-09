@@ -6,7 +6,8 @@ set -x
 # This script will initiate the transition to protocol version 2 (Example).
 
 # You need to provide the current epoch as a positional argument (the Shelley
-# update system requires this to be includded in the update proposal).
+# update system requires this to be includded in the update proposal). Run
+# the command "cardano-cli query tip" to get the current epoch number.
 
 
 # You need to restart the nodes after running this script in order for the
@@ -43,7 +44,7 @@ cardano-cli governance create-update-proposal \
 #  4. delegate from the user1 stake address to the stake pool
 # We'll include the update proposal
 
-cardano-cli transaction build-raw \
+cardano-cli transaction build-raw --shelley-era \
             --invalid-hereafter 100000 \
             --fee 0 \
             --tx-in $(cardano-cli genesis initial-txin \
@@ -78,6 +79,6 @@ cardano-cli transaction sign \
             --out-file      tx1.tx
 
 
-cardano-cli transaction submit --example-mode --tx-file tx1.tx --testnet-magic 42
+cardano-cli transaction submit --prototype-mode --tx-file tx1.tx --testnet-magic 42
 
 popd

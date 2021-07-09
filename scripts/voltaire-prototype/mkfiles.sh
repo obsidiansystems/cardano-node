@@ -3,7 +3,7 @@
 set -e
 #set -x
 
-ROOT=voltaire-prototype-nodes
+ROOT=example
 
 BFT_NODES="node-bft1 node-bft2"
 BFT_NODES_N="1 2"
