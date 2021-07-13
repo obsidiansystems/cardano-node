@@ -90,18 +90,21 @@ instance IOLike m => Protocol m (Voltaire.VoltairePrototypeBlock StandardCrypto)
     (ProtocolParamsShelleyBased StandardShelley)
     ProtocolParamsShelley
     Voltaire.ProtocolParamsVoltairePrototype
+    Voltaire.ProtocolParamsVoltairePrototype
     (Voltaire.ProtocolParamsTransition (ShelleyBlock StandardShelley) (ShelleyBlock Voltaire.StandardVoltaireOne))
     (Voltaire.ProtocolParamsTransition (ShelleyBlock Voltaire.StandardVoltaireOne) (ShelleyBlock Voltaire.StandardVoltaireTwo))
   protocolInfo (ProtocolInfoArgsPrototype
                paramsShelleyBased
                paramsShelley
-               paramsVoltairePrototype
+               paramsVoltairePrototypeOne
+               paramsVoltairePrototypeTwo
                paramsShelleyOne
                paramsOneTwo) =
     Voltaire.protocolInfoVoltairePrototype
       paramsShelleyBased
       paramsShelley
-      paramsVoltairePrototype
+      paramsVoltairePrototypeOne
+      paramsVoltairePrototypeTwo
       paramsShelleyOne
       paramsOneTwo
 

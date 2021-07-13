@@ -45,8 +45,7 @@ import           Cardano.Node.Protocol.Types
 -- | Make 'SomeConsensusProtocol' using the Voltaire instance.
 --
 -- The Voltaire protocol instance is currently the sequential composition of
--- the Byron and Shelley protocols, and will likely be extended in future
--- with further sequentially composed protocol revisions.
+-- the Shelley VoltairePrototype protocols.
 --
 -- The use of 'SomeConsensusProtocol' lets us handle multiple protocols in a
 -- generic way.
@@ -95,6 +94,13 @@ mkSomeConsensusProtocolVoltaire NodeShelleyProtocolConfiguration {
           -- version that this node will declare that it understands, when it
           -- is in the VoltaireOne era. That is, it is the version of protocol
           -- /after/ VoltaireOne, i.e. VoltaireTwo.
+          Voltaire.exampleProtVer = ProtVer 2 0
+        }
+        Voltaire.ProtocolParamsVoltairePrototype {
+          -- This is /not/ the VoltaireTwo protocol version. It is the protocol
+          -- version that this node will declare that it understands, when it
+          -- is in the VoltaireTwo era. Since VoltaireTwo is currently the last known
+          -- protocol version then this is also the VoltaireTwo protocol version.
           Voltaire.exampleProtVer = ProtVer 2 0
         }
         -- ProtocolParamsTransition specifies the parameters needed to transition between two eras

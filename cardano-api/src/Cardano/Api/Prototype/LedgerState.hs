@@ -476,14 +476,14 @@ instance FromJSON NodeConfig where
       parseShelleyHardForkEpoch o =
         asum
           [ Consensus.TriggerHardForkAtEpoch <$> o .: "TestShelleyHardForkAtEpoch"
-          , pure $ Consensus.TriggerHardForkAtVersion 2 -- Mainnet default
+          , pure $ Consensus.TriggerHardForkAtVersion 1 -- Mainnet default
           ]
 
       parseAllegraHardForkEpoch :: Object -> Data.Aeson.Types.Internal.Parser Consensus.TriggerHardFork
       parseAllegraHardForkEpoch o =
         asum
           [ Consensus.TriggerHardForkAtEpoch <$> o .: "TestAllegraHardForkAtEpoch"
-          , pure $ Consensus.TriggerHardForkAtVersion 3 -- Mainnet default
+          , pure $ Consensus.TriggerHardForkAtVersion 2 -- Mainnet default
           ]
 
 parseNodeConfig :: ByteString -> Either Text NodeConfig
@@ -581,15 +581,13 @@ mkProtocolInfoCardano (GenesisCardano dnc _ shelleyGenesis)
             { Consensus.shelleyProtVer = shelleyProtVer dnc
             }
           Voltaire.ProtocolParamsVoltairePrototype
-            { Voltaire.exampleProtVer = voltaireProtVer
+            { Voltaire.exampleProtVer = Shelley.Spec.ProtVer 1 0
+            }
+          Voltaire.ProtocolParamsVoltairePrototype
+            { Voltaire.exampleProtVer = Shelley.Spec.ProtVer 2 0
             }
           (ncShelleyToOne dnc)
           (ncOneToTwo dnc)
- where
-  shelleyMajor =
-    Shelley.Spec.pvMajor (shelleyProtVer dnc)
-  voltaireProtVer =
-    Shelley.Spec.ProtVer (shelleyMajor + 1) 0
 
 shelleyPraosNonce :: ShelleyConfig -> Shelley.Spec.Nonce
 shelleyPraosNonce sCfg = Shelley.Spec.Nonce (Cardano.Crypto.Hash.Class.castHash . unGenesisHashShelley $ scGenesisHash sCfg)
