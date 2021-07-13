@@ -136,6 +136,7 @@ toEraInMode AllegraEra CardanoMode = Just AllegraEraInCardanoMode
 toEraInMode MaryEra    CardanoMode = Just MaryEraInCardanoMode
 toEraInMode ShelleyEra PrototypeMode = Just ShelleyEraInPrototypeMode
 toEraInMode VoltairePrototypeOneEra PrototypeMode = Just VoltairePrototypeOneEraInPrototypeMode
+toEraInMode VoltairePrototypeTwoEra PrototypeMode = Just VoltairePrototypeTwoEraInPrototypeMode
 toEraInMode _ _                    = Nothing
 
 
