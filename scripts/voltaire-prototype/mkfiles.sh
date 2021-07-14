@@ -4,6 +4,8 @@ set -e
 #set -x
 
 ROOT=example
+SUPPLY=1500000000
+INITIAL_FUNDS=1000000000
 
 BFT_NODES="node-bft1 node-bft2"
 BFT_NODES_N="1 2"
@@ -31,8 +33,6 @@ cardano-cli genesis create --testnet-magic 42 --genesis-dir ${ROOT}
 
 # Then edit the genesis.spec.json ...
 
-SUPPLY=1000000000
-
 # We're going to use really quick epochs (300 seconds), by using short slots 0.2s
 # and K=10, but we'll keep long KES periods so we don't have to bother
 # cycling KES keys
@@ -40,7 +40,6 @@ sed -e 's/"slotLength": 1/"slotLength": 0.2/' \
     -e 's/"activeSlotsCoeff": 5.0e-2/"activeSlotsCoeff": 0.1/' \
     -e 's/"securityParam": 2160/"securityParam": 10/' \
     -e 's/"epochLength": 432000/"epochLength": 1500/' \
-    -e 's/"maxLovelaceSupply": 0/"maxLovelaceSupply": 1000000000/' \
     -e 's/"decentralisationParam": 1/"decentralisationParam": 0.7/' \
     -e 's/"updateQuorum": 5/"updateQuorum": 2/'\
     -i '' ${ROOT}/genesis.spec.json
@@ -51,7 +50,12 @@ cardano-cli genesis create \
     --testnet-magic 42 \
     --genesis-dir ${ROOT}/ \
     --gen-genesis-keys ${NUM_BFT_NODES} \
-    --gen-utxo-keys 1
+    --gen-utxo-keys 1 \
+    --supply "$INITIAL_FUNDS"
+
+# Increase the total supply, so that there's some funds left in the reserves
+sed -e "s/\"maxLovelaceSupply\": $INITIAL_FUNDS/\"maxLovelaceSupply\": $SUPPLY/" \
+    -i '' ${ROOT}/genesis.json
 
 pushd ${ROOT}
 
@@ -289,7 +293,7 @@ done
 echo "In order to do the protocol updates, proceed as follows:"
 echo
 echo "  0. wait for the nodes to start producing blocks"
-echo "  1. invoke ./scripts/example-prototype-mode/update.sh <N>"
+echo "  1. invoke ./scripts/voltaire-prototype/update.sh <N>"
 echo "     Here, <N> the current epoch (2 if you're quick)."
 echo "     If you provide the wrong epoch, you will see an error"
 echo "     that will tell you the current epoch, and can run"
@@ -301,7 +305,7 @@ echo "The update script also delegates to a mining pool"
 echo "You can query the stake distribution, and see if the pool node creates blocks"
 echo
 echo "CARDANO_NODE_SOCKET_PATH=example/node-bft1/node.sock \\"
-echo "  cardano-cli query stake-distribution --example-mode --testnet-magic 42"
+echo "  cardano-cli query stake-distribution --prototype-mode --testnet-magic 42"
 echo
 
 popd
