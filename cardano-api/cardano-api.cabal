@@ -91,6 +91,7 @@ library
                         Cardano.Api.Utils
                         Cardano.Api.Value
                         Cardano.Api.Update
+                        Cardano.Api.MirProposal
 
   build-depends:        aeson             >= 1.5.6.0
                       , aeson-pretty      >= 0.8.5

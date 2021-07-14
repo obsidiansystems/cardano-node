@@ -518,7 +518,7 @@ pTransaction =
                                  <*> pTxMetadataJsonSchema
                                  <*> many (pScriptFor "auxiliary-script-file" "Filepath of auxiliary script(s)")
                                  <*> many pMetadataFile
-                                 <*> optional pUpdateProposalFile
+                                 <*> optional (Right <$> pUpdateProposalFile <|> Left <$> pMirProposalFile)
                                  <*> pTxBodyFile Output
 
   pTransactionSign  :: Parser TransactionCmd
@@ -763,6 +763,9 @@ pGovernanceCmd =
    , subParser "create-update-proposal"
        (Opt.info pUpdateProposal $
          Opt.progDesc "Create an update proposal")
+   , subParser "create-mir-proposal"
+       (Opt.info pMirProposal $
+         Opt.progDesc "Create a MIR proposal")
    ]
   where
     mirCertParsers :: Parser GovernanceCmd
@@ -821,6 +824,15 @@ pGovernanceCmd =
                         <*> pEpochNoUpdateProp
                         <*> some pGenesisVerificationKeyFile
                         <*> pShelleyProtocolParametersUpdate
+
+    pMirProposal :: Parser GovernanceCmd
+    pMirProposal = GovernanceMirProposal
+                      <$> pOutputFile
+                      <*> pEpochNoUpdateProp
+                      <*> some pGenesisVerificationKeyFile
+                      <*> pMIRPot
+                      <*> some pStakeAddress
+                      <*> some pRewardAmt
 
 pTransferAmt :: Parser Lovelace
 pTransferAmt =
@@ -1186,6 +1198,23 @@ pUpdateProposalFile =
   <|>
     Opt.strOption
       (  Opt.long "update-proposal"
+      <> Opt.internal
+      )
+  )
+
+
+pMirProposalFile :: Parser MirProposalFile
+pMirProposalFile =
+  MirProposalFile <$>
+  ( Opt.strOption
+     (  Opt.long "mir-proposal-file"
+     <> Opt.metavar "FILE"
+     <> Opt.help "Filepath of the MIR proposal."
+     <> Opt.completer (Opt.bashCompleter "file")
+     )
+  <|>
+    Opt.strOption
+      (  Opt.long "mir-proposal"
       <> Opt.internal
       )
   )

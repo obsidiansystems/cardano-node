@@ -180,7 +180,7 @@ data TransactionCmd
       [ScriptFile]
       -- ^ Auxillary scripts
       [MetadataFile]
-      (Maybe UpdateProposalFile)
+      (Maybe (Either MirProposalFile UpdateProposalFile))
       TxBodyFile
   | TxSign TxBodyFile [WitnessSigningData] (Maybe NetworkId) TxFile
   | TxCreateWitness TxBodyFile WitnessSigningData (Maybe NetworkId) OutputFile
@@ -331,6 +331,11 @@ data GovernanceCmd
   | GovernanceUpdateProposal OutputFile EpochNo
                              [VerificationKeyFile]
                              ProtocolParametersUpdate
+  | GovernanceMirProposal OutputFile EpochNo
+                          [VerificationKeyFile]
+                          MIRPot
+                          [StakeAddress]
+                          [Lovelace]
   deriving Show
 
 renderGovernanceCmd :: GovernanceCmd -> Text
@@ -341,6 +346,7 @@ renderGovernanceCmd cmd =
     GovernanceMIRTransfer _ _ TransferToTreasury -> "governance create-mir-certificate transfer-to-treasury"
     GovernanceMIRTransfer _ _ TransferToReserves -> "governance create-mir-certificate transfer-to-reserves"
     GovernanceUpdateProposal {} -> "governance create-update-proposal"
+    GovernanceMirProposal {} -> "governance create-mir-proposal"
 
 data TextViewCmd
   = TextViewInfo !FilePath (Maybe OutputFile)

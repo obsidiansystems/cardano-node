@@ -14,6 +14,7 @@ module Cardano.CLI.Types
   , TransferDirection(..)
   , TxOutAnyEra (..)
   , UpdateProposalFile (..)
+  , MirProposalFile(..)
   , VerificationKeyFile (..)
   , Stakes (..)
   , Params (..)
@@ -136,6 +137,9 @@ newtype SigningKeyFile = SigningKeyFile
 newtype SocketPath = SocketPath { unSocketPath :: FilePath }
 
 newtype UpdateProposalFile = UpdateProposalFile { unUpdateProposalFile :: FilePath }
+                             deriving newtype (Eq, Show)
+
+newtype MirProposalFile = MirProposalFile { unMirProposalFile :: FilePath }
                              deriving newtype (Eq, Show)
 
 newtype VerificationKeyFile

@@ -61,6 +61,46 @@ runGovernanceCmd (GovernanceGenesisKeyDelegationCertificate genVk genDelegVk vrf
   runGovernanceGenesisKeyDelegationCertificate genVk genDelegVk vrfVk out
 runGovernanceCmd (GovernanceUpdateProposal out eNo genVKeys ppUp) =
   runGovernanceUpdateProposal out eNo genVKeys ppUp
+runGovernanceCmd (GovernanceMirProposal out eNo genVKeys mirpot vKeys rewards) =
+  runGovernanceMirProposal out eNo genVKeys mirpot vKeys rewards
+
+runGovernanceMirProposal
+  :: OutputFile
+  -> EpochNo
+  -> [VerificationKeyFile]
+  -> Shelley.MIRPot
+  -> [StakeAddress] -- ^ Stake addresses
+  -> [Lovelace]     -- ^ Corresponding reward amounts (same length)
+  -> ExceptT ShelleyGovernanceCmdError IO ()
+runGovernanceMirProposal (OutputFile oFp) eNo genVerKeyFiles mirPot sAddrs rwdAmts = do
+
+    unless (length sAddrs == length rwdAmts) $
+      left $ ShelleyGovernanceCmdMIRCertificateKeyRewardMistmach
+               oFp (length sAddrs) (length rwdAmts)
+
+    genVKeys <- sequence
+            [ firstExceptT ShelleyGovernanceCmdTextEnvReadError . newExceptT $
+                readFileTextEnvelope
+                  (AsVerificationKey AsGenesisKey)
+                  vkeyFile
+            | VerificationKeyFile vkeyFile <- genVerKeyFiles ]
+
+    let sCreds  = map stakeAddrToStakeCredential sAddrs
+        mirPotTarget = (mirPot, StakeAddressesMIR $ zip sCreds rwdAmts)
+        genKeyHashes = map verificationKeyHash genVKeys
+        mirProposal = makeVoltaireMirProposal mirPotTarget genKeyHashes eNo
+
+    firstExceptT ShelleyGovernanceCmdTextEnvWriteError
+      . newExceptT
+      $ writeFileTextEnvelope oFp (Just mirCertDesc) mirProposal
+  where
+    mirCertDesc :: TextEnvelopeDescr
+    mirCertDesc = "Move Instantaneous Rewards proposal"
+
+    --TODO: expose a pattern for StakeAddress that give us the StakeCredential
+    stakeAddrToStakeCredential :: StakeAddress -> StakeCredential
+    stakeAddrToStakeCredential (StakeAddress _ scred) =
+      fromShelleyStakeCredential scred
 
 runGovernanceMIRCertificatePayStakeAddrs
   :: Shelley.MIRPot

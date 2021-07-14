@@ -143,7 +143,6 @@ import qualified Cardano.Ledger.Shelley.Constraints as Ledger
 import qualified Cardano.Ledger.ShelleyMA.AuxiliaryData as Allegra
 import qualified Cardano.Ledger.ShelleyMA.TxBody as Allegra
 import qualified Cardano.Api.Prototype.Tmp as Voltaire
-import qualified Cardano.Ledger.Voltaire.Prototype.Class as Voltaire
 import qualified Cardano.Ledger.Voltaire.Prototype.TxBody as Voltaire
 import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
@@ -168,6 +167,7 @@ import           Cardano.Api.KeysByron
 import           Cardano.Api.KeysShelley
 import           Cardano.Api.NetworkId
 import           Cardano.Api.ProtocolParameters
+import           Cardano.Api.MirProposal
 import           Cardano.Api.Script
 import           Cardano.Api.SerialiseBech32
 import           Cardano.Api.SerialiseCBOR
@@ -858,9 +858,9 @@ data TxUpdateProposal era where
      TxUpdateProposal     :: UpdateProposalSupportedInEra era
                           -> UpdateProposal
                           -> TxUpdateProposal era
-     TxVoltaireProposal   :: Voltaire.VoltaireClass (ShelleyLedgerEra era)
-                          => VoltaireProposalSupportedInEra era
-                          -> Voltaire.Update (ShelleyLedgerEra era)
+
+     TxVoltaireProposal   :: VoltaireProposalSupportedInEra era
+                          -> MirProposal
                           -> TxUpdateProposal era
 
 deriving instance Eq   (TxUpdateProposal era)
@@ -1585,7 +1585,7 @@ makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototypeTwo
           (case txUpdateProposal of
              TxUpdateProposalNone -> SNothing
              TxUpdateProposal _ p -> SJust (toPrototypeTwoUpdate p)
-             TxVoltaireProposal _ p -> SJust p)
+             TxVoltaireProposal _ p -> SJust (toPrototypeTwoMirProposal p))
           (maybeToStrictMaybe
             (Ledger.hashAuxiliaryData @Voltaire.StandardVoltaireTwo <$> txAuxData))
           (case txMintValue of

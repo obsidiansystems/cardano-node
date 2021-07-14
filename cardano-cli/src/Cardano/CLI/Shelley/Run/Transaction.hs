@@ -13,7 +13,7 @@ module Cardano.CLI.Shelley.Run.Transaction
   ) where
 
 import           Cardano.Prelude hiding (All, Any)
-import           Prelude (String)
+import           Prelude (String, id)
 
 import qualified Data.Aeson as Aeson
 import qualified Data.ByteString.Char8 as BS
@@ -198,16 +198,17 @@ renderFeature TxFeatureMintValue            = "Asset minting"
 renderFeature TxFeatureMultiAssetOutputs    = "Multi-Asset outputs"
 renderFeature TxFeatureScriptWitnesses      = "Script witnesses"
 renderFeature TxFeatureShelleyKeys          = "Shelley keys"
+renderFeature TxFeatureMirProposals         = "MIR proposals"
 
 runTransactionCmd :: TransactionCmd -> ExceptT ShelleyTxCmdError IO ()
 runTransactionCmd cmd =
   case cmd of
     TxBuildRaw era txins txouts mValue mLowBound mUpperBound
                fee certs wdrls metadataSchema scriptFiles
-               metadataFiles mUpProp out ->
+               metadataFiles mUpMirProp out ->
       runTxBuildRaw era txins txouts mLowBound mUpperBound
                     fee mValue certs wdrls metadataSchema
-                    scriptFiles metadataFiles mUpProp out
+                    scriptFiles metadataFiles mUpMirProp out
     TxSign txinfile skfiles network txoutfile ->
       runTxSign txinfile skfiles network txoutfile
     TxSubmit anyConensusModeParams network txFp ->
@@ -248,14 +249,14 @@ runTxBuildRaw
   -> TxMetadataJsonSchema
   -> [ScriptFile]
   -> [MetadataFile]
-  -> Maybe UpdateProposalFile
+  -> Maybe (Either MirProposalFile UpdateProposalFile)
   -> TxBodyFile
   -> ExceptT ShelleyTxCmdError IO ()
 runTxBuildRaw (AnyCardanoEra era) inputsAndScripts txouts mLowerBound
               mUpperBound mFee mValue
               certFiles withdrawals
               metadataSchema scriptFiles
-              metadataFiles mUpdatePropFile
+              metadataFiles mUpdateMirPropFile
               (TxBodyFile fpath) = do
     txBodyContent <-
       TxBodyContent
@@ -268,7 +269,7 @@ runTxBuildRaw (AnyCardanoEra era) inputsAndScripts txouts mLowerBound
         <*> validateTxAuxScripts     era scriptFiles
         <*> validateTxWithdrawals    era withdrawals
         <*> validateTxCertificates   era certFiles
-        <*> validateTxUpdateProposal era mUpdatePropFile
+        <*> either (validateTxMirProposal era) (validateTxUpdateProposal era) (traverse id mUpdateMirPropFile)
         <*> validateTxMintValue      era mValue
 
     txBody <-
@@ -299,6 +300,7 @@ data TxFeature = TxFeatureShelleyAddresses
                | TxFeatureMultiAssetOutputs
                | TxFeatureScriptWitnesses
                | TxFeatureShelleyKeys
+               | TxFeatureMirProposals
   deriving Show
 
 txFeatureMismatch :: CardanoEra era
@@ -532,6 +534,16 @@ validateTxUpdateProposal era (Just (UpdateProposalFile file)) =
                    readFileTextEnvelope AsUpdateProposal file
          return (TxUpdateProposal supported prop)
 
+validateTxMirProposal :: CardanoEra era
+                      -> MirProposalFile
+                      -> ExceptT ShelleyTxCmdError IO (TxUpdateProposal era)
+validateTxMirProposal era (MirProposalFile file) =
+    case voltaireProposalSupportedInEra era of
+      Nothing -> txFeatureMismatch era TxFeatureMirProposals
+      Just supported -> do
+         prop <- firstExceptT ShelleyTxCmdReadTextViewFileError $ newExceptT $
+                   readFileTextEnvelope AsMirProposal file
+         return (TxVoltaireProposal supported prop)
 
 validateTxMintValue :: forall era. IsCardanoEra era
                     => CardanoEra era

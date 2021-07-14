@@ -30,6 +30,8 @@ module Cardano.Api.Certificate (
     toShelleyCertificate,
     fromShelleyCertificate,
     toShelleyPoolParams,
+    toShelleyMirCertificate,
+    fromShelleyMirCertificate,
 
     -- * Data family instances
     AsType(..)
@@ -253,31 +255,32 @@ toShelleyCertificate (GenesisKeyDelegationCertificate
         delegatekh
         vrfkh
 
-toShelleyCertificate (MIRCertificate mirpot (StakeAddressesMIR amounts)) =
-    Shelley.DCertMir $
-      Shelley.MIRCert
-        mirpot
-        (Shelley.StakeAddressesMIR $ Map.fromListWith (<>)
-           [ (toShelleyStakeCredential sc, Shelley.toDeltaCoin . toShelleyLovelace $ v)
-           | (sc, v) <- amounts ])
+toShelleyCertificate (MIRCertificate mirpot mirTarget) =
+    Shelley.DCertMir $ toShelleyMirCertificate mirpot mirTarget
 
-toShelleyCertificate (MIRCertificate mirPot (SendToReservesMIR amount)) =
+toShelleyMirCertificate :: MIRPot -> MIRTarget -> Shelley.MIRCert StandardCrypto
+toShelleyMirCertificate mirPot (StakeAddressesMIR amounts) =
+    Shelley.MIRCert
+      mirPot
+      (Shelley.StakeAddressesMIR $ Map.fromListWith (<>)
+          [ (toShelleyStakeCredential sc, Shelley.toDeltaCoin . toShelleyLovelace $ v)
+          | (sc, v) <- amounts ])
+
+toShelleyMirCertificate mirPot (SendToReservesMIR amount) =
     case mirPot of
       TreasuryMIR ->
-        Shelley.DCertMir $
-          Shelley.MIRCert
-            TreasuryMIR
-            (Shelley.SendToOppositePotMIR $ toShelleyLovelace amount)
+        Shelley.MIRCert
+          TreasuryMIR
+          (Shelley.SendToOppositePotMIR $ toShelleyLovelace amount)
       ReservesMIR ->
         error "toShelleyCertificate: Incorrect MIRPot specified. Expected TreasuryMIR but got ReservesMIR"
 
-toShelleyCertificate (MIRCertificate mirPot (SendToTreasuryMIR amount)) =
+toShelleyMirCertificate mirPot (SendToTreasuryMIR amount) =
     case mirPot of
       ReservesMIR ->
-        Shelley.DCertMir $
-          Shelley.MIRCert
-            ReservesMIR
-            (Shelley.SendToOppositePotMIR $ toShelleyLovelace amount)
+        Shelley.MIRCert
+          ReservesMIR
+          (Shelley.SendToOppositePotMIR $ toShelleyLovelace amount)
       TreasuryMIR ->
         error "toShelleyCertificate: Incorrect MIRPot specified. Expected ReservesMIR but got TreasuryMIR"
 
@@ -313,23 +316,27 @@ fromShelleyCertificate (Shelley.DCertGenesis
       (GenesisDelegateKeyHash delegatekh)
       (VrfKeyHash             vrfkh)
 
-fromShelleyCertificate (Shelley.DCertMir
-                         (Shelley.MIRCert mirpot (Shelley.StakeAddressesMIR amounts))) =
-    MIRCertificate
-      mirpot
-      (StakeAddressesMIR
+fromShelleyCertificate (Shelley.DCertMir mirCert) =
+    uncurry MIRCertificate $ fromShelleyMirCertificate mirCert
+
+fromShelleyMirCertificate :: Shelley.MIRCert StandardCrypto -> (MIRPot, MIRTarget)
+fromShelleyMirCertificate (Shelley.MIRCert mirpot (Shelley.StakeAddressesMIR amounts)) =
+      ( mirpot
+      , (StakeAddressesMIR
         [ (fromShelleyStakeCredential sc, fromShelleyDeltaLovelace v)
         | (sc, v) <- Map.toList amounts ]
+        )
       )
-fromShelleyCertificate (Shelley.DCertMir
-                         (Shelley.MIRCert ReservesMIR (Shelley.SendToOppositePotMIR amount))) =
-    MIRCertificate ReservesMIR
-      (SendToTreasuryMIR $ fromShelleyLovelace amount)
 
-fromShelleyCertificate (Shelley.DCertMir
-                         (Shelley.MIRCert TreasuryMIR (Shelley.SendToOppositePotMIR amount))) =
-    MIRCertificate TreasuryMIR
-      (SendToReservesMIR $ fromShelleyLovelace amount)
+fromShelleyMirCertificate (Shelley.MIRCert ReservesMIR (Shelley.SendToOppositePotMIR amount)) =
+    ( ReservesMIR
+    , (SendToTreasuryMIR $ fromShelleyLovelace amount)
+    )
+
+fromShelleyMirCertificate (Shelley.MIRCert TreasuryMIR (Shelley.SendToOppositePotMIR amount)) =
+    ( TreasuryMIR
+    , (SendToReservesMIR $ fromShelleyLovelace amount)
+    )
 
 toShelleyPoolParams :: StakePoolParameters -> Shelley.PoolParams StandardCrypto
 toShelleyPoolParams StakePoolParameters {

@@ -47,7 +47,6 @@ import qualified Cardano.Binary as CBOR
 import qualified Cardano.Crypto.Hash as Crypto
 import qualified Cardano.Crypto.Seed as Crypto
 import qualified Shelley.Spec.Ledger.TxBody as Ledger (EraIndependentTxBody)
-import qualified Cardano.Ledger.Voltaire.Prototype.Class as Voltaire
 
 
 import           Hedgehog (Gen, Range)
@@ -549,11 +548,13 @@ genTxUpdateProposal era =
       Gen.choice
         [ pure TxUpdateProposalNone
         , pure (TxUpdateProposal UpdateProposalInVoltairePrototypeTwoEra emptyUpdateProposal) -- TODO: Generate proposals
-        , pure (TxVoltaireProposal VoltaireProposalSupportedInVoltairePrototypeTwoEra Voltaire.emptyUpdate) -- TODO: Generate Voltaire proposal
+        , pure (TxVoltaireProposal VoltaireProposalSupportedInVoltairePrototypeTwoEra emptyMirProposal) -- TODO: Generate Voltaire proposal
         ]
   where
     emptyUpdateProposal :: UpdateProposal
     emptyUpdateProposal = UpdateProposal Map.empty (EpochNo 0)
+    emptyMirProposal :: MirProposal
+    emptyMirProposal = MirProposal Map.empty (EpochNo 0)
 
 genTxMintValue :: CardanoEra era -> Gen (TxMintValue BuildTx era)
 genTxMintValue era =

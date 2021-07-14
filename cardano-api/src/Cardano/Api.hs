@@ -213,6 +213,7 @@ module Cardano.Api (
     withdrawalsSupportedInEra,
     certificatesSupportedInEra,
     updateProposalSupportedInEra,
+    voltaireProposalSupportedInEra,
 
     -- * Signing transactions
     -- | Creating transaction witnesses one by one, or all in one go.
@@ -496,6 +497,11 @@ module Cardano.Api (
     PraosNonce,
     makePraosNonce,
 
+    -- * MIR proposals
+    MirProposal(..),
+    makeVoltaireMirProposal,
+    toPrototypeTwoMirProposal,
+
     NetworkMagic(..),
 
     -- ** Conversions
@@ -523,6 +529,7 @@ import           Cardano.Api.Modes
 import           Cardano.Api.NetworkId
 import           Cardano.Api.OperationalCertificate
 import           Cardano.Api.ProtocolParameters
+import           Cardano.Api.MirProposal
 import           Cardano.Api.Script
 import           Cardano.Api.SerialiseBech32
 import           Cardano.Api.SerialiseCBOR
