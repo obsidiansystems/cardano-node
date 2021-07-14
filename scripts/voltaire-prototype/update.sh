@@ -3,20 +3,7 @@
 set -e
 set -x
 
-# This script will initiate the transition to protocol version 2 (Example).
-
-# You need to provide the current epoch as a positional argument (the Shelley
-# update system requires this to be includded in the update proposal). Run
-# the command "cardano-cli query tip" to get the current epoch number.
-
-
-# You need to restart the nodes after running this script in order for the
-# update to be endorsed by the nodes.
-
-if [ ! "$1" ]; then echo "update.sh: expects an <N> epoch argument"; exit; fi
-
-EPOCH=$1
-VERSION=1
+# This script will initiate a transition to the specified protocol major version.
 
 ROOT=example
 SUPPLY=1000000000
@@ -25,38 +12,36 @@ pushd ${ROOT}
 
 export CARDANO_NODE_SOCKET_PATH=node-bft1/node.sock
 
+if [ ! "$1" ] || [ ! "$2" ]; then
+    echo "Usage: $0 <major_version> <current_era>";
+    echo "Example: $0 2 prototype-era-one"
+    exit 1;
+fi
+
+VERSION=$1
+CURRENT_ERA=$2
+
+EPOCH=$(cardano-cli query tip --prototype-mode --testnet-magic 42 | jq .epoch)
+
+
 cardano-cli governance create-update-proposal \
-            --out-file update-proposal-example \
-            --epoch ${EPOCH} \
+            --out-file "update-proposal-example-v${VERSION}" \
+            --epoch "${EPOCH}" \
             --genesis-verification-key-file genesis-keys/genesis1.vkey \
             --genesis-verification-key-file genesis-keys/genesis2.vkey \
-            --protocol-major-version ${VERSION} \
+            --protocol-major-version "${VERSION}" \
             --protocol-minor-version 0
 
-# Now we'll construct one whopper of a transaction that does everything
-# just to show off that we can, and to make the script shorter
+# Now we'll construct a transaction that contains the update proposal
 
-# We'll transfer all the funds to the user1, which delegates to pool1
-# We'll register certs to:
-#  1. register the pool-owner1 stake address
-#  2. register the stake pool 1
-#  3. register the user1 stake address
-#  4. delegate from the user1 stake address to the stake pool
-# We'll include the update proposal
-
-cardano-cli transaction build-raw --shelley-era \
+TX_IN=$(cardano-cli query utxo --prototype-mode --testnet-magic 42| awk '{print $1}' |sed -n '3,3p')
+cardano-cli transaction build-raw --"${CURRENT_ERA}" \
             --invalid-hereafter 100000 \
             --fee 0 \
-            --tx-in $(cardano-cli genesis initial-txin \
-                --testnet-magic 42 \
-                --verification-key-file utxo-keys/utxo1.vkey) \
-            --tx-out $(cat addresses/user1.addr)+${SUPPLY} \
-            --certificate-file addresses/pool-owner1-stake.reg.cert \
-            --certificate-file node-pool1/registration.cert \
-            --certificate-file addresses/user1-stake.reg.cert \
-            --certificate-file addresses/user1-stake.deleg.cert \
-            --update-proposal-file update-proposal-example \
-            --out-file tx1.txbody
+            --tx-in "${TX_IN}#0" \
+            --tx-out "$(cat addresses/user1.addr)"+${SUPPLY} \
+            --update-proposal-file "update-proposal-example-v${VERSION}" \
+            --out-file "tx${VERSION}.txbody"
 
 # So we'll need to sign this with a bunch of keys:
 # 1. the initial utxo spending key, for the funds
@@ -66,6 +51,7 @@ cardano-cli transaction build-raw --shelley-era \
 # 5. the genesis delegate keys, due to the update proposal
 
 cardano-cli transaction sign \
+            --signing-key-file addresses/user1.skey \
             --signing-key-file utxo-keys/utxo1.skey \
             --signing-key-file addresses/user1-stake.skey \
             --signing-key-file node-pool1/owner.skey \
@@ -75,10 +61,10 @@ cardano-cli transaction sign \
             --signing-key-file delegate-keys/delegate1.skey \
             --signing-key-file delegate-keys/delegate2.skey \
             --testnet-magic 42 \
-            --tx-body-file  tx1.txbody \
-            --out-file      tx1.tx
+            --tx-body-file  "tx${VERSION}.txbody" \
+            --out-file      "tx${VERSION}.tx"
 
 
-cardano-cli transaction submit --prototype-mode --tx-file tx1.tx --testnet-magic 42
+cardano-cli transaction submit --prototype-mode --tx-file "tx${VERSION}.tx" --testnet-magic 42
 
 popd
