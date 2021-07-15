@@ -135,6 +135,18 @@ jobs:
           fi
         done
 
+    - name: Test MIR proposal
+      run: |
+        retry 2 cabal install --installdir=$PWD cardano-node cardano-cli
+        scripts/voltaire-prototype/mkfiles.sh test
+        sleep 30
+        scripts/voltaire-prototype/demo.sh
+
+    - name: "Logs: Test MIR proposal"
+      if: ${{ always() }}
+      run: |
+        cat logs/mainnet.log
+
     - name: Save Artifact
       if: matrix.ghc == '8.10.4'
       uses: actions/upload-artifact@v1
