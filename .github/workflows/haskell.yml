@@ -140,8 +140,7 @@ jobs:
         mkdir exe
         retry 2 cabal install --installdir=$PWD/exe cardano-node cardano-cli
         export PATH="$PWD/exe:$PATH"
-        scripts/voltaire-prototype/mkfiles.sh test
-        scripts/voltaire-prototype/demo.sh
+        scripts/voltaire-prototype/mkfiles.sh test && scripts/voltaire-prototype/demo.sh
 
     - name: "Logs: Test MIR proposal"
       if: ${{ always() }}
