@@ -18,9 +18,15 @@ function wait_for_era () {
 }
 
 function wait_for_node_connect () {
+  COUNT=0
   echo "Waiting for successful connection to node..."
   while (cardano-cli query tip --prototype-mode --testnet-magic 42 2>&1 |grep -e "Network.Socket.connect.*does not exist")
   do
+    if [ $COUNT -gt 25 ]; then
+      echo "ERROR: failed to connect to node"
+      exit 1
+    fi
+    COUNT=$((COUNT+1))
     sleep 5
   done
   echo "Connected to node."
