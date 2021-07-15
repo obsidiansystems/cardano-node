@@ -137,7 +137,6 @@ jobs:
 
     - name: Test MIR proposal
       run: |
-        retry 2 cabal install --installdir=$PWD cardano-node cardano-cli
         scripts/voltaire-prototype/mkfiles.sh test
         sleep 30
         scripts/voltaire-prototype/demo.sh
