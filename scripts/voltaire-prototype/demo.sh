@@ -17,6 +17,17 @@ function wait_for_era () {
   echo "Hard fork to $1 completed."
 }
 
+function wait_for_node_connect () {
+  echo "Waiting for successful connection to node..."
+  while (cardano-cli query tip --prototype-mode --testnet-magic 42 2>&1 |grep -e "Network.Socket.connect.*does not exist")
+  do
+    sleep 5
+  done
+  echo "Connected to node."
+}
+
+wait_for_node_connect
+
 echo "Waiting for node to produce blocks..."
 BLOCK_NO=0
 while [ $BLOCK_NO -le 0 ]
