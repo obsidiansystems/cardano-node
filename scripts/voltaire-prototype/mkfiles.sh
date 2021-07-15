@@ -15,6 +15,8 @@ POOL_NODES="node-pool1"
 
 ALL_NODES="${BFT_NODES} ${POOL_NODES}"
 
+if [ "$1" = "test" ]; then TEST=true; fi
+
 if ! mkdir "${ROOT}"; then
   echo "The ${ROOT} directory already exists, please move or remove it"
   exit
@@ -275,19 +277,31 @@ echo "Generated stake pool registration certs:"
 ls -1 node-*/registration.cert
 echo "====================================================================="
 
-echo "To start the nodes, in separate terminals use:"
-echo
+if [ ! $TEST ]; then
+  echo "To start the nodes, in separate terminals use:"
+  echo
+fi
+
 for NODE in ${ALL_NODES}; do
 
-  echo "cardano-node run \\"
-  echo "  --config                          ${ROOT}/configuration.yaml \\"
-  echo "  --topology                        ${ROOT}/${NODE}/topology.json \\"
-  echo "  --database-path                   ${ROOT}/${NODE}/db \\"
-  echo "  --socket-path                     ${ROOT}/${NODE}/node.sock \\"
-  echo "  --shelley-kes-key                 ${ROOT}/${NODE}/kes.skey \\"
-  echo "  --shelley-vrf-key                 ${ROOT}/${NODE}/vrf.skey \\"
-  echo "  --shelley-operational-certificate ${ROOT}/${NODE}/node.cert \\"
-  echo "  --port                            $(cat ${NODE}/port)"
+COMMAND=$(cat <<-END
+cardano-node run \\
+  --config                          ${ROOT}/configuration.yaml \\
+  --topology                        ${ROOT}/${NODE}/topology.json \\
+  --database-path                   ${ROOT}/${NODE}/db \\
+  --socket-path                     ${ROOT}/${NODE}/node.sock \\
+  --shelley-kes-key                 ${ROOT}/${NODE}/kes.skey \\
+  --shelley-vrf-key                 ${ROOT}/${NODE}/vrf.skey \\
+  --shelley-operational-certificate ${ROOT}/${NODE}/node.cert \\
+  --port                            $(cat "${NODE}"/port)
+END
+)
+
+if [ ! "$TEST" ]; then
+  echo "$COMMAND"
+else
+  eval "(cd .. ; $COMMAND) &"
+fi
 
 done
 echo "In order to do the protocol updates, proceed as follows:"
