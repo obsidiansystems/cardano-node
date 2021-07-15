@@ -145,7 +145,7 @@ jobs:
     - name: "Logs: Test MIR proposal"
       if: ${{ always() }}
       run: |
-        cat logs/mainnet.log || true
+        cat logs/mainnet.log ||true
 
     - name: Save Artifact
       if: matrix.ghc == '8.10.4'
