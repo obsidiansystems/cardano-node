@@ -9,7 +9,7 @@ function wait_for_era () {
   echo -n "Current era:"
   while [ "$ERA_NAME" != "$1" ]
   do
-    ERA_NAME=$(cardano-cli query tip --prototype-mode --testnet-magic 42| jq -r .era || exit)
+    if ! ERA_NAME=$(cardano-cli query tip --prototype-mode --testnet-magic 42| jq -r .era); then exit 1; fi
     echo -n " $ERA_NAME"
     sleep 5
   done
@@ -21,7 +21,7 @@ BLOCK_NO=0
 while [ $BLOCK_NO -le 0 ]
 do
   sleep 5
-  BLOCK_NO=$(cardano-cli query tip --prototype-mode --testnet-magic 42 |jq .block || exit)
+  if ! BLOCK_NO=$(cardano-cli query tip --prototype-mode --testnet-magic 42 |jq .block); then exit 1; fi
 done
 echo "First block produced."
 
@@ -40,7 +40,7 @@ echo "Publishing MIR proposal..."
 scripts/voltaire-prototype/mir-proposal.sh
 
 echo -n "Verifying that MIR proposal has been registered... "
-PROPOSALS=$(cardano-cli query ledger-state --prototype-mode --testnet-magic 42 | jq .stateBefore.esLState.utxoState.ppups.proposals)
+if ! PROPOSALS=$(cardano-cli query ledger-state --prototype-mode --testnet-magic 42 | jq .stateBefore.esLState.utxoState.ppups.proposals); then exit 1; fi
 sleep 5
 if [ "$PROPOSALS" = "{}" ]; then echo "ERROR: MIR proposal not registered"; exit 1; else echo "OK"; fi
 
@@ -49,7 +49,7 @@ STAKER_BALANCE="null"
 echo -n "Stake balance for MIR target address:"
 while [ "$STAKER_BALANCE" != "250000000" ]
 do
-  STAKER_BALANCE=$(cardano-cli query stake-address-info --prototype-mode --address "$(cat example/addresses/user1-stake.addr)" --testnet-magic 42 | jq '.[0].rewardAccountBalance')
+  if ! STAKER_BALANCE=$(cardano-cli query stake-address-info --prototype-mode --address "$(cat example/addresses/user1-stake.addr)" --testnet-magic 42 | jq '.[0].rewardAccountBalance'); then exit 1; fi
   echo -n " $STAKER_BALANCE"
   sleep 5
 done
