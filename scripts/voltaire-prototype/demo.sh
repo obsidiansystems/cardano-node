@@ -13,6 +13,7 @@ function wait_for_era () {
     if ! ERA_NAME=$(cardano-cli query tip --prototype-mode --testnet-magic 42| jq -r .era); then exit 1; fi
     echo -n " $ERA_NAME"
   done
+  echo
   echo "Hard fork to $1 completed."
 }
 
