@@ -9,9 +9,9 @@ function wait_for_era () {
   echo -n "Current era:"
   while [ "$ERA_NAME" != "$1" ]
   do
+    sleep 5
     if ! ERA_NAME=$(cardano-cli query tip --prototype-mode --testnet-magic 42| jq -r .era); then exit 1; fi
     echo -n " $ERA_NAME"
-    sleep 5
   done
   echo "Hard fork to $1 completed."
 }
@@ -28,6 +28,7 @@ echo "First block produced."
 echo "Setting up staking..."
 scripts/voltaire-prototype/stake-pool_setup.sh
 
+sleep 10 # ideally we would wait until the "stake pool" transaction has been included in a block
 echo "Initiating PrototypeOne hard fork..."
 scripts/voltaire-prototype/update.sh 1 shelley-era
 
@@ -40,8 +41,8 @@ echo "Publishing MIR proposal..."
 scripts/voltaire-prototype/mir-proposal.sh
 
 echo -n "Verifying that MIR proposal has been registered... "
+sleep 10 # ideally we would wait until the "MIR proposal" transaction has been included in a block
 if ! PROPOSALS=$(cardano-cli query ledger-state --prototype-mode --testnet-magic 42 | jq .stateBefore.esLState.utxoState.ppups.proposals); then exit 1; fi
-sleep 5
 if [ "$PROPOSALS" = "{}" ]; then echo "ERROR: MIR proposal not registered"; exit 1; else echo "OK"; fi
 
 echo "Waiting to receive MIR transfer..."
