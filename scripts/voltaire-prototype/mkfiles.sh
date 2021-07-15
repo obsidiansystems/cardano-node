@@ -300,7 +300,7 @@ END
 if [ ! "$TEST" ]; then
   echo "$COMMAND"
 else
-  eval "(cd .. ; $COMMAND &>/dev/null) &"
+  eval "(cd .. ; $COMMAND) &"
 fi
 
 done
