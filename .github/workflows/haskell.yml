@@ -137,6 +137,7 @@ jobs:
 
     - name: Test MIR proposal
       run: |
+        export PATH="$PWD:$PATH"
         scripts/voltaire-prototype/mkfiles.sh test
         sleep 30
         scripts/voltaire-prototype/demo.sh
