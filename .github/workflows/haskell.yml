@@ -137,7 +137,9 @@ jobs:
 
     - name: Test MIR proposal
       run: |
-        export PATH="$PWD:$PATH"
+        mkdir exe
+        retry 2 cabal install --installdir=$PWD/exe cardano-node cardano-cli
+        export PATH="$PWD/exe:$PATH"
         scripts/voltaire-prototype/mkfiles.sh test
         sleep 30
         scripts/voltaire-prototype/demo.sh
