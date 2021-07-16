@@ -10,7 +10,7 @@ INITIAL_FUNDS=1000000000
 REWARD=250000000
 
 source scripts/voltaire-prototype/_windows_socket-path.sh
-export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock
+export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}node-bft1
 
 EPOCH=$(cardano-cli query tip --prototype-mode --testnet-magic 42 | jq .epoch)
 

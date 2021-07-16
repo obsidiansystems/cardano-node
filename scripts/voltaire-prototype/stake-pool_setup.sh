@@ -9,7 +9,7 @@ ROOT=example
 TRANSFER_AMOUNT=1000000000
 
 source scripts/voltaire-prototype/_windows_socket-path.sh
-export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock
+export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}node-bft1
 
 # Transfer all the funds to the user1, which delegates to pool1.
 # Register certs to:
