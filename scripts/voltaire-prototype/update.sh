@@ -8,9 +8,8 @@ set -x
 ROOT=example
 SUPPLY=1000000000
 
-pushd ${ROOT}
-
-export CARDANO_NODE_SOCKET_PATH=node-bft1/node.sock
+source scripts/voltaire-prototype/_windows_socket-path.sh
+export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock
 
 if [ ! "$1" ] || [ ! "$2" ]; then
     echo "Usage: $0 <major_version> <current_era>";
@@ -23,25 +22,27 @@ CURRENT_ERA=$2
 
 EPOCH=$(cardano-cli query tip --prototype-mode --testnet-magic 42 | jq .epoch)
 
+UPDATE_PROPOSAL_FILE="${ROOT}/update-proposal-example-v${VERSION}"
 
 cardano-cli governance create-update-proposal \
-            --out-file "update-proposal-example-v${VERSION}" \
+            --out-file "$UPDATE_PROPOSAL_FILE" \
             --epoch "${EPOCH}" \
-            --genesis-verification-key-file genesis-keys/genesis1.vkey \
-            --genesis-verification-key-file genesis-keys/genesis2.vkey \
+            --genesis-verification-key-file ${ROOT}/genesis-keys/genesis1.vkey \
+            --genesis-verification-key-file ${ROOT}/genesis-keys/genesis2.vkey \
             --protocol-major-version "${VERSION}" \
             --protocol-minor-version 0
 
 # Now we'll construct a transaction that contains the update proposal
 
+TX_FILENAME="${ROOT}/tx${VERSION}.tx"
 TX_IN=$(cardano-cli query utxo --prototype-mode --testnet-magic 42| awk '{print $1}' |sed -n '3,3p')
 cardano-cli transaction build-raw --"${CURRENT_ERA}" \
             --invalid-hereafter 100000 \
             --fee 0 \
             --tx-in "${TX_IN}#0" \
-            --tx-out "$(cat addresses/user1.addr)"+${SUPPLY} \
-            --update-proposal-file "update-proposal-example-v${VERSION}" \
-            --out-file "tx${VERSION}.txbody"
+            --tx-out "$(cat ${ROOT}/addresses/user1.addr)"+${SUPPLY} \
+            --update-proposal-file "$UPDATE_PROPOSAL_FILE" \
+            --out-file "${TX_FILENAME}body"
 
 # So we'll need to sign this with a bunch of keys:
 # 1. the initial utxo spending key, for the funds
@@ -51,20 +52,18 @@ cardano-cli transaction build-raw --"${CURRENT_ERA}" \
 # 5. the genesis delegate keys, due to the update proposal
 
 cardano-cli transaction sign \
-            --signing-key-file addresses/user1.skey \
-            --signing-key-file utxo-keys/utxo1.skey \
-            --signing-key-file addresses/user1-stake.skey \
-            --signing-key-file node-pool1/owner.skey \
-            --signing-key-file node-pool1/operator.skey \
-            --signing-key-file genesis-keys/genesis1.skey \
-            --signing-key-file genesis-keys/genesis2.skey \
-            --signing-key-file delegate-keys/delegate1.skey \
-            --signing-key-file delegate-keys/delegate2.skey \
+            --signing-key-file ${ROOT}/addresses/user1.skey \
+            --signing-key-file ${ROOT}/utxo-keys/utxo1.skey \
+            --signing-key-file ${ROOT}/addresses/user1-stake.skey \
+            --signing-key-file ${ROOT}/node-pool1/owner.skey \
+            --signing-key-file ${ROOT}/node-pool1/operator.skey \
+            --signing-key-file ${ROOT}/genesis-keys/genesis1.skey \
+            --signing-key-file ${ROOT}/genesis-keys/genesis2.skey \
+            --signing-key-file ${ROOT}/delegate-keys/delegate1.skey \
+            --signing-key-file ${ROOT}/delegate-keys/delegate2.skey \
             --testnet-magic 42 \
-            --tx-body-file  "tx${VERSION}.txbody" \
-            --out-file      "tx${VERSION}.tx"
+            --tx-body-file  "${TX_FILENAME}body" \
+            --out-file      "${TX_FILENAME}"
 
 
-cardano-cli transaction submit --prototype-mode --tx-file "tx${VERSION}.tx" --testnet-magic 42
-
-popd
+cardano-cli transaction submit --prototype-mode --tx-file "${TX_FILENAME}" --testnet-magic 42

@@ -2,7 +2,10 @@
 
 set -e
 
-export CARDANO_NODE_SOCKET_PATH=example/node-bft1/node.sock
+ROOT=example
+
+source scripts/voltaire-prototype/_windows_socket-path.sh
+export CARDANO_NODE_SOCKET_PATH="${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock"
 
 function wait_for_era () {
   echo "Waiting for nodes to upgrade to $1..."
@@ -74,7 +77,7 @@ STAKER_BALANCE="null"
 echo -n "Stake balance for MIR target address:"
 while [ "$STAKER_BALANCE" != "250000000" ]
 do
-  if ! STAKER_BALANCE=$(cardano-cli query stake-address-info --prototype-mode --address "$(cat example/addresses/user1-stake.addr)" --testnet-magic 42 | jq '.[0].rewardAccountBalance'); then exit 1; fi
+  if ! STAKER_BALANCE=$(cardano-cli query stake-address-info --prototype-mode --address "$(cat ${ROOT}/addresses/user1-stake.addr)" --testnet-magic 42 | jq '.[0].rewardAccountBalance'); then exit 1; fi
   echo -n " $STAKER_BALANCE"
   sleep 5
 done

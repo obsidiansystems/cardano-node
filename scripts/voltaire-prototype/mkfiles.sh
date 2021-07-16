@@ -15,6 +15,8 @@ POOL_NODES="node-pool1"
 
 ALL_NODES="${BFT_NODES} ${POOL_NODES}"
 
+source scripts/voltaire-prototype/_windows_socket-path.sh
+
 # Cross platform compatible sed "in-place edit" mode.
 # Necessary because MacOS and GNU "sed" differ in how they handle the "-i" argument.
 #
@@ -303,7 +305,7 @@ cardano-node run \\
 --config                          ${ROOT}/configuration.yaml \\
 --topology                        ${ROOT}/${NODE}/topology.json \\
 --database-path                   ${ROOT}/${NODE}/db \\
---socket-path                     ${ROOT}/${NODE}/node.sock \\
+--socket-path                     ${WINDOWS_SOCKET_PREFIX}${ROOT}/${NODE}/node.sock \\
 --shelley-kes-key                 ${ROOT}/${NODE}/kes.skey \\
 --shelley-vrf-key                 ${ROOT}/${NODE}/vrf.skey \\
 --shelley-operational-certificate ${ROOT}/${NODE}/node.cert \\
@@ -332,7 +334,7 @@ echo "     wait for the next epoch for the update to take effect"
 echo "The update script also delegates to a mining pool"
 echo "You can query the stake distribution, and see if the pool node creates blocks"
 echo
-echo "CARDANO_NODE_SOCKET_PATH=example/node-bft1/node.sock \\"
+echo "CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock \\"
 echo "  cardano-cli query stake-distribution --prototype-mode --testnet-magic 42"
 echo
 
