@@ -15,6 +15,20 @@ POOL_NODES="node-pool1"
 
 ALL_NODES="${BFT_NODES} ${POOL_NODES}"
 
+# Cross platform compatible sed "in-place edit" mode.
+# Necessary because MacOS and GNU "sed" differ in how they handle the "-i" argument.
+#
+# Usage: sed_inplace FILE arg1 arg2 ... argN
+function sed_inplace () {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    # with MacOS "sed", the filename must be the last argument
+    sed -i '' "${@:2}" "$1" # all arguments except the first, followed by the first argument
+  else
+    # with GNU "sed", the filename itself can be an argument to "-i"
+    sed -i "$@"
+  fi
+}
+
 if [ "$1" = "test" ]; then TEST=true; fi
 
 if ! mkdir "${ROOT}"; then
@@ -25,7 +39,7 @@ fi
 # copy and tweak the configuration
 cp configuration/defaults/byron-mainnet/configuration.yaml ${ROOT}/
 
-sed -i ${ROOT}/configuration.yaml \
+sed_inplace ${ROOT}/configuration.yaml \
     -e 's/Protocol: RealPBFT/Protocol: Voltaire/' \
     -e 's/minSeverity: Info/minSeverity: Warning/'\
     -e 's/LastKnownBlockVersion-Minor: 2/LastKnownBlockVersion-Minor: 0/'
@@ -38,7 +52,7 @@ cardano-cli genesis create --testnet-magic 42 --genesis-dir ${ROOT}
 # We're going to use really quick epochs (300 seconds), by using short slots 0.2s
 # and K=10, but we'll keep long KES periods so we don't have to bother
 # cycling KES keys
-sed -i ${ROOT}/genesis.spec.json \
+sed_inplace ${ROOT}/genesis.spec.json \
     -e 's/"slotLength": 1/"slotLength": 0.2/' \
     -e 's/"activeSlotsCoeff": 5.0e-2/"activeSlotsCoeff": 0.1/' \
     -e 's/"securityParam": 2160/"securityParam": 10/' \
@@ -56,7 +70,7 @@ cardano-cli genesis create \
     --supply "$INITIAL_FUNDS"
 
 # Increase the total supply, so that there's some funds left in the reserves
-sed -i ${ROOT}/genesis.json \
+sed_inplace ${ROOT}/genesis.json \
     -e "s/\"maxLovelaceSupply\": $INITIAL_FUNDS/\"maxLovelaceSupply\": $SUPPLY/"
 
 pushd ${ROOT}
