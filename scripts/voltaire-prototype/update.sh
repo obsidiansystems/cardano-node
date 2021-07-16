@@ -4,6 +4,11 @@ set -e
 set -x
 
 # This script will initiate a transition to the specified protocol major version.
+#
+# To upgrade from Shelley to VoltairePrototypeOne, run the command:
+#   scripts/voltaire-prototype/update.sh 1 shelley-era
+# To upgrade from VoltairePrototypeOne to VoltairePrototypeTwo, run the command:
+#   scripts/voltaire-prototype/update.sh 2 prototype-era-one
 
 ROOT=example
 SUPPLY=1000000000

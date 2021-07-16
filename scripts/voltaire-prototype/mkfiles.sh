@@ -322,19 +322,16 @@ fi
 done
 echo "In order to do the protocol updates, proceed as follows:"
 echo
-echo "  0. wait for the nodes to start producing blocks"
-echo "  1. invoke ./scripts/voltaire-prototype/update.sh <N>"
-echo "     Here, <N> the current epoch (2 if you're quick)."
-echo "     If you provide the wrong epoch, you will see an error"
-echo "     that will tell you the current epoch, and can run"
-echo "     the script again."
-echo "  2. restart the nodes"
-echo "     wait for the next epoch for the update to take effect"
+echo "  1. Start nodes"
+echo "  2. wait for the nodes to start producing blocks"
+echo "  3. set up stake pool by invoking"
+echo "       scripts/voltaire-prototype/stake-pool_setup.sh"
+echo "  4. invoke ./scripts/voltaire-prototype/update.sh"
+echo "     see the script file for running instructions"
 
-echo "The update script also delegates to a mining pool"
 echo "You can query the stake distribution, and see if the pool node creates blocks"
 echo
-echo "CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock \\"
+echo "CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}node-bft1 \\"
 echo "  cardano-cli query stake-distribution --prototype-mode --testnet-magic 42"
 echo
 
