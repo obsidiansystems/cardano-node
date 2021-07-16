@@ -300,7 +300,7 @@ END
 if [ ! "$TEST" ]; then
   echo "$COMMAND"
 else
-  eval "(cd .. ; $COMMAND) &"
+  eval "(cd .. ; $COMMAND &>${ROOT}/${NODE}.log) &"
 fi
 
 done
