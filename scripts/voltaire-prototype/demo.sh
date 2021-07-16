@@ -18,9 +18,15 @@ function wait_for_era () {
 }
 
 function wait_for_node_connect () {
+  # Windows error output example:
+  #   cardano-cli.exe: CreateFile "example/node-bft1/node.sock": does not exist (The system cannot find the file specified.)
+  # UNIX error output example:
+  #   cardano-cli: Network.Socket.connect: <socket: 13>: does not exist (No such file or directory)
+  #   cardano-cli: Network.Socket.connect: <socket: 13>: does not exist (Connection refused)
+  local REGEX='(CreateFile|Network\.Socket\.connect).*does not exist'
   COUNT=0
   echo "Waiting for successful connection to node..."
-  while (cardano-cli query tip --prototype-mode --testnet-magic 42 2>&1 |grep -e "Network.Socket.connect.*does not exist")
+  while (cardano-cli query tip --prototype-mode --testnet-magic 42 2>&1 |grep -E "$REGEX")
   do
     if [ $COUNT -gt 25 ]; then
       echo "ERROR: failed to connect to node"
