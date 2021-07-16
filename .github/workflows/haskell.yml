@@ -144,10 +144,7 @@ jobs:
 
     - name: "Logs: Test MIR proposal"
       if: ${{ always() }}
-      run: |
-        cat example/node-bft1.log
-        cat example/node-bft2.log
-        cat example/node-pool1.log
+      run: tail -n +1 example/node-bft1.log example/node-bft2.log example/node-pool1.log
 
     - name: Save Artifact
       if: matrix.ghc == '8.10.4'
