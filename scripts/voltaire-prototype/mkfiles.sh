@@ -301,14 +301,14 @@ fi
 for NODE in ${ALL_NODES}; do
 
 COMMAND=$(cat <<-END
-cardano-node run ^
---config ${ROOT}/configuration.yaml ^
---topology ${ROOT}/${NODE}/topology.json ^
---database-path ${ROOT}/${NODE}/db ^
---socket-path ${WINDOWS_SOCKET_PREFIX}${NODE} ^
---shelley-kes-key ${ROOT}/${NODE}/kes.skey ^
---shelley-vrf-key ${ROOT}/${NODE}/vrf.skey ^
---shelley-operational-certificate ${ROOT}/${NODE}/node.cert ^
+cardano-node run \\
+--config ${ROOT}/configuration.yaml \\
+--topology ${ROOT}/${NODE}/topology.json \\
+--database-path ${ROOT}/${NODE}/db \\
+--socket-path ${WINDOWS_SOCKET_PREFIX}${NODE} \\
+--shelley-kes-key ${ROOT}/${NODE}/kes.skey \\
+--shelley-vrf-key ${ROOT}/${NODE}/vrf.skey \\
+--shelley-operational-certificate ${ROOT}/${NODE}/node.cert \\
 --port $(cat "${NODE}"/port)
 END
 )
