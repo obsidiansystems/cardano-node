@@ -79,7 +79,6 @@ library
                         Cardano.Api.SerialiseRaw
                         Cardano.Api.SerialiseTextEnvelope
                         Cardano.Api.Shelley.Genesis
-                        Cardano.Api.Prototype.Tmp
                         Cardano.Api.SpecialByron
                         Cardano.Api.StakePoolMetadata
                         Cardano.Api.Tx

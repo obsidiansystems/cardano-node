@@ -51,13 +51,14 @@ import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary
 import qualified Ouroboros.Consensus.Shelley.Ledger as Consensus
 import           Ouroboros.Consensus.Shelley.Protocol (StandardCrypto)
 -- prototypes
+import           Ouroboros.Consensus.Voltaire.Prototype.Eras (StandardVoltairePrototypeOne,
+                   StandardVoltairePrototypeTwo)
 import qualified Ouroboros.Consensus.Voltaire.Prototype as Consensus
 import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Consensus
 
 import qualified Cardano.Chain.Slotting as Byron (EpochSlots (..))
 
 import           Cardano.Api.Eras
-import           Cardano.Api.Prototype.Tmp (StandardVoltaireOne, StandardVoltaireTwo)
 
 
 -- ----------------------------------------------------------------------------
@@ -240,8 +241,8 @@ type family ConsensusBlockForEra era where
   ConsensusBlockForEra ShelleyEra = Consensus.ShelleyBlock StandardShelley
   ConsensusBlockForEra AllegraEra = Consensus.ShelleyBlock StandardAllegra
   ConsensusBlockForEra MaryEra    = Consensus.ShelleyBlock StandardMary
-  ConsensusBlockForEra VoltairePrototypeOneEra = Consensus.ShelleyBlock StandardVoltaireOne
-  ConsensusBlockForEra VoltairePrototypeTwoEra = Consensus.ShelleyBlock StandardVoltaireTwo
+  ConsensusBlockForEra VoltairePrototypeOneEra = Consensus.ShelleyBlock StandardVoltairePrototypeOne
+  ConsensusBlockForEra VoltairePrototypeTwoEra = Consensus.ShelleyBlock StandardVoltairePrototypeTwo
 
 
 

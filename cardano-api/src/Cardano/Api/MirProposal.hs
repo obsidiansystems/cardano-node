@@ -30,9 +30,8 @@ import qualified Data.Sequence.Strict as Seq
 import Data.Coders
 import           Cardano.Slotting.Slot (EpochNo)
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
-import qualified Cardano.Ledger.Voltaire.Prototype.Class as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Eras as Prototype
 import qualified Cardano.Ledger.Voltaire.Prototype.Class as Prototype
-import qualified Cardano.Api.Prototype.Tmp as Prototype
 import qualified Cardano.Ledger.Voltaire.Prototype.One as One
 import qualified Cardano.Ledger.Voltaire.Prototype.Two as Two
 
@@ -92,7 +91,7 @@ makeVoltaireMirProposal :: (MIRPot, MIRTarget)
 makeVoltaireMirProposal params genesisKeyHashes =
     MirProposal (Map.fromList [ (kh, params) | kh <- genesisKeyHashes ])
 
-toPrototypeTwoMirProposal :: MirProposal -> Voltaire.Update Prototype.StandardVoltaireTwo
+toPrototypeTwoMirProposal :: MirProposal -> Prototype.Update Prototype.StandardVoltairePrototypeTwo
 toPrototypeTwoMirProposal (MirProposal map' epochNo) =
   Prototype.emptyUpdate {
     Prototype._update_submissions = Prototype.Submissions $ Seq.fromList proposalList
@@ -103,7 +102,7 @@ toPrototypeTwoMirProposal (MirProposal map' epochNo) =
 toPrototypeTwoMirProposals
   :: EpochNo
   -> Map (Hash GenesisKey) (MIRPot, MIRTarget)
-  -> [Prototype.Proposal Prototype.StandardVoltaireTwo]
+  -> [Prototype.Proposal Prototype.StandardVoltairePrototypeTwo]
 toPrototypeTwoMirProposals epochNo ppupMap =
     map (uncurry toProposal)
   $ Map.toList (toShelleyMirCert ppupMap)

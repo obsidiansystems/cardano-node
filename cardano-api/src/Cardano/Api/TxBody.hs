@@ -142,8 +142,8 @@ import qualified Cardano.Ledger.SafeHash as SafeHash
 import qualified Cardano.Ledger.Shelley.Constraints as Ledger
 import qualified Cardano.Ledger.ShelleyMA.AuxiliaryData as Allegra
 import qualified Cardano.Ledger.ShelleyMA.TxBody as Allegra
-import qualified Cardano.Api.Prototype.Tmp as Voltaire
 import qualified Cardano.Ledger.Voltaire.Prototype.TxBody as Voltaire
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Eras as Voltaire
 import           Ouroboros.Consensus.Shelley.Eras (StandardAllegra, StandardMary, StandardShelley)
 import           Ouroboros.Consensus.Shelley.Protocol.Crypto (StandardCrypto)
 
@@ -1496,14 +1496,14 @@ makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototypeOne
              TxUpdateProposal _ p -> SJust (toPrototypeOneUpdate p)
              TxVoltaireProposal absurd _ -> case absurd of {})
           (maybeToStrictMaybe
-            (Ledger.hashAuxiliaryData @Voltaire.StandardVoltaireOne <$> txAuxData))
+            (Ledger.hashAuxiliaryData @Voltaire.StandardVoltairePrototypeOne <$> txAuxData))
           (case txMintValue of
              TxMintNone        -> mempty
              TxMintValue _ v _ -> toMaryValue v))
         (map toShelleySimpleScript (collectTxBodySimpleScripts txbodycontent))
         txAuxData
   where
-    txAuxData :: Maybe (Ledger.AuxiliaryData Voltaire.StandardVoltaireOne)
+    txAuxData :: Maybe (Ledger.AuxiliaryData Voltaire.StandardVoltairePrototypeOne)
     txAuxData
       | Map.null ms
       , null ss   = Nothing
@@ -1587,14 +1587,14 @@ makeShelleyTransactionBody era@ShelleyBasedEraVoltairePrototypeTwo
              TxUpdateProposal _ p -> SJust (toPrototypeTwoUpdate p)
              TxVoltaireProposal _ p -> SJust (toPrototypeTwoMirProposal p))
           (maybeToStrictMaybe
-            (Ledger.hashAuxiliaryData @Voltaire.StandardVoltaireTwo <$> txAuxData))
+            (Ledger.hashAuxiliaryData @Voltaire.StandardVoltairePrototypeTwo <$> txAuxData))
           (case txMintValue of
              TxMintNone        -> mempty
              TxMintValue _ v _ -> toMaryValue v))
         (map toShelleySimpleScript (collectTxBodySimpleScripts txbodycontent))
         txAuxData
   where
-    txAuxData :: Maybe (Ledger.AuxiliaryData Voltaire.StandardVoltaireTwo)
+    txAuxData :: Maybe (Ledger.AuxiliaryData Voltaire.StandardVoltairePrototypeTwo)
     txAuxData
       | Map.null ms
       , null ss   = Nothing

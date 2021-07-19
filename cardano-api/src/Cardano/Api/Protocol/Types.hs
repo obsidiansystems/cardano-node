@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
@@ -29,7 +29,6 @@ import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 import qualified Ouroboros.Consensus.Voltaire.Prototype.Node as Voltaire
 import qualified Cardano.Ledger.Voltaire.Prototype.One.Translation as One ()
 import qualified Cardano.Ledger.Voltaire.Prototype.Two.Translation as Two ()
-import qualified Cardano.Api.Prototype.Tmp as Voltaire
 import           Ouroboros.Consensus.HardFork.Combinator.Embed.Unary
 import           Ouroboros.Consensus.Node.ProtocolInfo (ProtocolClientInfo(..), ProtocolInfo(..))
 import           Ouroboros.Consensus.Node.Run (RunNode)
@@ -91,8 +90,8 @@ instance IOLike m => Protocol m (Voltaire.VoltairePrototypeBlock StandardCrypto)
     ProtocolParamsShelley
     Voltaire.ProtocolParamsVoltairePrototype
     Voltaire.ProtocolParamsVoltairePrototype
-    (Voltaire.ProtocolParamsTransition (ShelleyBlock StandardShelley) (ShelleyBlock Voltaire.StandardVoltaireOne))
-    (Voltaire.ProtocolParamsTransition (ShelleyBlock Voltaire.StandardVoltaireOne) (ShelleyBlock Voltaire.StandardVoltaireTwo))
+    (Voltaire.ProtocolParamsTransition (ShelleyBlock StandardShelley) (ShelleyBlock Voltaire.StandardVoltairePrototypeOne))
+    (Voltaire.ProtocolParamsTransition (ShelleyBlock Voltaire.StandardVoltairePrototypeOne) (ShelleyBlock Voltaire.StandardVoltairePrototypeTwo))
   protocolInfo (ProtocolInfoArgsPrototype
                paramsShelleyBased
                paramsShelley

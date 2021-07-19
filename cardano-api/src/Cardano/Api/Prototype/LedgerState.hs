@@ -83,7 +83,6 @@ import qualified Ouroboros.Consensus.Config as Consensus
 import qualified Ouroboros.Consensus.Voltaire.Prototype as Voltaire
 import qualified Ouroboros.Consensus.Voltaire.Prototype.Block as Voltaire
 import qualified Ouroboros.Consensus.Voltaire.Prototype.Node as Voltaire
-import qualified Cardano.Api.Prototype.Tmp as Voltaire
 import qualified Ouroboros.Consensus.HardFork.Combinator.AcrossEras as HFC
 import qualified Ouroboros.Consensus.HardFork.Combinator.Basics as HFC
 import qualified Ouroboros.Consensus.Ledger.Abstract as Ledger
@@ -172,12 +171,12 @@ pattern LedgerStateShelley
 pattern LedgerStateShelley st <- LedgerState  (Voltaire.LedgerStateShelley st)
 
 pattern LedgerStateVoltairePrototypeOne
-  :: Ledger.LedgerState (Shelley.ShelleyBlock Voltaire.StandardVoltaireOne)
+  :: Ledger.LedgerState (Shelley.ShelleyBlock Voltaire.StandardVoltairePrototypeOne)
   -> LedgerState
 pattern LedgerStateVoltairePrototypeOne st <- LedgerState  (Voltaire.LedgerStateVoltairePrototypeOne st)
 
 pattern LedgerStateVoltairePrototypeTwo
-  :: Ledger.LedgerState (Shelley.ShelleyBlock Voltaire.StandardVoltaireTwo)
+  :: Ledger.LedgerState (Shelley.ShelleyBlock Voltaire.StandardVoltairePrototypeTwo)
   -> LedgerState
 pattern LedgerStateVoltairePrototypeTwo st <- LedgerState  (Voltaire.LedgerStateVoltairePrototypeTwo st)
 
@@ -529,12 +528,12 @@ data ShelleyConfig = ShelleyConfig
 type ShelleyToOne =
   Voltaire.ProtocolParamsTransition
     (Shelley.ShelleyBlock Shelley.StandardShelley)
-    (Shelley.ShelleyBlock Voltaire.StandardVoltaireOne)
+    (Shelley.ShelleyBlock Voltaire.StandardVoltairePrototypeOne)
 
 type OneToTwo =
   Voltaire.ProtocolParamsTransition
-    (Shelley.ShelleyBlock Voltaire.StandardVoltaireOne)
-    (Shelley.ShelleyBlock Voltaire.StandardVoltaireTwo)
+    (Shelley.ShelleyBlock Voltaire.StandardVoltairePrototypeOne)
+    (Shelley.ShelleyBlock Voltaire.StandardVoltairePrototypeTwo)
 
 newtype GenesisFile = GenesisFile
   { unGenesisFile :: FilePath

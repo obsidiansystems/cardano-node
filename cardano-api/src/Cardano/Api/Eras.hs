@@ -56,7 +56,8 @@ import           Cardano.Ledger.Era as Ledger (Crypto)
 
 import           Ouroboros.Consensus.Shelley.Eras as Ledger (StandardAllegra, StandardCrypto,
                      StandardMary, StandardShelley)
-import           Cardano.Api.Prototype.Tmp as Ledger (StandardVoltaireOne, StandardVoltaireTwo)
+import           Ouroboros.Consensus.Voltaire.Prototype.Eras as Ledger (StandardVoltairePrototypeOne,
+                     StandardVoltairePrototypeTwo)
 import           Cardano.Api.HasTypeProxy
 
 
@@ -376,5 +377,5 @@ type family ShelleyLedgerEra era where
   ShelleyLedgerEra ShelleyEra = Ledger.StandardShelley
   ShelleyLedgerEra AllegraEra = Ledger.StandardAllegra
   ShelleyLedgerEra MaryEra    = Ledger.StandardMary
-  ShelleyLedgerEra VoltairePrototypeOneEra = Ledger.StandardVoltaireOne
-  ShelleyLedgerEra VoltairePrototypeTwoEra = Ledger.StandardVoltaireTwo
+  ShelleyLedgerEra VoltairePrototypeOneEra = Ledger.StandardVoltairePrototypeOne
+  ShelleyLedgerEra VoltairePrototypeTwoEra = Ledger.StandardVoltairePrototypeTwo

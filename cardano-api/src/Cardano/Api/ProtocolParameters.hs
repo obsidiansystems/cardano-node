@@ -82,7 +82,7 @@ import qualified Shelley.Spec.Ledger.Keys as Shelley
 import qualified Shelley.Spec.Ledger.PParams as Shelley
 
 import qualified Cardano.Ledger.Voltaire.Prototype.Class as Prototype
-import qualified Cardano.Api.Prototype.Tmp as Prototype
+import qualified Ouroboros.Consensus.Voltaire.Prototype.Eras as Prototype
 import qualified Cardano.Ledger.Voltaire.Prototype.One as One
 import qualified Cardano.Ledger.Voltaire.Prototype.Two as Two
 
@@ -801,7 +801,7 @@ fromShelleyGenesis
 
 toPrototypeOneUpdate
   :: UpdateProposal
-  -> Prototype.Update Prototype.StandardVoltaireOne
+  -> Prototype.Update Prototype.StandardVoltairePrototypeOne
 toPrototypeOneUpdate (UpdateProposal ppup epochNo) =
   Prototype.emptyUpdate {
     Prototype._update_submissions = Prototype.Submissions $ Seq.fromList proposalList
@@ -812,7 +812,7 @@ toPrototypeOneUpdate (UpdateProposal ppup epochNo) =
 toPrototypeOneProposals
   :: EpochNo
   -> Map (Hash GenesisKey) ProtocolParametersUpdate
-  -> [Prototype.Proposal Prototype.StandardVoltaireOne]
+  -> [Prototype.Proposal Prototype.StandardVoltairePrototypeOne]
 toPrototypeOneProposals epochNo ppupMap =
     map (uncurry toProposal)
   $ Map.toList ppDeltaMap
@@ -820,11 +820,11 @@ toPrototypeOneProposals epochNo ppupMap =
   toProposal keyHash pParamsDelta =
     Prototype.Proposal (One.ProposalHeader keyHash epochNo) pParamsDelta
   Shelley.ProposedPPUpdates ppDeltaMap =
-    toShelleyProposedPPUpdates @Prototype.StandardVoltaireOne ppupMap
+    toShelleyProposedPPUpdates @Prototype.StandardVoltairePrototypeOne ppupMap
 
 toPrototypeTwoUpdate
   :: UpdateProposal
-  -> Prototype.Update Prototype.StandardVoltaireTwo
+  -> Prototype.Update Prototype.StandardVoltairePrototypeTwo
 toPrototypeTwoUpdate (UpdateProposal ppup epochNo) =
   Prototype.emptyUpdate {
     Prototype._update_submissions = Prototype.Submissions $ Seq.fromList proposalList
@@ -835,7 +835,7 @@ toPrototypeTwoUpdate (UpdateProposal ppup epochNo) =
 toPrototypeTwoProposals
   :: EpochNo
   -> Map (Hash GenesisKey) ProtocolParametersUpdate
-  -> [Prototype.Proposal Prototype.StandardVoltaireTwo]
+  -> [Prototype.Proposal Prototype.StandardVoltairePrototypeTwo]
 toPrototypeTwoProposals epochNo ppupMap =
     map (uncurry toProposal)
   $ Map.toList ppDeltaMap
@@ -843,4 +843,4 @@ toPrototypeTwoProposals epochNo ppupMap =
   toProposal keyHash pParamsDelta =
     Prototype.Proposal (One.ProposalHeader keyHash epochNo) (Two.BodyPPUP pParamsDelta)
   Shelley.ProposedPPUpdates ppDeltaMap =
-    toShelleyProposedPPUpdates @Prototype.StandardVoltaireTwo ppupMap
+    toShelleyProposedPPUpdates @Prototype.StandardVoltairePrototypeTwo ppupMap
