@@ -313,9 +313,9 @@ cardano-node run \\
 END
 )
 
-if [ ! "$TEST" ]; then
-  echo "$COMMAND"
-else
+echo "$COMMAND"
+if [ "$TEST" ]; then
+  echo "Starting node using the above command..."
   eval "(cd .. ; $COMMAND &>${ROOT}/${NODE}.log) &"
 fi
 
