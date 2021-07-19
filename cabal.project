@@ -173,8 +173,7 @@ source-repository-package
 source-repository-package
   type: git
   location: https://github.com/input-output-hk/Win32-network
-  tag: 94153b676617f8f33abe8d8182c37377d2784bd1
-  --sha256: 0pb7bg0936fldaa5r08nqbxvi2g8pcy4w3c7kdcg7pdgmimr30ss
+  tag: 817051f57c959cb7102510a9c0b3d29eabcc4df0
 
 source-repository-package
   type: git
