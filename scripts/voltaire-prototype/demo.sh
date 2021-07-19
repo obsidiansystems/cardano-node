@@ -5,7 +5,7 @@ set -e
 ROOT=example
 
 source scripts/voltaire-prototype/_windows_socket-path.sh
-export CARDANO_NODE_SOCKET_PATH="${WINDOWS_SOCKET_PREFIX}node-bft1"
+export CARDANO_NODE_SOCKET_PATH="${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock"
 
 function wait_for_era () {
   echo "Waiting for nodes to upgrade to $1..."

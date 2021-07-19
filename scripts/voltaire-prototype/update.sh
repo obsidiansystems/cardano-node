@@ -14,7 +14,7 @@ ROOT=example
 SUPPLY=1000000000
 
 source scripts/voltaire-prototype/_windows_socket-path.sh
-export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}node-bft1
+export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock
 
 if [ ! "$1" ] || [ ! "$2" ]; then
     echo "Usage: $0 <major_version> <current_era>";
