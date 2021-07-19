@@ -12,7 +12,7 @@ case "$(uname -s)" in
      ;;
 
    CYGWIN*|MINGW32*|MSYS*|MINGW*)
-     WINDOWS_SOCKET_PREFIX='\\.\pipe\'
+     WINDOWS_SOCKET_PREFIX='\\\\.\\pipe\\'
      ;;
 
    *)
