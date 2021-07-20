@@ -40,11 +40,11 @@ cardano-cli governance create-update-proposal \
 # Now we'll construct a transaction that contains the update proposal
 
 TX_FILENAME="${ROOT}/tx${VERSION}.tx"
-TX_IN=$(cardano-cli query utxo --prototype-mode --testnet-magic 42| awk '{print $1}' |sed -n '3,3p')
+TX_IN="$(cardano-cli query utxo --prototype-mode --testnet-magic 42| awk '{print $1}' |sed -n '3,3p')#0"
 cardano-cli transaction build-raw --"${CURRENT_ERA}" \
             --invalid-hereafter 100000 \
             --fee 0 \
-            --tx-in "${TX_IN}#0" \
+            --tx-in "${TX_IN}" \
             --tx-out "$(cat ${ROOT}/addresses/user1.addr)"+${SUPPLY} \
             --update-proposal-file "$UPDATE_PROPOSAL_FILE" \
             --out-file "${TX_FILENAME}body"

@@ -26,10 +26,11 @@ cardano-cli governance create-mir-proposal \
             --stake-address "$(cat ${ROOT}/addresses/user1-stake.addr)" \
             --reward ${REWARD}
 
+TX_IN="$(cardano-cli query utxo --prototype-mode --testnet-magic 42| awk '{print $1}' |sed -n '3,3p')#0"
 cardano-cli transaction build-raw --prototype-era-two \
             --invalid-hereafter 100000 \
             --fee 0 \
-            --tx-in "$(cardano-cli query utxo --prototype-mode --testnet-magic 42|grep lovelace|awk '{print $1}')#0" \
+            --tx-in "${TX_IN}" \
             --tx-out "$(cat ${ROOT}/addresses/user1.addr)"+$INITIAL_FUNDS \
             --mir-proposal-file ${ROOT}/mir-proposal-example \
             --out-file ${ROOT}/tx3.txbody
