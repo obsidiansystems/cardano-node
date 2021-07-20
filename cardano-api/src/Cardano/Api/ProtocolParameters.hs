@@ -44,6 +44,7 @@ module Cardano.Api.ProtocolParameters (
     fromShelleyGenesis,
     toPrototypeOneUpdate,
     toPrototypeTwoUpdate,
+    fromVoltaireProposedUpdates,
 
     -- * Data family instances
     AsType(..)
@@ -844,3 +845,15 @@ toPrototypeTwoProposals epochNo ppupMap =
     Prototype.Proposal (One.ProposalHeader keyHash epochNo) (Two.BodyPPUP pParamsDelta)
   Shelley.ProposedPPUpdates ppDeltaMap =
     toShelleyProposedPPUpdates @Prototype.StandardVoltairePrototypeTwo ppupMap
+
+fromVoltaireProposedUpdates :: ( Ledger.Crypto ledgerera ~ StandardCrypto
+                               , Shelley.PParamsDelta ledgerera
+                                 ~ Shelley.PParamsUpdate ledgerera
+                               )
+                            => Two.ProposedUpdates ledgerera
+                            -> Map (Hash GenesisKey) ProtocolParametersUpdate
+fromVoltaireProposedUpdates =
+    Map.map fromShelleyPParamsUpdate
+  . Map.mapKeysMonotonic GenesisKeyHash
+  . Map.mapMaybe Two.bodyPParamsDelta
+  . (\(Two.ProposedUpdates ppup) -> ppup)

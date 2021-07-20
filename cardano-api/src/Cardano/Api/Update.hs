@@ -8,12 +8,13 @@ where
 
 import Cardano.Prelude
 
-import Cardano.Api.ProtocolParameters (ProtocolParametersUpdate, fromShelleyProposedPPUpdates)
+import Cardano.Api.ProtocolParameters (ProtocolParametersUpdate, fromShelleyProposedPPUpdates,
+           fromVoltaireProposedUpdates)
 import Ouroboros.Consensus.Shelley.Update (HasProtocolUpdates, ProposedProtocolUpdates)
 import Ouroboros.Consensus.Voltaire.Prototype.Eras ()
 import Cardano.Api.Hash (Hash)
 import Cardano.Api.KeysShelley (GenesisKey)
-import Cardano.Api.Eras (VoltairePrototypeOneEra, ShelleyLedgerEra)
+import Cardano.Api.Eras (VoltairePrototypeOneEra, VoltairePrototypeTwoEra, ShelleyLedgerEra)
 
 
 class (HasProtocolUpdates (ShelleyLedgerEra era)) => VoltaireProtocolUpdate era where
@@ -24,3 +25,6 @@ class (HasProtocolUpdates (ShelleyLedgerEra era)) => VoltaireProtocolUpdate era 
 
 instance VoltaireProtocolUpdate VoltairePrototypeOneEra where
   toProtocolParametersUpdate _ = fromShelleyProposedPPUpdates
+
+instance VoltaireProtocolUpdate VoltairePrototypeTwoEra where
+  toProtocolParametersUpdate _ = fromVoltaireProposedUpdates
