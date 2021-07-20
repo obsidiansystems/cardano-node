@@ -44,12 +44,15 @@ function wait_for_reward_balance () {
   STAKE_ADDRESS="$1"
   TARGET_BALANCE="$2"
   REWARD_BALANCE="null"
+  COUNT=0
   echo -n "Reward balance for address $STAKE_ADDRESS:"
   while [ "$REWARD_BALANCE" != "$TARGET_BALANCE" ]
   do
     if ! REWARD_BALANCE=$(reward_balance "$STAKE_ADDRESS"); then exit 1; fi
     echo -n " $REWARD_BALANCE"
     sleep 5
+    if [ $COUNT -gt 70 ]; then echo "ERROR: waited too long for reward balance"; exit 1; fi
+    COUNT=$((COUNT+1))
   done
   echo ""
 }
@@ -114,10 +117,12 @@ scripts/voltaire-prototype/update.sh 2 prototype-era-one
 # Test 1: create and publish a MIR, and verify that funds are received.
 wait_for_era "VoltairePrototypeTwo"
 echo "Publishing MIR proposal..."
-scripts/voltaire-prototype/mir-proposal.sh
+ADDRESS="$(cat ${ROOT}/addresses/user1-stake.addr)"
+AMOUNT=250000000
+scripts/voltaire-prototype/mir-proposal.sh "$ADDRESS" "$AMOUNT"
 assert_nonempty_proposals
 echo "Waiting to receive MIR transfer..."
-wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" "250000000"
+wait_for_reward_balance "$ADDRESS" "$AMOUNT"
 
 ########
 # Test 2: create and publish a MIR containing two recipients,
@@ -136,7 +141,31 @@ wait_for_reward_balance "$ADDR_2" "$ADDR_AMOUNT_2"
 #         the first transaction is signed only by the first delegate, the second only by the second delegate.
 #         verify that the funds are received.
 AMOUNT_SEP=345678
+EXPECTED_BALANCE_SEP=$((350000000+AMOUNT_SEP))
 scripts/voltaire-prototype/mir-proposal_separate-txs.sh "$AMOUNT_SEP"
-wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" $((350000000+AMOUNT_SEP))
+wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" $EXPECTED_BALANCE_SEP
+
+########
+# Test 4: create and publish one MIR, which has sufficient votes.
+#         then publish a different MIR, also with sufficient votes.
+#         verify that only the funds of the second MIR are received.
+echo "Two MIRs: publishing first MIR proposal..."
+ADDRESS1="$(cat ${ROOT}/addresses/user1-stake.addr)"
+AMOUNT1=135790
+scripts/voltaire-prototype/mir-proposal.sh "$ADDRESS1" $AMOUNT1
+assert_nonempty_proposals
+sleep 30 # wait a bit
+echo "Two MIRs: publishing second MIR proposal..."
+ADDRESS2="$(cat ${ROOT}/addresses/pool-owner1-stake.addr)"
+AMOUNT2=567890
+scripts/voltaire-prototype/mir-proposal.sh "$ADDRESS2" "$AMOUNT2"
+echo "Two MIRs: waiting to receive MIR transfer..."
+wait_for_reward_balance "$ADDRESS2" "$((AMOUNT2+ADDR_AMOUNT_2))"
+sleep 20 # wait a bit
+# assert that the balance of the other address _has not_ changed
+if [ "$(reward_balance "$ADDRESS1")" != "$EXPECTED_BALANCE_SEP" ]; then
+  echo "Two MIRs: FAILURE: First MIR proposal enacted. Balance of $ADDRESS1: $(reward_balance "$ADDRESS1")"
+  exit 1;
+fi
 
 echo "Done!"

@@ -3,14 +3,19 @@
 set -e
 set -x
 
+# Create and publish a MIR proposal, voted on by both genesis delegates,
+#  that pays the specified amount to the specified address.
+#
 # Usage:
 #
 # This scrips needs to be run from the repository root, like so:
-#   scripts/voltaire-prototype/mir-proposal.sh
+#   scripts/voltaire-prototype/mir-proposal.sh <reward_address> <reward_amount>
+
+ADDRESS="$1"
+AMOUNT="$2"
 
 ROOT=example
 INITIAL_FUNDS=1000000000
-REWARD=250000000
 
 source scripts/voltaire-prototype/_windows_socket-path.sh
 export CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock
@@ -23,8 +28,8 @@ cardano-cli governance create-mir-proposal \
             --genesis-verification-key-file ${ROOT}/genesis-keys/genesis1.vkey \
             --genesis-verification-key-file ${ROOT}/genesis-keys/genesis2.vkey \
             --reserves \
-            --stake-address "$(cat ${ROOT}/addresses/user1-stake.addr)" \
-            --reward ${REWARD}
+            --stake-address "${ADDRESS}" \
+            --reward "${AMOUNT}"
 
 TX_IN="$(cardano-cli query utxo --prototype-mode --testnet-magic 42| awk '{print $1}' |sed -n '3,3p')#0"
 cardano-cli transaction build-raw --prototype-era-two \
@@ -35,7 +40,7 @@ cardano-cli transaction build-raw --prototype-era-two \
             --mir-proposal-file ${ROOT}/mir-proposal-example \
             --out-file ${ROOT}/tx3.txbody
 
-# So we'll need to sign this with a bunch of keys:
+# So we'll need to sign this with two keys:
 # 1. the initial utxo spending key, for the funds
 # 2. the genesis delegate keys, due to the MIR proposal
 
