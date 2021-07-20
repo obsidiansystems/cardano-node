@@ -37,15 +37,10 @@ cardano-cli transaction build-raw --prototype-era-two \
 
 # So we'll need to sign this with a bunch of keys:
 # 1. the initial utxo spending key, for the funds
-# 2. the user1 stake address key, due to the delegatation cert
-# 3. the pool1 owner key, due to the pool registration cert
-# 4. the pool1 operator key, due to the pool registration cert
-# 5. the genesis delegate keys, due to the update proposal
+# 2. the genesis delegate keys, due to the MIR proposal
 
 cardano-cli transaction sign \
             --signing-key-file ${ROOT}/addresses/user1.skey \
-            --signing-key-file ${ROOT}/genesis-keys/genesis1.skey \
-            --signing-key-file ${ROOT}/genesis-keys/genesis2.skey \
             --signing-key-file ${ROOT}/delegate-keys/delegate1.skey \
             --signing-key-file ${ROOT}/delegate-keys/delegate2.skey \
             --testnet-magic 42 \
