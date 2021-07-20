@@ -1,5 +1,20 @@
 #!/usr/bin/env bash
 
+# Usage:
+#
+# This scrips needs to be run from the repository root, like so:
+#   scripts/voltaire-prototype/demo.sh
+#
+# Before running this script you should, also from the repository root,
+# run either:
+#
+#    (a) scripts/voltaire-prototype/mkfiles.sh
+#       * and then start the nodes manually (as per the printed instructions), or
+#
+#    (b) scripts/voltaire-prototype/mkfiles.sh test
+#       * which automatically starts the nodes (and you need to kill them when you're done)
+#
+
 set -e
 
 ROOT=example
