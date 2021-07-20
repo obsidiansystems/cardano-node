@@ -110,25 +110,31 @@ wait_for_era "VoltairePrototypeOne"
 echo "Initiating PrototypeTwo hard fork..."
 scripts/voltaire-prototype/update.sh 2 prototype-era-one
 
+########
+# Test 1: create and publish a MIR, and verify that funds are received.
 wait_for_era "VoltairePrototypeTwo"
 echo "Publishing MIR proposal..."
 scripts/voltaire-prototype/mir-proposal.sh
-
 assert_nonempty_proposals
 echo "Waiting to receive MIR transfer..."
 wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" "250000000"
 
+########
+# Test 2: create and publish a MIR containing two recipients,
+#         and verify that funds are received by both recipients.
 ADDR_2="$(cat ${ROOT}/addresses/pool-owner1-stake.addr)"
 ADDR_AMOUNT_2=50000000
 echo "Publishing second MIR proposal..."
 scripts/voltaire-prototype/mir-proposal_two-addrs.sh "$ADDR_2" "$ADDR_AMOUNT_2"
-
 assert_nonempty_proposals
 echo "Waiting to receive both MIR transfers..."
 wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" "350000000"
 wait_for_reward_balance "$ADDR_2" "$ADDR_AMOUNT_2"
 
-# Test 3: each genesis delegate votes on the same proposal in a separate transaction
+########
+# Test 3: create and publish two identical MIRs in two separate transactions.
+#         the first transaction is signed only by the first delegate, the second only by the second delegate.
+#         verify that the funds are received.
 AMOUNT_SEP=345678
 scripts/voltaire-prototype/mir-proposal_separate-txs.sh "$AMOUNT_SEP"
 wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" $((350000000+AMOUNT_SEP))
