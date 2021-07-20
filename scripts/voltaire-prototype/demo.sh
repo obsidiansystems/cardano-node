@@ -128,4 +128,9 @@ echo "Waiting to receive both MIR transfers..."
 wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" "350000000"
 wait_for_reward_balance "$ADDR_2" "$ADDR_AMOUNT_2"
 
+# Test 3: each genesis delegate votes on the same proposal in a separate transaction
+AMOUNT_SEP=345678
+scripts/voltaire-prototype/mir-proposal_separate-txs.sh "$AMOUNT_SEP"
+wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" $((350000000+AMOUNT_SEP))
+
 echo "Done!"
