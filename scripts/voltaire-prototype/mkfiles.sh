@@ -304,6 +304,9 @@ fi
 # environment variable used by cardano-cli SHOULD NOT contain escaped
 # backslashes, if it does then cardano-cli fails.
 WINDOWS_SOCKET_PREFIX_ESCAPED=$(echo "$WINDOWS_SOCKET_PREFIX" | sed 's/\\/\\\\/g')
+ALL_NODES_PID=""
+
+popd
 
 for NODE in ${ALL_NODES}; do
 
@@ -316,17 +319,23 @@ cardano-node run \\
 --shelley-kes-key                 ${ROOT}/${NODE}/kes.skey \\
 --shelley-vrf-key                 ${ROOT}/${NODE}/vrf.skey \\
 --shelley-operational-certificate ${ROOT}/${NODE}/node.cert \\
---port                            $(cat "${NODE}"/port)
+--port                            $(cat "${ROOT}/${NODE}"/port)
 END
 )
 
 echo "$COMMAND"
 if [ "$TEST" ]; then
   echo "Starting node using the above command..."
-  eval "(cd .. ; $COMMAND &>${ROOT}/${NODE}.log) &"
+  echo
+  eval "$COMMAND &>${ROOT}/${NODE}.log &"
+  ALL_NODES_PID="$! $ALL_NODES_PID"
 fi
 
 done
+
+echo "Node process IDs: $ALL_NODES_PID"
+echo
+
 echo "In order to do the protocol updates, proceed as follows:"
 echo
 echo "  1. Start nodes"
@@ -341,5 +350,3 @@ echo
 echo "CARDANO_NODE_SOCKET_PATH=${WINDOWS_SOCKET_PREFIX}node-bft1 \\"
 echo "  cardano-cli query stake-distribution --prototype-mode --testnet-magic 42"
 echo
-
-popd
