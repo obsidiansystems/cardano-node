@@ -3,7 +3,10 @@
 set -e
 set -x
 
-# This script will TODO
+# Usage:
+#
+# This scrips needs to be run from the repository root, like so:
+#   scripts/voltaire-prototype/mir-proposal.sh
 
 ROOT=example
 INITIAL_FUNDS=1000000000
