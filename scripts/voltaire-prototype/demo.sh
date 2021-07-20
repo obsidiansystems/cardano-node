@@ -22,6 +22,38 @@ ROOT=example
 source scripts/voltaire-prototype/_windows_socket-path.sh
 export CARDANO_NODE_SOCKET_PATH="${WINDOWS_SOCKET_PREFIX}${ROOT}/node-bft1/node.sock"
 
+
+function assert_nonempty_proposals () {
+  echo -n "Verifying that MIR proposal has been registered... "
+  sleep 10 # ideally we would wait until the "MIR proposal" transaction has been included in a block
+  if ! PROPOSALS=$(cardano-cli query ledger-state --prototype-mode --testnet-magic 42 | jq .stateBefore.esLState.utxoState.ppups.proposals); then exit 1; fi
+  if [ "$PROPOSALS" = "{}" ]; then echo "ERROR: no proposals registered"; exit 1; else echo "OK"; fi
+}
+
+# Get the reward balance for a given address
+#
+# Usage: reward_balance <stake_address>
+function reward_balance () {
+  cardano-cli query stake-address-info --prototype-mode --address "$1" --testnet-magic 42 | jq '.[0].rewardAccountBalance'
+}
+
+# Wait until the given reward address has the given balance
+#
+# Usage: wait_for_reward_balance <stake_address> <balance>
+function wait_for_reward_balance () {
+  STAKE_ADDRESS="$1"
+  TARGET_BALANCE="$2"
+  REWARD_BALANCE="null"
+  echo -n "Reward balance for address $STAKE_ADDRESS:"
+  while [ "$REWARD_BALANCE" != "$TARGET_BALANCE" ]
+  do
+    if ! REWARD_BALANCE=$(reward_balance "$STAKE_ADDRESS"); then exit 1; fi
+    echo -n " $REWARD_BALANCE"
+    sleep 5
+  done
+  echo ""
+}
+
 function wait_for_era () {
   echo "Waiting for nodes to upgrade to $1..."
   echo -n "Current era:"
@@ -82,20 +114,18 @@ wait_for_era "VoltairePrototypeTwo"
 echo "Publishing MIR proposal..."
 scripts/voltaire-prototype/mir-proposal.sh
 
-echo -n "Verifying that MIR proposal has been registered... "
-sleep 10 # ideally we would wait until the "MIR proposal" transaction has been included in a block
-if ! PROPOSALS=$(cardano-cli query ledger-state --prototype-mode --testnet-magic 42 | jq .stateBefore.esLState.utxoState.ppups.proposals); then exit 1; fi
-if [ "$PROPOSALS" = "{}" ]; then echo "ERROR: MIR proposal not registered"; exit 1; else echo "OK"; fi
-
+assert_nonempty_proposals
 echo "Waiting to receive MIR transfer..."
-STAKER_BALANCE="null"
-echo -n "Stake balance for MIR target address:"
-while [ "$STAKER_BALANCE" != "250000000" ]
-do
-  if ! STAKER_BALANCE=$(cardano-cli query stake-address-info --prototype-mode --address "$(cat ${ROOT}/addresses/user1-stake.addr)" --testnet-magic 42 | jq '.[0].rewardAccountBalance'); then exit 1; fi
-  echo -n " $STAKER_BALANCE"
-  sleep 5
-done
-echo ""
+wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" "250000000"
+
+ADDR_2="$(cat ${ROOT}/addresses/pool-owner1-stake.addr)"
+ADDR_AMOUNT_2=50000000
+echo "Publishing second MIR proposal..."
+scripts/voltaire-prototype/mir-proposal_two-addrs.sh "$ADDR_2" "$ADDR_AMOUNT_2"
+
+assert_nonempty_proposals
+echo "Waiting to receive both MIR transfers..."
+wait_for_reward_balance "$(cat ${ROOT}/addresses/user1-stake.addr)" "350000000"
+wait_for_reward_balance "$ADDR_2" "$ADDR_AMOUNT_2"
 
 echo "Done!"
