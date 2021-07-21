@@ -70,6 +70,20 @@ function wait_for_era () {
   echo "Hard fork to $1 completed."
 }
 
+function wait_for_slot () {
+  TARGET_SLOT_NUMBER=$1
+  SLOT_NUMBER=0
+  echo "Waiting for slot number $TARGET_SLOT_NUMBER..."
+  echo -n "Current slot number:"
+  while [ "$SLOT_NUMBER" -lt "$TARGET_SLOT_NUMBER" ]
+  do
+    sleep 5
+    if ! SLOT_NUMBER=$(cardano-cli query tip --prototype-mode --testnet-magic 42 |jq -r .slot); then exit 1; fi
+    echo -n " $SLOT_NUMBER"
+  done
+  echo
+}
+
 function wait_for_node_connect () {
   # Windows error output example:
   #   cardano-cli.exe: CreateFile "example/node-bft1/node.sock": does not exist (The system cannot find the file specified.)
@@ -166,6 +180,23 @@ sleep 20 # wait a bit
 if [ "$(reward_balance "$ADDRESS1")" != "$EXPECTED_BALANCE_SEP" ]; then
   echo "Two MIRs: FAILURE: First MIR proposal enacted. Balance of $ADDRESS1: $(reward_balance "$ADDRESS1")"
   exit 1;
+fi
+
+########
+# Test 5: verify that nodes respect the stability window for MIR proposals
+EPOCH_LENGTH=1500
+ACTIVE_SLOTS_COEFF=0.1
+SECURITY_PARAM=10
+STABILITY_WINDOW=$((3*SECURITY_PARAM/ACTIVE_SLOTS_COEFF))
+if ! EPOCH_NUMBER=$(cardano-cli query tip --prototype-mode --testnet-magic 42 |jq -r .epoch); then exit 1; fi
+FIRST_SLOT_NEXT_EPOCH=$(((EPOCH_NUMBER+1)*EPOCH_LENGTH))
+# wait until there are at most 2*STABILITY_WINDOW slots until the next epoch
+wait_for_slot $((FIRST_SLOT_NEXT_EPOCH-2*STABILITY_WINDOW))
+if scripts/voltaire-prototype/mir-proposal.sh "$ADDRESS1" $AMOUNT1; then
+  echo "SUCCESS: late MIR proposal rejected"
+else
+  echo "FAIL: late MIR proposal accepted"
+  exit 1
 fi
 
 echo "Done!"
