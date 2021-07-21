@@ -310,25 +310,25 @@ popd
 
 for NODE in ${ALL_NODES}; do
 
-NODE_OPTIONS=(
-  --config                          "${ROOT}/configuration.yaml"
-  --topology                        "${ROOT}/${NODE}/topology.json"
-  --database-path                   "${ROOT}/${NODE}/db"
-  --socket-path                     "${WINDOWS_SOCKET_PREFIX_ESCAPED}${ROOT}/${NODE}/node.sock"
-  --shelley-kes-key                 "${ROOT}/${NODE}/kes.skey"
-  --shelley-vrf-key                 "${ROOT}/${NODE}/vrf.skey"
-  --shelley-operational-certificate "${ROOT}/${NODE}/node.cert"
-  --port                            "$(cat ${ROOT}/${NODE}/port)"
-)
+  NODE_OPTIONS=(
+    --config                          "${ROOT}/configuration.yaml"
+    --topology                        "${ROOT}/${NODE}/topology.json"
+    --database-path                   "${ROOT}/${NODE}/db"
+    --socket-path                     "${WINDOWS_SOCKET_PREFIX_ESCAPED}${ROOT}/${NODE}/node.sock"
+    --shelley-kes-key                 "${ROOT}/${NODE}/kes.skey"
+    --shelley-vrf-key                 "${ROOT}/${NODE}/vrf.skey"
+    --shelley-operational-certificate "${ROOT}/${NODE}/node.cert"
+    --port                            "$(cat ${ROOT}/${NODE}/port)"
+  )
 
-COMMAND="cardano-node run ${NODE_OPTIONS[*]}"
-echo "$COMMAND"
-if [ "$TEST" ]; then
-  echo "Starting node using the above command..."
-  echo
-  cardano-node run "${NODE_OPTIONS[@]}" &>"${ROOT}/${NODE}.log" &
-  ALL_NODES_PID="$! $ALL_NODES_PID"
-fi
+  COMMAND="cardano-node run ${NODE_OPTIONS[*]}"
+  echo "$COMMAND"
+  if [ "$TEST" ]; then
+    echo "Starting node using the above command..."
+    echo
+    cardano-node run "${NODE_OPTIONS[@]}" &>"${ROOT}/${NODE}.log" &
+    ALL_NODES_PID="$! $ALL_NODES_PID"
+  fi
 
 done
 
