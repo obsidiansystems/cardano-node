@@ -184,9 +184,9 @@ fi
 
 ########
 # Test 5: verify that nodes respect the stability window for MIR proposals
-EPOCH_LENGTH=750
+EPOCH_LENGTH=1500
 ACTIVE_SLOTS_COEFF=0.1
-SECURITY_PARAM=5
+SECURITY_PARAM=10
 STABILITY_WINDOW=$(bc <<< 3*$SECURITY_PARAM/$ACTIVE_SLOTS_COEFF)
 if ! EPOCH_NUMBER=$(cardano-cli query tip --prototype-mode --testnet-magic 42 |jq -r .epoch); then exit 1; fi
 FIRST_SLOT_NEXT_EPOCH=$(((EPOCH_NUMBER+1)*EPOCH_LENGTH))
