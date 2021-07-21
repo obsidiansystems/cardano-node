@@ -292,10 +292,11 @@ done
 echo "Generated stake pool registration certs:"
 ls -1 node-*/registration.cert
 echo "====================================================================="
+popd
+echo
 
 if [ ! $TEST ]; then
-  echo "To start the nodes, in separate terminals use:"
-  echo
+  echo "To start the nodes, in separate terminals run:"
 fi
 
 # Replace a single backslash with two backslashes.
@@ -305,8 +306,6 @@ fi
 # backslashes, if it does then cardano-cli fails.
 WINDOWS_SOCKET_PREFIX_ESCAPED=$(echo "$WINDOWS_SOCKET_PREFIX" | sed 's/\\/\\\\/g')
 ALL_NODES_PID=""
-
-popd
 
 for NODE in ${ALL_NODES}; do
 
@@ -322,17 +321,21 @@ for NODE in ${ALL_NODES}; do
   )
 
   COMMAND="cardano-node run ${NODE_OPTIONS[*]}"
+  echo
   echo "$COMMAND"
   if [ "$TEST" ]; then
     echo "Starting node using the above command..."
-    echo
     cardano-node run "${NODE_OPTIONS[@]}" &>"${ROOT}/${NODE}.log" &
     ALL_NODES_PID="$! $ALL_NODES_PID"
   fi
 
 done
 
-echo "Node process IDs: $ALL_NODES_PID"
+if [ $TEST ]; then
+  echo
+  echo "Node process IDs: $ALL_NODES_PID"
+fi
+
 echo
 
 echo "In order to do the protocol updates, proceed as follows:"
