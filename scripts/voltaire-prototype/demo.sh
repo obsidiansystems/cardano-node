@@ -187,12 +187,12 @@ fi
 EPOCH_LENGTH=1500
 ACTIVE_SLOTS_COEFF=0.1
 SECURITY_PARAM=10
-STABILITY_WINDOW=$((3*SECURITY_PARAM/ACTIVE_SLOTS_COEFF))
+STABILITY_WINDOW=$(bc <<< 3*$SECURITY_PARAM/$ACTIVE_SLOTS_COEFF)
 if ! EPOCH_NUMBER=$(cardano-cli query tip --prototype-mode --testnet-magic 42 |jq -r .epoch); then exit 1; fi
 FIRST_SLOT_NEXT_EPOCH=$(((EPOCH_NUMBER+1)*EPOCH_LENGTH))
 # wait until there are at most 2*STABILITY_WINDOW slots until the next epoch
 wait_for_slot $((FIRST_SLOT_NEXT_EPOCH-2*STABILITY_WINDOW))
-if scripts/voltaire-prototype/mir-proposal.sh "$ADDRESS1" $AMOUNT1; then
+if ! scripts/voltaire-prototype/mir-proposal.sh "$ADDRESS1" $AMOUNT1; then
   echo "SUCCESS: late MIR proposal rejected"
 else
   echo "FAIL: late MIR proposal accepted"
