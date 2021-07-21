@@ -299,12 +299,6 @@ if [ ! $TEST ]; then
   echo "To start the nodes, in separate terminals run:"
 fi
 
-# Replace a single backslash with two backslashes.
-# The argument passed to the --socket-path switch of "cardano-node run"
-# requires that backslashes be escaped. However, the CARDANO_NODE_SOCKET_PATH
-# environment variable used by cardano-cli SHOULD NOT contain escaped
-# backslashes, if it does then cardano-cli fails.
-WINDOWS_SOCKET_PREFIX_ESCAPED=$(echo "$WINDOWS_SOCKET_PREFIX" | sed 's/\\/\\\\/g')
 ALL_NODES_PID=""
 
 for NODE in ${ALL_NODES}; do
@@ -313,7 +307,7 @@ for NODE in ${ALL_NODES}; do
     --config                          "${ROOT}/configuration.yaml"
     --topology                        "${ROOT}/${NODE}/topology.json"
     --database-path                   "${ROOT}/${NODE}/db"
-    --socket-path                     "${WINDOWS_SOCKET_PREFIX_ESCAPED}${ROOT}/${NODE}/node.sock"
+    --socket-path                     "${WINDOWS_SOCKET_PREFIX}${ROOT}/${NODE}/node.sock"
     --shelley-kes-key                 "${ROOT}/${NODE}/kes.skey"
     --shelley-vrf-key                 "${ROOT}/${NODE}/vrf.skey"
     --shelley-operational-certificate "${ROOT}/${NODE}/node.cert"
