@@ -84,7 +84,7 @@ cardano-cli transaction sign \
 # Wait for the output of the first transaction to appear in the UTXO set
 COUNT=0
 echo "MIR proposal multi tx: waiting for first tx to be included in block..."
-while (cardano-cli query utxo --prototype-mode --testnet-magic 42 |grep "${TX_ID1}")
+while (! cardano-cli query utxo --prototype-mode --testnet-magic 42 |grep "${TX_ID1}")
 do
 if [ $COUNT -gt 25 ]; then
     echo "ERROR: output did not appear in UTXO set"
